@@ -1,0 +1,1150 @@
+════════════════════════════════════════════
+ Run 33410221539 | vllm-project/vllm-ascend
+════════════════════════════════════════════
+
+X main Nightly-A3 · 33410221539
+Triggered via workflow_dispatch about 16 hours ago
+
+JOBS
+✓ Parse trigger and determine test scope in 13s (ID 99547661900)
+- Build nightly-a3 image in 0s (ID 99547663565)
+✓ Export global env vars as job outputs in 3m38s (ID 99547853439)
+✓ multi-node (main, DeepSeek-V4-Pro-w4a8-1M-PD, DeepSeek-V4-Pro-w4a8-1M-PD.yaml, tests/e2e/nightly/... / DeepSeek-V4-Pro-w4a8-1M-PD.yaml in 43m21s (ID 99549237553)
+X multi-node (main, multi-node-deepseek-v3.2-W8A8-EP, DeepSeek-V3_2-W8A8-EP.yaml, tests/e2e/nightly... / DeepSeek-V3_2-W8A8-EP.yaml in 31m54s (ID 99549237678)
+  ✓ Set up job
+  ✓ Initialize containers
+  ✓ Decode kubeconfig
+  ✓ Checkout code
+  ✓ Set job variables
+  ✓ Prepare scripts
+  ✓ Clear resources
+  ✓ Launch cluster
+  ✓ Wait for pods ready
+  X Stream logs
+  - Update good_table.csv on success
+  ✓ Fetch benchmark results from PVC
+  ✓ Post process
+  ✓ Collect Ascend logs
+  ✓ Upload Ascend logs
+  ✓ Upload Ascend logs (GitHub Artifacts)
+  ✓ Set benchmark artifact timestamp
+  ✓ Upload benchmark results
+  ✓ Upload benchmark results (GitHub Artifacts)
+  ✓ Post Checkout code
+  ✓ Stop containers
+  ✓ Complete job
+X multi-node (main, DeepSeek-V4-Pro-w4a8-prefix-cache-PD, DeepSeek-V4-Pro-w4a8-prefix-cache-PD.yaml... / DeepSeek-V4-Pro-w4a8-prefix-cache-PD.yaml in 1h5m1s (ID 99559264146)
+  ✓ Set up job
+  ✓ Initialize containers
+  ✓ Decode kubeconfig
+  ✓ Checkout code
+  ✓ Set job variables
+  ✓ Prepare scripts
+  ✓ Clear resources
+  ✓ Launch cluster
+  ✓ Wait for pods ready
+  X Stream logs
+  - Update good_table.csv on success
+  ✓ Fetch benchmark results from PVC
+  ✓ Post process
+  ✓ Collect Ascend logs
+  ✓ Upload Ascend logs
+  ✓ Upload Ascend logs (GitHub Artifacts)
+  ✓ Set benchmark artifact timestamp
+  ✓ Upload benchmark results
+  ✓ Upload benchmark results (GitHub Artifacts)
+  ✓ Post Checkout code
+  ✓ Stop containers
+  ✓ Complete job
+X multi-node (main, GLM-5.1-w8a8c8-128k-1k-90-50-PD, GLM-5.1-W8A8C8-128k-1k-90-50-PD.yaml, tests/e2... / GLM-5.1-W8A8C8-128k-1k-90-50-PD.yaml in 1h14m46s (ID 99562731606)
+  ✓ Set up job
+  ✓ Initialize containers
+  ✓ Decode kubeconfig
+  ✓ Checkout code
+  ✓ Set job variables
+  ✓ Prepare scripts
+  ✓ Clear resources
+  ✓ Launch cluster
+  ✓ Wait for pods ready
+  X Stream logs
+  - Update good_table.csv on success
+  ✓ Fetch benchmark results from PVC
+  ✓ Post process
+  ✓ Collect Ascend logs
+  ✓ Upload Ascend logs
+  ✓ Upload Ascend logs (GitHub Artifacts)
+  ✓ Set benchmark artifact timestamp
+  ✓ Upload benchmark results
+  ✓ Upload benchmark results (GitHub Artifacts)
+  ✓ Post Checkout code
+  ✓ Stop containers
+  ✓ Complete job
+✓ multi-node (main, QWEN3_235B_PD_3_5K_1_5k, QWEN3_235B_PD_3_5K_1_5k.yaml, tests/e2e/nightly/multi_... / QWEN3_235B_PD_3_5K_1_5k.yaml in 21m49s (ID 99578786014)
+✓ double-node (main, multi-node-dpsk3.2-2node, DeepSeek-V3_2-W8A8-A3-dual-nodes.yaml, tests/e2e/nig... / DeepSeek-V3_2-W8A8-A3-dual-nodes.yaml in 56m35s (ID 99585413291)
+X double-node (main, multi-node-qwen-disagg-pd, Qwen3-235B-disagg-pd.yaml, tests/e2e/nightly/multi_... / Qwen3-235B-disagg-pd.yaml in 54m21s (ID 99585413371)
+  ✓ Set up job
+  ✓ Initialize containers
+  ✓ Decode kubeconfig
+  ✓ Checkout code
+  ✓ Set job variables
+  ✓ Prepare scripts
+  ✓ Clear resources
+  ✓ Launch cluster
+  ✓ Wait for pods ready
+  X Stream logs
+  - Update good_table.csv on success
+  ✓ Fetch benchmark results from PVC
+  ✓ Post process
+  ✓ Collect Ascend logs
+  ✓ Upload Ascend logs
+  ✓ Upload Ascend logs (GitHub Artifacts)
+  ✓ Set benchmark artifact timestamp
+  ✓ Upload benchmark results
+  ✓ Upload benchmark results (GitHub Artifacts)
+  ✓ Post Checkout code
+  ✓ Stop containers
+  ✓ Complete job
+✓ double-node (main, multi-node-qwen3-dp, Qwen3-235B-A22B.yaml, tests/e2e/nightly/multi_node/intern... / Qwen3-235B-A22B.yaml in 1h5m20s (ID 99585413503)
+X double-node (main, multi-node-GLM-5.1-w8a8-A3, GLM5_1-W8A8-A3-dual-nodes.yaml, tests/e2e/nightly/... / GLM5_1-W8A8-A3-dual-nodes.yaml in 1h15m9s (ID 99585413623)
+  ✓ Set up job
+  ✓ Initialize containers
+  ✓ Decode kubeconfig
+  ✓ Checkout code
+  ✓ Set job variables
+  ✓ Prepare scripts
+  ✓ Clear resources
+  ✓ Launch cluster
+  ✓ Wait for pods ready
+  X Stream logs
+  - Update good_table.csv on success
+  ✓ Fetch benchmark results from PVC
+  ✓ Post process
+  ✓ Collect Ascend logs
+  ✓ Upload Ascend logs
+  ✓ Upload Ascend logs (GitHub Artifacts)
+  ✓ Set benchmark artifact timestamp
+  ✓ Upload benchmark results
+  ✓ Upload benchmark results (GitHub Artifacts)
+  ✓ Post Checkout code
+  ✓ Stop containers
+  ✓ Complete job
+✓ double-node (main, multi-node-qwen-vl-disagg-pd, Qwen3-VL-235B-disagg-pd.yaml, tests/e2e/nightly/... / Qwen3-VL-235B-disagg-pd.yaml in 27m37s (ID 99601966469)
+✓ double-node (main, multi-node-qwenw8a8-2node-eplb, Qwen3-235B-W8A8-EPLB.yaml, tests/e2e/nightly/m... / Qwen3-235B-W8A8-EPLB.yaml in 16m14s (ID 99602674553)
+X double-node (main, multi-node-GLM-5.1-W8A8C8-A3_128k_90_50, GLM-5.1-W8A8C8-A3_128k_90_50.yaml, te... / GLM-5.1-W8A8C8-A3_128k_90_50.yaml in 36m19s (ID 99605334546)
+  ✓ Set up job
+  ✓ Initialize containers
+  ✓ Decode kubeconfig
+  ✓ Checkout code
+  ✓ Set job variables
+  ✓ Prepare scripts
+  ✓ Clear resources
+  ✓ Launch cluster
+  ✓ Wait for pods ready
+  X Stream logs
+  - Update good_table.csv on success
+  ✓ Fetch benchmark results from PVC
+  ✓ Post process
+  ✓ Collect Ascend logs
+  ✓ Upload Ascend logs
+  ✓ Upload Ascend logs (GitHub Artifacts)
+  ✓ Set benchmark artifact timestamp
+  ✓ Upload benchmark results
+  ✓ Upload benchmark results (GitHub Artifacts)
+  ✓ Post Checkout code
+  ✓ Stop containers
+  ✓ Complete job
+X double-node (main, multi-node-GLM-5.1-W8A8C8-MTP-A3_198k_function, GLM-5.1-W8A8C8-A3_198k_functio... / GLM-5.1-W8A8C8-A3_198k_function.yaml in 2h1m47s (ID 99607709533)
+✓ double-node (main, multi-node-deepseek-v3.1, DeepSeek-V3.1-BF16.yaml, tests/e2e/nightly/multi_nod... / DeepSeek-V3.1-BF16.yaml in 24m16s (ID 99608349875)
+X double-node (main, multi-node-GLM-5.2-w8a8-A3, GLM5_2-W8A8-A3-dual-nodes.yaml, tests/e2e/nightly/... / GLM5_2-W8A8-A3-dual-nodes.yaml in 54m36s (ID 99610527631)
+  ✓ Set up job
+  ✓ Initialize containers
+  ✓ Decode kubeconfig
+  ✓ Checkout code
+  ✓ Set job variables
+  ✓ Prepare scripts
+  ✓ Clear resources
+  ✓ Launch cluster
+  ✓ Wait for pods ready
+  X Stream logs
+  - Update good_table.csv on success
+  ✓ Fetch benchmark results from PVC
+  ✓ Post process
+  ✓ Collect Ascend logs
+  ✓ Upload Ascend logs
+  ✓ Upload Ascend logs (GitHub Artifacts)
+  ✓ Set benchmark artifact timestamp
+  ✓ Upload benchmark results
+  ✓ Upload benchmark results (GitHub Artifacts)
+  ✓ Post Checkout code
+  ✓ Stop containers
+  ✓ Complete job
+X double-node (main, Minimax_m2.7_in128k_1k_prefix90_tpot50, Minimax_m2.7_in128k_1k_prefix90_tpot50... / Minimax_m2.7_in128k_1k_prefix90_tpot50.yaml in 1h5m39s (ID 99615861862)
+  ✓ Set up job
+  ✓ Initialize containers
+  ✓ Decode kubeconfig
+  ✓ Checkout code
+  ✓ Set job variables
+  ✓ Prepare scripts
+  ✓ Clear resources
+  ✓ Launch cluster
+  ✓ Wait for pods ready
+  X Stream logs
+  - Update good_table.csv on success
+  ✓ Fetch benchmark results from PVC
+  ✓ Post process
+  ✓ Collect Ascend logs
+  ✓ Upload Ascend logs
+  ✓ Upload Ascend logs (GitHub Artifacts)
+  ✓ Set benchmark artifact timestamp
+  ✓ Upload benchmark results
+  ✓ Upload benchmark results (GitHub Artifacts)
+  ✓ Post Checkout code
+  ✓ Stop containers
+  ✓ Complete job
+✓ double-node (main, DeepSeek-V4-flash-w8a8-PD-prefix, DeepSeek-V4-flash-w8a8-PD-prefix.yaml, tests... / DeepSeek-V4-flash-w8a8-PD-prefix.yaml in 34m22s (ID 99616498369)
+X double-node (main, Kimi-K2.6-W4A8-64k-1k-TPOT50-PD, Kimi-K2.6-W4A8-64k-1k-TPOT50-PD.yaml, tests/e... / Kimi-K2.6-W4A8-64k-1k-TPOT50-PD.yaml in 1h18m58s (ID 99626841067)
+  ✓ Set up job
+  ✓ Initialize containers
+  ✓ Decode kubeconfig
+  ✓ Checkout code
+  ✓ Set job variables
+  ✓ Prepare scripts
+  ✓ Clear resources
+  ✓ Launch cluster
+  ✓ Wait for pods ready
+  X Stream logs
+  - Update good_table.csv on success
+  ✓ Fetch benchmark results from PVC
+  ✓ Post process
+  ✓ Collect Ascend logs
+  ✓ Upload Ascend logs
+  ✓ Upload Ascend logs (GitHub Artifacts)
+  ✓ Set benchmark artifact timestamp
+  ✓ Upload benchmark results
+  ✓ Upload benchmark results (GitHub Artifacts)
+  ✓ Post Checkout code
+  ✓ Stop containers
+  ✓ Complete job
+✓ single-node (main, MiniMax-M3-W8A8-A3, linux-aarch64-nightly-a3-16, MiniMax-M3-W8A8-A3.yaml) / MiniMax-M3-W8A8-A3 in 1h33m6s (ID 99650209428)
+✓ single-node (main, MiniMax-M3-BF16-A3, linux-aarch64-nightly-a3-16, MiniMax-M3-BF16-A3.yaml) / MiniMax-M3-BF16-A3 in 32m18s (ID 99650209436)
+✓ single-node (main, DeepSeek-V4-Flash-W8A8-A3, linux-aarch64-nightly-a3-16, DeepSeek-V4-Flash-W8A8... / DeepSeek-V4-Flash-W8A8-A3 in 1h6m47s (ID 99650209499)
+✓ single-node (main, kimi-k2-thinking, linux-aarch64-nightly-a3-16, Kimi-K2-Thinking.yaml) / kimi-k2-thinking in 1h11m23s (ID 99650209580)
+- clear-pre-logs (ID 99650209594)
+✓ single-node (main, qwen3-32b-bf16-gpqa-acc, linux-aarch64-nightly-a3-4, tests/e2e/nightly/test_qw... / qwen3-32b-bf16-gpqa-acc in 1h34m20s (ID 99650209677)
+X single-node (main, deepseek-v3-2-w8a8, linux-aarch64-nightly-a3-16, DeepSeek-V3.2-W8A8.yaml) / deepseek-v3-2-w8a8 in 45m48s (ID 99650209695)
+  ✓ Set up job
+  ✓ Initialize containers
+  ✓ Check npu and CANN info
+  - uninstall vlm vllm-ascend and remove code (if pr test)
+  - Checkout vllm-project/vllm-ascend repo
+  - Move code to /vllm-workspace
+  ✓ Set MAX_JOBS based on runner
+  - Install vllm-project/vllm-ascend
+  - Uninstall Triton for 310P tests
+  - Install aisbench
+  ✓ Show vLLM and vLLM-Ascend version
+  ✓ Install clang
+  ✓ Validate Inputs
+  - Run Pytest (py-driven)
+  X Run Pytest (YAML-driven)
+  - Update good_table.csv on success
+  - Capture test result
+  - Classify failure
+  - Skip - env issue
+  - Check commit age
+  - Skip - old commit
+  - Process - recent real failure
+  - On success
+  ✓ Set benchmark artifact timestamp
+  ✓ Upload benchmark results
+  ✓ Upload benchmark results (GitHub Artifacts)
+  ✓ Stop containers
+  ✓ Complete job
+X single-node (main, Qwen3.5-122B-A10B-W8A8-A3, linux-aarch64-nightly-a3-16, Qwen3.5-122B-A10B-W8A8... / Qwen3.5-122B-A10B-W8A8-A3 in 53m35s (ID 99650209697)
+  ✓ Set up job
+  ✓ Initialize containers
+  ✓ Check npu and CANN info
+  - uninstall vlm vllm-ascend and remove code (if pr test)
+  - Checkout vllm-project/vllm-ascend repo
+  - Move code to /vllm-workspace
+  ✓ Set MAX_JOBS based on runner
+  - Install vllm-project/vllm-ascend
+  - Uninstall Triton for 310P tests
+  - Install aisbench
+  ✓ Show vLLM and vLLM-Ascend version
+  ✓ Install clang
+  ✓ Validate Inputs
+  - Run Pytest (py-driven)
+  X Run Pytest (YAML-driven)
+  - Update good_table.csv on success
+  - Capture test result
+  - Classify failure
+  - Skip - env issue
+  - Check commit age
+  - Skip - old commit
+  - Process - recent real failure
+  - On success
+  ✓ Set benchmark artifact timestamp
+  ✓ Upload benchmark results
+  ✓ Upload benchmark results (GitHub Artifacts)
+  ✓ Stop containers
+  ✓ Complete job
+✓ single-node (main, deepseek-r1-0528-w8a8, linux-aarch64-nightly-a3-16, DeepSeek-R1-0528-W8A8.yaml) / deepseek-r1-0528-w8a8 in 1h28m59s (ID 99650209722)
+X single-node (main, kimi-k2.5, linux-aarch64-nightly-a3-16, Kimi-K2.5.yaml) / kimi-k2.5 in 1h35m30s (ID 99650209745)
+  ✓ Set up job
+  ✓ Initialize containers
+  ✓ Check npu and CANN info
+  - uninstall vlm vllm-ascend and remove code (if pr test)
+  - Checkout vllm-project/vllm-ascend repo
+  - Move code to /vllm-workspace
+  ✓ Set MAX_JOBS based on runner
+  - Install vllm-project/vllm-ascend
+  - Uninstall Triton for 310P tests
+  - Install aisbench
+  ✓ Show vLLM and vLLM-Ascend version
+  ✓ Install clang
+  ✓ Validate Inputs
+  - Run Pytest (py-driven)
+  X Run Pytest (YAML-driven)
+  - Update good_table.csv on success
+  - Capture test result
+  - Classify failure
+  - Skip - env issue
+  - Check commit age
+  - Skip - old commit
+  - Process - recent real failure
+  - On success
+  ✓ Set benchmark artifact timestamp
+  ✓ Upload benchmark results
+  ✓ Upload benchmark results (GitHub Artifacts)
+  ✓ Stop containers
+  ✓ Complete job
+✓ single-node (main, qwen3-32b-int8, linux-aarch64-nightly-a3-4, Qwen3-32B-Int8.yaml) / qwen3-32b-int8 in 18m16s (ID 99650209781)
+✓ single-node (main, mtpx-deepseek-r1-0528-w8a8, linux-aarch64-nightly-a3-16, MTPX-DeepSeek-R1-0528... / mtpx-deepseek-r1-0528-w8a8 in 1h8m51s (ID 99650209782)
+✓ single-node (main, Qwen3.5-27B-w8a8-A3, linux-aarch64-nightly-a3-2, Qwen3.5-27B-w8a8-A3.yaml) / Qwen3.5-27B-w8a8-A3 in 46m43s (ID 99650209818)
+✓ single-node (main, qwen3-30b-a3b-w8a8, linux-aarch64-nightly-a3-4, Qwen3-30B-A3B-W8A8.yaml) / qwen3-30b-a3b-w8a8 in 12m17s (ID 99650209825)
+✓ single-node (main, qwen3-32b-w8a8-aime2024-acc, linux-aarch64-nightly-a3-4, tests/e2e/nightly/tes... / qwen3-32b-w8a8-aime2024-acc in 42m9s (ID 99650209853)
+✓ single-node (main, Qwen3-30B-A3B-W4A8-llm-compressor, linux-aarch64-nightly-a3-2, Qwen3-30B-A3B-W... / Qwen3-30B-A3B-W4A8-llm-compressor in 7m27s (ID 99650209927)
+✓ single-node (main, qwen3-32b-int8-prefix-cache, linux-aarch64-nightly-a3-4, Prefix-Cache-Qwen3-32... / qwen3-32b-int8-prefix-cache in 11m19s (ID 99650209991)
+✓ single-node (main, qwen3-30b-acc, linux-aarch64-nightly-a3-4, tests/e2e/weekly/single_node/models... / qwen3-30b-acc in 15m39s (ID 99650210069)
+✓ single-node (main, Qwen3-32B-W8A8C8-A3, linux-aarch64-nightly-a3-4, Qwen3-32B-W8A8C8-A3.yaml) / Qwen3-32B-W8A8C8-A3 in 21m40s (ID 99650210118)
+✓ single-node (main, Qwen3-32B-QuaRot, linux-aarch64-nightly-a3-2, Qwen3-32B-QuaRot-eagle3.yaml) / Qwen3-32B-QuaRot in 13m5s (ID 99650210130)
+X single-node (main, Qwen3-30B-QuaRot, linux-aarch64-nightly-a3-2, Qwen3-30B-QuaRot-eagle3.yaml) / Qwen3-30B-QuaRot in 15m14s (ID 99650210308)
+  ✓ Set up job
+  ✓ Initialize containers
+  ✓ Check npu and CANN info
+  - uninstall vlm vllm-ascend and remove code (if pr test)
+  - Checkout vllm-project/vllm-ascend repo
+  - Move code to /vllm-workspace
+  ✓ Set MAX_JOBS based on runner
+  - Install vllm-project/vllm-ascend
+  - Uninstall Triton for 310P tests
+  - Install aisbench
+  ✓ Show vLLM and vLLM-Ascend version
+  ✓ Install clang
+  ✓ Validate Inputs
+  - Run Pytest (py-driven)
+  X Run Pytest (YAML-driven)
+  - Update good_table.csv on success
+  - Capture test result
+  - Classify failure
+  - Skip - env issue
+  - Check commit age
+  - Skip - old commit
+  - Process - recent real failure
+  - On success
+  ✓ Set benchmark artifact timestamp
+  ✓ Upload benchmark results
+  ✓ Upload benchmark results (GitHub Artifacts)
+  ✓ Stop containers
+  ✓ Complete job
+✓ single-node (main, glm-5.1-w8a8-prefill-mc2, linux-aarch64-nightly-a3-16, GLM-5.1-W8A8-PrefillMC2... / glm-5.1-w8a8-prefill-mc2 in 58m0s (ID 99659019579)
+✓ single-node (main, qwen3-235b-a22b-w8a8, linux-aarch64-nightly-a3-16, Qwen3-235B-A22B-W8A8.yaml) / qwen3-235b-a22b-w8a8 in 55m4s (ID 99662626928)
+X single-node (main, Qwen3.5-397B-A17B-w8a8-mtp, linux-aarch64-nightly-a3-16, Qwen3.5-397B-A17B-W8A... / Qwen3.5-397B-A17B-w8a8-mtp in 47m39s (ID 99664575228)
+  ✓ Set up job
+  ✓ Initialize containers
+  ✓ Check npu and CANN info
+  - uninstall vlm vllm-ascend and remove code (if pr test)
+  - Checkout vllm-project/vllm-ascend repo
+  - Move code to /vllm-workspace
+  ✓ Set MAX_JOBS based on runner
+  - Install vllm-project/vllm-ascend
+  - Uninstall Triton for 310P tests
+  - Install aisbench
+  ✓ Show vLLM and vLLM-Ascend version
+  ✓ Install clang
+  ✓ Validate Inputs
+  - Run Pytest (py-driven)
+  X Run Pytest (YAML-driven)
+  - Update good_table.csv on success
+  - Capture test result
+  - Classify failure
+  - Skip - env issue
+  - Check commit age
+  - Skip - old commit
+  - Process - recent real failure
+  - On success
+  ✓ Set benchmark artifact timestamp
+  ✓ Upload benchmark results
+  ✓ Upload benchmark results (GitHub Artifacts)
+  ✓ Stop containers
+  ✓ Complete job
+✓ single-node (main, deepseek-r1-0528-w8a8-prefix-cache, linux-aarch64-nightly-a3-16, Prefix-Cache-... / deepseek-r1-0528-w8a8-prefix-cache in 27m35s (ID 99667666607)
+✓ single-node (main, glm-4.7-w8a8, linux-aarch64-nightly-a3-16, GLM-4.7.yaml) / glm-4.7-w8a8 in 19m58s (ID 99668222059)
+✓ single-node (main, qwen3-vl-235b-a22b-instruct-w8a8, linux-aarch64-nightly-a3-16, Qwen3-VL-235B-A... / qwen3-vl-235b-a22b-instruct-w8a8 in 30m32s (ID 99668768658)
+X single-node (main, Kimi-K2.6-w4a8-A3, linux-aarch64-nightly-a3-16, Kimi-K2.6-w4a8-A3.yaml) / Kimi-K2.6-w4a8-A3 in 25m55s (ID 99672943437)
+  ✓ Set up job
+  ✓ Initialize containers
+  ✓ Check npu and CANN info
+  - uninstall vlm vllm-ascend and remove code (if pr test)
+  - Checkout vllm-project/vllm-ascend repo
+  - Move code to /vllm-workspace
+  ✓ Set MAX_JOBS based on runner
+  - Install vllm-project/vllm-ascend
+  - Uninstall Triton for 310P tests
+  - Install aisbench
+  ✓ Show vLLM and vLLM-Ascend version
+  ✓ Install clang
+  ✓ Validate Inputs
+  - Run Pytest (py-driven)
+  X Run Pytest (YAML-driven)
+  - Update good_table.csv on success
+  - Capture test result
+  - Classify failure
+  - Skip - env issue
+  - Check commit age
+  - Skip - old commit
+  - Process - recent real failure
+  - On success
+  ✓ Set benchmark artifact timestamp
+  ✓ Upload benchmark results
+  ✓ Upload benchmark results (GitHub Artifacts)
+  ✓ Stop containers
+  ✓ Complete job
+✓ single-node (main, Minimax_m2.7_w8a8_A3, linux-aarch64-nightly-a3-16, Minimax_m2.7_w8a8_A3.yaml) / Minimax_m2.7_w8a8_A3 in 24m34s (ID 99672975146)
+✓ single-node (main, Qwen3_32b_w8a8_ml_A3, linux-aarch64-a3-16, Qwen3_32b_w8a8_ml_A3.yaml) / Qwen3_32b_w8a8_ml_A3 in 16m18s (ID 99673232333)
+✓ single-node (main, Deepseek_R1_W8A8_A3, linux-aarch64-a3-16, Deepseek_R1_W8A8_A3.yaml) / Deepseek_R1_W8A8_A3 in 59m1s (ID 99673729027)
+✓ single-node (main, Qwen3.8-27B-w8a8-A3, linux-aarch64-a3-2, Qwen3.8-27B-w8a8-A3.yaml) / Qwen3.8-27B-w8a8-A3 in 1h17m26s (ID 99674233596)
+✓ single-node (main, Qwq_32b_A3, linux-aarch64-a3-16, Qwq_32b_A3.yaml) / Qwq_32b_A3 in 22m49s (ID 99674440084)
+✓ single-node (main, Qwen3_32b_W8A8_wl_A3, linux-aarch64-a3-16, Qwen3_32b_W8A8_wl_A3.yaml) / Qwen3_32b_W8A8_wl_A3 in 48m52s (ID 99675757887)
+✓ single-node (main, Deepseek_R1_W8A8_Reasoning_output_A3, linux-aarch64-a3-16, Deepseek_R1_W8A8_Re... / Deepseek_R1_W8A8_Reasoning_output_A3 in 47m14s (ID 99675906366)
+✓ single-node (main, qwen_3_6_27b_w8a8_A3, linux-aarch64-a3-16, qwen_3_6_27b_w8a8_A3.yaml) / qwen_3_6_27b_w8a8_A3 in 1h12m6s (ID 99675941283)
+✓ Remove node taints in 27s (ID 99705378602)
+✓ Merge benchmark artifacts into nightly-a3.zip in 19s (ID 99705378622)
+
+ANNOTATIONS
+X Executing the custom container implementation failed. Please contact your self hosted runner administrator.
+multi-node (main, DeepSeek-V4-Pro-w4a8-1M-PD, DeepSeek-V4-Pro-w4a8-1M-PD.yaml, tests/e2e/nightly/... / DeepSeek-V4-Pro-w4a8-1M-PD.yaml: .github#246
+
+X Process completed with exit code 1.
+multi-node (main, DeepSeek-V4-Pro-w4a8-1M-PD, DeepSeek-V4-Pro-w4a8-1M-PD.yaml, tests/e2e/nightly/... / DeepSeek-V4-Pro-w4a8-1M-PD.yaml: .github#245
+
+X Error: failed to run script step: Error: command terminated with non-zero exit code: command terminated with exit code 1
+multi-node (main, DeepSeek-V4-Pro-w4a8-1M-PD, DeepSeek-V4-Pro-w4a8-1M-PD.yaml, tests/e2e/nightly/... / DeepSeek-V4-Pro-w4a8-1M-PD.yaml: .github#244
+
+X Upload failed. See log:
+multi-node (main, DeepSeek-V4-Pro-w4a8-1M-PD, DeepSeek-V4-Pro-w4a8-1M-PD.yaml, tests/e2e/nightly/... / DeepSeek-V4-Pro-w4a8-1M-PD.yaml: .github#226
+
+X Executing the custom container implementation failed. Please contact your self hosted runner administrator.
+multi-node (main, DeepSeek-V4-Pro-w4a8-1M-PD, DeepSeek-V4-Pro-w4a8-1M-PD.yaml, tests/e2e/nightly/... / DeepSeek-V4-Pro-w4a8-1M-PD.yaml: .github#246
+
+X Process completed with exit code 1.
+multi-node (main, DeepSeek-V4-Pro-w4a8-1M-PD, DeepSeek-V4-Pro-w4a8-1M-PD.yaml, tests/e2e/nightly/... / DeepSeek-V4-Pro-w4a8-1M-PD.yaml: .github#245
+
+X Error: failed to run script step: Error: command terminated with non-zero exit code: command terminated with exit code 1
+multi-node (main, DeepSeek-V4-Pro-w4a8-1M-PD, DeepSeek-V4-Pro-w4a8-1M-PD.yaml, tests/e2e/nightly/... / DeepSeek-V4-Pro-w4a8-1M-PD.yaml: .github#244
+
+X Upload failed. See log:
+multi-node (main, DeepSeek-V4-Pro-w4a8-1M-PD, DeepSeek-V4-Pro-w4a8-1M-PD.yaml, tests/e2e/nightly/... / DeepSeek-V4-Pro-w4a8-1M-PD.yaml: .github#226
+
+! No files were found with the provided path: /tmp/benchmark_results/. No artifacts will be uploaded.
+multi-node (main, multi-node-deepseek-v3.2-W8A8-EP, DeepSeek-V3_2-W8A8-EP.yaml, tests/e2e/nightly... / DeepSeek-V3_2-W8A8-EP.yaml: .github#22
+
+! No files found for path: /tmp/benchmark_results/, skipping upload
+multi-node (main, multi-node-deepseek-v3.2-W8A8-EP, DeepSeek-V3_2-W8A8-EP.yaml, tests/e2e/nightly... / DeepSeek-V3_2-W8A8-EP.yaml: .github#225
+
+X Executing the custom container implementation failed. Please contact your self hosted runner administrator.
+multi-node (main, multi-node-deepseek-v3.2-W8A8-EP, DeepSeek-V3_2-W8A8-EP.yaml, tests/e2e/nightly... / DeepSeek-V3_2-W8A8-EP.yaml: .github#246
+
+X Process completed with exit code 1.
+multi-node (main, multi-node-deepseek-v3.2-W8A8-EP, DeepSeek-V3_2-W8A8-EP.yaml, tests/e2e/nightly... / DeepSeek-V3_2-W8A8-EP.yaml: .github#245
+
+X Error: failed to run script step: Error: command terminated with non-zero exit code: command terminated with exit code 1
+multi-node (main, multi-node-deepseek-v3.2-W8A8-EP, DeepSeek-V3_2-W8A8-EP.yaml, tests/e2e/nightly... / DeepSeek-V3_2-W8A8-EP.yaml: .github#244
+
+X Upload failed. See log:
+multi-node (main, multi-node-deepseek-v3.2-W8A8-EP, DeepSeek-V3_2-W8A8-EP.yaml, tests/e2e/nightly... / DeepSeek-V3_2-W8A8-EP.yaml: .github#226
+
+X Executing the custom container implementation failed. Please contact your self hosted runner administrator.
+multi-node (main, multi-node-deepseek-v3.2-W8A8-EP, DeepSeek-V3_2-W8A8-EP.yaml, tests/e2e/nightly... / DeepSeek-V3_2-W8A8-EP.yaml: .github#7294
+
+X Process completed with exit code 1.
+multi-node (main, multi-node-deepseek-v3.2-W8A8-EP, DeepSeek-V3_2-W8A8-EP.yaml, tests/e2e/nightly... / DeepSeek-V3_2-W8A8-EP.yaml: .github#7293
+
+X Error: failed to run script step: Error: command terminated with non-zero exit code: command terminated with exit code 1
+multi-node (main, multi-node-deepseek-v3.2-W8A8-EP, DeepSeek-V3_2-W8A8-EP.yaml, tests/e2e/nightly... / DeepSeek-V3_2-W8A8-EP.yaml: .github#7292
+
+! No files were found with the provided path: /tmp/benchmark_results/. No artifacts will be uploaded.
+multi-node (main, DeepSeek-V4-Pro-w4a8-prefix-cache-PD, DeepSeek-V4-Pro-w4a8-prefix-cache-PD.yaml... / DeepSeek-V4-Pro-w4a8-prefix-cache-PD.yaml: .github#22
+
+! No files found for path: /tmp/benchmark_results/, skipping upload
+multi-node (main, DeepSeek-V4-Pro-w4a8-prefix-cache-PD, DeepSeek-V4-Pro-w4a8-prefix-cache-PD.yaml... / DeepSeek-V4-Pro-w4a8-prefix-cache-PD.yaml: .github#225
+
+X Executing the custom container implementation failed. Please contact your self hosted runner administrator.
+multi-node (main, DeepSeek-V4-Pro-w4a8-prefix-cache-PD, DeepSeek-V4-Pro-w4a8-prefix-cache-PD.yaml... / DeepSeek-V4-Pro-w4a8-prefix-cache-PD.yaml: .github#246
+
+X Process completed with exit code 1.
+multi-node (main, DeepSeek-V4-Pro-w4a8-prefix-cache-PD, DeepSeek-V4-Pro-w4a8-prefix-cache-PD.yaml... / DeepSeek-V4-Pro-w4a8-prefix-cache-PD.yaml: .github#245
+
+X Error: failed to run script step: Error: command terminated with non-zero exit code: command terminated with exit code 1
+multi-node (main, DeepSeek-V4-Pro-w4a8-prefix-cache-PD, DeepSeek-V4-Pro-w4a8-prefix-cache-PD.yaml... / DeepSeek-V4-Pro-w4a8-prefix-cache-PD.yaml: .github#244
+
+X Upload failed. See log:
+multi-node (main, DeepSeek-V4-Pro-w4a8-prefix-cache-PD, DeepSeek-V4-Pro-w4a8-prefix-cache-PD.yaml... / DeepSeek-V4-Pro-w4a8-prefix-cache-PD.yaml: .github#226
+
+X Executing the custom container implementation failed. Please contact your self hosted runner administrator.
+multi-node (main, DeepSeek-V4-Pro-w4a8-prefix-cache-PD, DeepSeek-V4-Pro-w4a8-prefix-cache-PD.yaml... / DeepSeek-V4-Pro-w4a8-prefix-cache-PD.yaml: .github#1241
+
+X Process completed with exit code 1.
+multi-node (main, DeepSeek-V4-Pro-w4a8-prefix-cache-PD, DeepSeek-V4-Pro-w4a8-prefix-cache-PD.yaml... / DeepSeek-V4-Pro-w4a8-prefix-cache-PD.yaml: .github#1240
+
+X Error: failed to run script step: Error: command terminated with non-zero exit code: command terminated with exit code 1
+multi-node (main, DeepSeek-V4-Pro-w4a8-prefix-cache-PD, DeepSeek-V4-Pro-w4a8-prefix-cache-PD.yaml... / DeepSeek-V4-Pro-w4a8-prefix-cache-PD.yaml: .github#1239
+
+! No files were found with the provided path: /tmp/benchmark_results/. No artifacts will be uploaded.
+multi-node (main, GLM-5.1-w8a8c8-128k-1k-90-50-PD, GLM-5.1-W8A8C8-128k-1k-90-50-PD.yaml, tests/e2... / GLM-5.1-W8A8C8-128k-1k-90-50-PD.yaml: .github#22
+
+! No files found for path: /tmp/benchmark_results/, skipping upload
+multi-node (main, GLM-5.1-w8a8c8-128k-1k-90-50-PD, GLM-5.1-W8A8C8-128k-1k-90-50-PD.yaml, tests/e2... / GLM-5.1-W8A8C8-128k-1k-90-50-PD.yaml: .github#225
+
+X Executing the custom container implementation failed. Please contact your self hosted runner administrator.
+multi-node (main, GLM-5.1-w8a8c8-128k-1k-90-50-PD, GLM-5.1-W8A8C8-128k-1k-90-50-PD.yaml, tests/e2... / GLM-5.1-W8A8C8-128k-1k-90-50-PD.yaml: .github#246
+
+X Process completed with exit code 1.
+multi-node (main, GLM-5.1-w8a8c8-128k-1k-90-50-PD, GLM-5.1-W8A8C8-128k-1k-90-50-PD.yaml, tests/e2... / GLM-5.1-W8A8C8-128k-1k-90-50-PD.yaml: .github#245
+
+X Error: failed to run script step: Error: command terminated with non-zero exit code: command terminated with exit code 1
+multi-node (main, GLM-5.1-w8a8c8-128k-1k-90-50-PD, GLM-5.1-W8A8C8-128k-1k-90-50-PD.yaml, tests/e2... / GLM-5.1-W8A8C8-128k-1k-90-50-PD.yaml: .github#244
+
+X Upload failed. See log:
+multi-node (main, GLM-5.1-w8a8c8-128k-1k-90-50-PD, GLM-5.1-W8A8C8-128k-1k-90-50-PD.yaml, tests/e2... / GLM-5.1-W8A8C8-128k-1k-90-50-PD.yaml: .github#226
+
+X Executing the custom container implementation failed. Please contact your self hosted runner administrator.
+multi-node (main, GLM-5.1-w8a8c8-128k-1k-90-50-PD, GLM-5.1-W8A8C8-128k-1k-90-50-PD.yaml, tests/e2... / GLM-5.1-W8A8C8-128k-1k-90-50-PD.yaml: .github#1259
+
+X Process completed with exit code 1.
+multi-node (main, GLM-5.1-w8a8c8-128k-1k-90-50-PD, GLM-5.1-W8A8C8-128k-1k-90-50-PD.yaml, tests/e2... / GLM-5.1-W8A8C8-128k-1k-90-50-PD.yaml: .github#1258
+
+X Error: failed to run script step: Error: command terminated with non-zero exit code: command terminated with exit code 1
+multi-node (main, GLM-5.1-w8a8c8-128k-1k-90-50-PD, GLM-5.1-W8A8C8-128k-1k-90-50-PD.yaml, tests/e2... / GLM-5.1-W8A8C8-128k-1k-90-50-PD.yaml: .github#1257
+
+X Executing the custom container implementation failed. Please contact your self hosted runner administrator.
+multi-node (main, QWEN3_235B_PD_3_5K_1_5k, QWEN3_235B_PD_3_5K_1_5k.yaml, tests/e2e/nightly/multi_... / QWEN3_235B_PD_3_5K_1_5k.yaml: .github#246
+
+X Process completed with exit code 1.
+multi-node (main, QWEN3_235B_PD_3_5K_1_5k, QWEN3_235B_PD_3_5K_1_5k.yaml, tests/e2e/nightly/multi_... / QWEN3_235B_PD_3_5K_1_5k.yaml: .github#245
+
+X Error: failed to run script step: Error: command terminated with non-zero exit code: command terminated with exit code 1
+multi-node (main, QWEN3_235B_PD_3_5K_1_5k, QWEN3_235B_PD_3_5K_1_5k.yaml, tests/e2e/nightly/multi_... / QWEN3_235B_PD_3_5K_1_5k.yaml: .github#244
+
+X Upload failed. See log:
+multi-node (main, QWEN3_235B_PD_3_5K_1_5k, QWEN3_235B_PD_3_5K_1_5k.yaml, tests/e2e/nightly/multi_... / QWEN3_235B_PD_3_5K_1_5k.yaml: .github#226
+
+X Executing the custom container implementation failed. Please contact your self hosted runner administrator.
+multi-node (main, QWEN3_235B_PD_3_5K_1_5k, QWEN3_235B_PD_3_5K_1_5k.yaml, tests/e2e/nightly/multi_... / QWEN3_235B_PD_3_5K_1_5k.yaml: .github#246
+
+X Process completed with exit code 1.
+multi-node (main, QWEN3_235B_PD_3_5K_1_5k, QWEN3_235B_PD_3_5K_1_5k.yaml, tests/e2e/nightly/multi_... / QWEN3_235B_PD_3_5K_1_5k.yaml: .github#245
+
+X Error: failed to run script step: Error: command terminated with non-zero exit code: command terminated with exit code 1
+multi-node (main, QWEN3_235B_PD_3_5K_1_5k, QWEN3_235B_PD_3_5K_1_5k.yaml, tests/e2e/nightly/multi_... / QWEN3_235B_PD_3_5K_1_5k.yaml: .github#244
+
+X Upload failed. See log:
+multi-node (main, QWEN3_235B_PD_3_5K_1_5k, QWEN3_235B_PD_3_5K_1_5k.yaml, tests/e2e/nightly/multi_... / QWEN3_235B_PD_3_5K_1_5k.yaml: .github#226
+
+X Executing the custom container implementation failed. Please contact your self hosted runner administrator.
+double-node (main, multi-node-dpsk3.2-2node, DeepSeek-V3_2-W8A8-A3-dual-nodes.yaml, tests/e2e/nig... / DeepSeek-V3_2-W8A8-A3-dual-nodes.yaml: .github#246
+
+X Process completed with exit code 1.
+double-node (main, multi-node-dpsk3.2-2node, DeepSeek-V3_2-W8A8-A3-dual-nodes.yaml, tests/e2e/nig... / DeepSeek-V3_2-W8A8-A3-dual-nodes.yaml: .github#245
+
+X Error: failed to run script step: Error: command terminated with non-zero exit code: command terminated with exit code 1
+double-node (main, multi-node-dpsk3.2-2node, DeepSeek-V3_2-W8A8-A3-dual-nodes.yaml, tests/e2e/nig... / DeepSeek-V3_2-W8A8-A3-dual-nodes.yaml: .github#244
+
+X Upload failed. See log:
+double-node (main, multi-node-dpsk3.2-2node, DeepSeek-V3_2-W8A8-A3-dual-nodes.yaml, tests/e2e/nig... / DeepSeek-V3_2-W8A8-A3-dual-nodes.yaml: .github#226
+
+X Executing the custom container implementation failed. Please contact your self hosted runner administrator.
+double-node (main, multi-node-dpsk3.2-2node, DeepSeek-V3_2-W8A8-A3-dual-nodes.yaml, tests/e2e/nig... / DeepSeek-V3_2-W8A8-A3-dual-nodes.yaml: .github#246
+
+X Process completed with exit code 1.
+double-node (main, multi-node-dpsk3.2-2node, DeepSeek-V3_2-W8A8-A3-dual-nodes.yaml, tests/e2e/nig... / DeepSeek-V3_2-W8A8-A3-dual-nodes.yaml: .github#245
+
+X Error: failed to run script step: Error: command terminated with non-zero exit code: command terminated with exit code 1
+double-node (main, multi-node-dpsk3.2-2node, DeepSeek-V3_2-W8A8-A3-dual-nodes.yaml, tests/e2e/nig... / DeepSeek-V3_2-W8A8-A3-dual-nodes.yaml: .github#244
+
+X Upload failed. See log:
+double-node (main, multi-node-dpsk3.2-2node, DeepSeek-V3_2-W8A8-A3-dual-nodes.yaml, tests/e2e/nig... / DeepSeek-V3_2-W8A8-A3-dual-nodes.yaml: .github#226
+
+! No files were found with the provided path: /tmp/benchmark_results/. No artifacts will be uploaded.
+double-node (main, multi-node-qwen-disagg-pd, Qwen3-235B-disagg-pd.yaml, tests/e2e/nightly/multi_... / Qwen3-235B-disagg-pd.yaml: .github#22
+
+! No files found for path: /tmp/benchmark_results/, skipping upload
+double-node (main, multi-node-qwen-disagg-pd, Qwen3-235B-disagg-pd.yaml, tests/e2e/nightly/multi_... / Qwen3-235B-disagg-pd.yaml: .github#225
+
+X Executing the custom container implementation failed. Please contact your self hosted runner administrator.
+double-node (main, multi-node-qwen-disagg-pd, Qwen3-235B-disagg-pd.yaml, tests/e2e/nightly/multi_... / Qwen3-235B-disagg-pd.yaml: .github#246
+
+X Process completed with exit code 1.
+double-node (main, multi-node-qwen-disagg-pd, Qwen3-235B-disagg-pd.yaml, tests/e2e/nightly/multi_... / Qwen3-235B-disagg-pd.yaml: .github#245
+
+X Error: failed to run script step: Error: command terminated with non-zero exit code: command terminated with exit code 1
+double-node (main, multi-node-qwen-disagg-pd, Qwen3-235B-disagg-pd.yaml, tests/e2e/nightly/multi_... / Qwen3-235B-disagg-pd.yaml: .github#244
+
+X Upload failed. See log:
+double-node (main, multi-node-qwen-disagg-pd, Qwen3-235B-disagg-pd.yaml, tests/e2e/nightly/multi_... / Qwen3-235B-disagg-pd.yaml: .github#226
+
+X Executing the custom container implementation failed. Please contact your self hosted runner administrator.
+double-node (main, multi-node-qwen-disagg-pd, Qwen3-235B-disagg-pd.yaml, tests/e2e/nightly/multi_... / Qwen3-235B-disagg-pd.yaml: .github#14775
+
+X Process completed with exit code 1.
+double-node (main, multi-node-qwen-disagg-pd, Qwen3-235B-disagg-pd.yaml, tests/e2e/nightly/multi_... / Qwen3-235B-disagg-pd.yaml: .github#14774
+
+X Error: failed to run script step: Error: command terminated with non-zero exit code: command terminated with exit code 1
+double-node (main, multi-node-qwen-disagg-pd, Qwen3-235B-disagg-pd.yaml, tests/e2e/nightly/multi_... / Qwen3-235B-disagg-pd.yaml: .github#14773
+
+X Executing the custom container implementation failed. Please contact your self hosted runner administrator.
+double-node (main, multi-node-qwen3-dp, Qwen3-235B-A22B.yaml, tests/e2e/nightly/multi_node/intern... / Qwen3-235B-A22B.yaml: .github#246
+
+X Process completed with exit code 1.
+double-node (main, multi-node-qwen3-dp, Qwen3-235B-A22B.yaml, tests/e2e/nightly/multi_node/intern... / Qwen3-235B-A22B.yaml: .github#245
+
+X Error: failed to run script step: Error: command terminated with non-zero exit code: command terminated with exit code 1
+double-node (main, multi-node-qwen3-dp, Qwen3-235B-A22B.yaml, tests/e2e/nightly/multi_node/intern... / Qwen3-235B-A22B.yaml: .github#244
+
+X Upload failed. See log:
+double-node (main, multi-node-qwen3-dp, Qwen3-235B-A22B.yaml, tests/e2e/nightly/multi_node/intern... / Qwen3-235B-A22B.yaml: .github#226
+
+X Executing the custom container implementation failed. Please contact your self hosted runner administrator.
+double-node (main, multi-node-qwen3-dp, Qwen3-235B-A22B.yaml, tests/e2e/nightly/multi_node/intern... / Qwen3-235B-A22B.yaml: .github#247
+
+X Process completed with exit code 1.
+double-node (main, multi-node-qwen3-dp, Qwen3-235B-A22B.yaml, tests/e2e/nightly/multi_node/intern... / Qwen3-235B-A22B.yaml: .github#246
+
+X Error: failed to run script step: Error: command terminated with non-zero exit code: command terminated with exit code 1
+double-node (main, multi-node-qwen3-dp, Qwen3-235B-A22B.yaml, tests/e2e/nightly/multi_node/intern... / Qwen3-235B-A22B.yaml: .github#245
+
+X Upload failed. See log:
+double-node (main, multi-node-qwen3-dp, Qwen3-235B-A22B.yaml, tests/e2e/nightly/multi_node/intern... / Qwen3-235B-A22B.yaml: .github#226
+
+! No files were found with the provided path: /tmp/benchmark_results/. No artifacts will be uploaded.
+double-node (main, multi-node-GLM-5.1-w8a8-A3, GLM5_1-W8A8-A3-dual-nodes.yaml, tests/e2e/nightly/... / GLM5_1-W8A8-A3-dual-nodes.yaml: .github#22
+
+! No files found for path: /tmp/benchmark_results/, skipping upload
+double-node (main, multi-node-GLM-5.1-w8a8-A3, GLM5_1-W8A8-A3-dual-nodes.yaml, tests/e2e/nightly/... / GLM5_1-W8A8-A3-dual-nodes.yaml: .github#225
+
+X Executing the custom container implementation failed. Please contact your self hosted runner administrator.
+double-node (main, multi-node-GLM-5.1-w8a8-A3, GLM5_1-W8A8-A3-dual-nodes.yaml, tests/e2e/nightly/... / GLM5_1-W8A8-A3-dual-nodes.yaml: .github#246
+
+X Process completed with exit code 1.
+double-node (main, multi-node-GLM-5.1-w8a8-A3, GLM5_1-W8A8-A3-dual-nodes.yaml, tests/e2e/nightly/... / GLM5_1-W8A8-A3-dual-nodes.yaml: .github#245
+
+X Error: failed to run script step: Error: command terminated with non-zero exit code: command terminated with exit code 1
+double-node (main, multi-node-GLM-5.1-w8a8-A3, GLM5_1-W8A8-A3-dual-nodes.yaml, tests/e2e/nightly/... / GLM5_1-W8A8-A3-dual-nodes.yaml: .github#244
+
+X Upload failed. See log:
+double-node (main, multi-node-GLM-5.1-w8a8-A3, GLM5_1-W8A8-A3-dual-nodes.yaml, tests/e2e/nightly/... / GLM5_1-W8A8-A3-dual-nodes.yaml: .github#226
+
+X Executing the custom container implementation failed. Please contact your self hosted runner administrator.
+double-node (main, multi-node-GLM-5.1-w8a8-A3, GLM5_1-W8A8-A3-dual-nodes.yaml, tests/e2e/nightly/... / GLM5_1-W8A8-A3-dual-nodes.yaml: .github#4943
+
+X Process completed with exit code 1.
+double-node (main, multi-node-GLM-5.1-w8a8-A3, GLM5_1-W8A8-A3-dual-nodes.yaml, tests/e2e/nightly/... / GLM5_1-W8A8-A3-dual-nodes.yaml: .github#4942
+
+X Error: failed to run script step: Error: command terminated with non-zero exit code: command terminated with exit code 1
+double-node (main, multi-node-GLM-5.1-w8a8-A3, GLM5_1-W8A8-A3-dual-nodes.yaml, tests/e2e/nightly/... / GLM5_1-W8A8-A3-dual-nodes.yaml: .github#4941
+
+X Executing the custom container implementation failed. Please contact your self hosted runner administrator.
+double-node (main, multi-node-qwen-vl-disagg-pd, Qwen3-VL-235B-disagg-pd.yaml, tests/e2e/nightly/... / Qwen3-VL-235B-disagg-pd.yaml: .github#246
+
+X Process completed with exit code 1.
+double-node (main, multi-node-qwen-vl-disagg-pd, Qwen3-VL-235B-disagg-pd.yaml, tests/e2e/nightly/... / Qwen3-VL-235B-disagg-pd.yaml: .github#245
+
+X Error: failed to run script step: Error: command terminated with non-zero exit code: command terminated with exit code 1
+double-node (main, multi-node-qwen-vl-disagg-pd, Qwen3-VL-235B-disagg-pd.yaml, tests/e2e/nightly/... / Qwen3-VL-235B-disagg-pd.yaml: .github#244
+
+X Upload failed. See log:
+double-node (main, multi-node-qwen-vl-disagg-pd, Qwen3-VL-235B-disagg-pd.yaml, tests/e2e/nightly/... / Qwen3-VL-235B-disagg-pd.yaml: .github#226
+
+X Executing the custom container implementation failed. Please contact your self hosted runner administrator.
+double-node (main, multi-node-qwen-vl-disagg-pd, Qwen3-VL-235B-disagg-pd.yaml, tests/e2e/nightly/... / Qwen3-VL-235B-disagg-pd.yaml: .github#246
+
+X Process completed with exit code 1.
+double-node (main, multi-node-qwen-vl-disagg-pd, Qwen3-VL-235B-disagg-pd.yaml, tests/e2e/nightly/... / Qwen3-VL-235B-disagg-pd.yaml: .github#245
+
+X Error: failed to run script step: Error: command terminated with non-zero exit code: command terminated with exit code 1
+double-node (main, multi-node-qwen-vl-disagg-pd, Qwen3-VL-235B-disagg-pd.yaml, tests/e2e/nightly/... / Qwen3-VL-235B-disagg-pd.yaml: .github#244
+
+X Upload failed. See log:
+double-node (main, multi-node-qwen-vl-disagg-pd, Qwen3-VL-235B-disagg-pd.yaml, tests/e2e/nightly/... / Qwen3-VL-235B-disagg-pd.yaml: .github#226
+
+X Executing the custom container implementation failed. Please contact your self hosted runner administrator.
+double-node (main, multi-node-qwenw8a8-2node-eplb, Qwen3-235B-W8A8-EPLB.yaml, tests/e2e/nightly/m... / Qwen3-235B-W8A8-EPLB.yaml: .github#246
+
+X Process completed with exit code 1.
+double-node (main, multi-node-qwenw8a8-2node-eplb, Qwen3-235B-W8A8-EPLB.yaml, tests/e2e/nightly/m... / Qwen3-235B-W8A8-EPLB.yaml: .github#245
+
+X Error: failed to run script step: Error: command terminated with non-zero exit code: command terminated with exit code 1
+double-node (main, multi-node-qwenw8a8-2node-eplb, Qwen3-235B-W8A8-EPLB.yaml, tests/e2e/nightly/m... / Qwen3-235B-W8A8-EPLB.yaml: .github#244
+
+X Upload failed. See log:
+double-node (main, multi-node-qwenw8a8-2node-eplb, Qwen3-235B-W8A8-EPLB.yaml, tests/e2e/nightly/m... / Qwen3-235B-W8A8-EPLB.yaml: .github#226
+
+X Executing the custom container implementation failed. Please contact your self hosted runner administrator.
+double-node (main, multi-node-qwenw8a8-2node-eplb, Qwen3-235B-W8A8-EPLB.yaml, tests/e2e/nightly/m... / Qwen3-235B-W8A8-EPLB.yaml: .github#246
+
+X Process completed with exit code 1.
+double-node (main, multi-node-qwenw8a8-2node-eplb, Qwen3-235B-W8A8-EPLB.yaml, tests/e2e/nightly/m... / Qwen3-235B-W8A8-EPLB.yaml: .github#245
+
+X Error: failed to run script step: Error: command terminated with non-zero exit code: command terminated with exit code 1
+double-node (main, multi-node-qwenw8a8-2node-eplb, Qwen3-235B-W8A8-EPLB.yaml, tests/e2e/nightly/m... / Qwen3-235B-W8A8-EPLB.yaml: .github#244
+
+X Upload failed. See log:
+double-node (main, multi-node-qwenw8a8-2node-eplb, Qwen3-235B-W8A8-EPLB.yaml, tests/e2e/nightly/m... / Qwen3-235B-W8A8-EPLB.yaml: .github#226
+
+! No files were found with the provided path: /tmp/benchmark_results/. No artifacts will be uploaded.
+double-node (main, multi-node-GLM-5.1-W8A8C8-A3_128k_90_50, GLM-5.1-W8A8C8-A3_128k_90_50.yaml, te... / GLM-5.1-W8A8C8-A3_128k_90_50.yaml: .github#22
+
+! No files found for path: /tmp/benchmark_results/, skipping upload
+double-node (main, multi-node-GLM-5.1-W8A8C8-A3_128k_90_50, GLM-5.1-W8A8C8-A3_128k_90_50.yaml, te... / GLM-5.1-W8A8C8-A3_128k_90_50.yaml: .github#225
+
+X Executing the custom container implementation failed. Please contact your self hosted runner administrator.
+double-node (main, multi-node-GLM-5.1-W8A8C8-A3_128k_90_50, GLM-5.1-W8A8C8-A3_128k_90_50.yaml, te... / GLM-5.1-W8A8C8-A3_128k_90_50.yaml: .github#246
+
+X Process completed with exit code 1.
+double-node (main, multi-node-GLM-5.1-W8A8C8-A3_128k_90_50, GLM-5.1-W8A8C8-A3_128k_90_50.yaml, te... / GLM-5.1-W8A8C8-A3_128k_90_50.yaml: .github#245
+
+X Error: failed to run script step: Error: command terminated with non-zero exit code: command terminated with exit code 1
+double-node (main, multi-node-GLM-5.1-W8A8C8-A3_128k_90_50, GLM-5.1-W8A8C8-A3_128k_90_50.yaml, te... / GLM-5.1-W8A8C8-A3_128k_90_50.yaml: .github#244
+
+X Upload failed. See log:
+double-node (main, multi-node-GLM-5.1-W8A8C8-A3_128k_90_50, GLM-5.1-W8A8C8-A3_128k_90_50.yaml, te... / GLM-5.1-W8A8C8-A3_128k_90_50.yaml: .github#226
+
+X Executing the custom container implementation failed. Please contact your self hosted runner administrator.
+double-node (main, multi-node-GLM-5.1-W8A8C8-A3_128k_90_50, GLM-5.1-W8A8C8-A3_128k_90_50.yaml, te... / GLM-5.1-W8A8C8-A3_128k_90_50.yaml: .github#4344
+
+X Process completed with exit code 1.
+double-node (main, multi-node-GLM-5.1-W8A8C8-A3_128k_90_50, GLM-5.1-W8A8C8-A3_128k_90_50.yaml, te... / GLM-5.1-W8A8C8-A3_128k_90_50.yaml: .github#4343
+
+X Error: failed to run script step: Error: command terminated with non-zero exit code: command terminated with exit code 1
+double-node (main, multi-node-GLM-5.1-W8A8C8-A3_128k_90_50, GLM-5.1-W8A8C8-A3_128k_90_50.yaml, te... / GLM-5.1-W8A8C8-A3_128k_90_50.yaml: .github#4342
+
+X The job has exceeded the maximum execution time of 2h0m0s
+double-node (main, multi-node-GLM-5.1-W8A8C8-MTP-A3_198k_function, GLM-5.1-W8A8C8-A3_198k_functio... / GLM-5.1-W8A8C8-A3_198k_function.yaml: .github#1
+
+! No files were found with the provided path: /tmp/benchmark_results/. No artifacts will be uploaded.
+double-node (main, multi-node-GLM-5.1-W8A8C8-MTP-A3_198k_function, GLM-5.1-W8A8C8-A3_198k_functio... / GLM-5.1-W8A8C8-A3_198k_function.yaml: .github#22
+
+! No files found for path: /tmp/benchmark_results/, skipping upload
+double-node (main, multi-node-GLM-5.1-W8A8C8-MTP-A3_198k_function, GLM-5.1-W8A8C8-A3_198k_functio... / GLM-5.1-W8A8C8-A3_198k_function.yaml: .github#225
+
+X Executing the custom container implementation failed. Please contact your self hosted runner administrator.
+double-node (main, multi-node-GLM-5.1-W8A8C8-MTP-A3_198k_function, GLM-5.1-W8A8C8-A3_198k_functio... / GLM-5.1-W8A8C8-A3_198k_function.yaml: .github#246
+
+X Process completed with exit code 1.
+double-node (main, multi-node-GLM-5.1-W8A8C8-MTP-A3_198k_function, GLM-5.1-W8A8C8-A3_198k_functio... / GLM-5.1-W8A8C8-A3_198k_function.yaml: .github#245
+
+X Error: failed to run script step: Error: command terminated with non-zero exit code: command terminated with exit code 1
+double-node (main, multi-node-GLM-5.1-W8A8C8-MTP-A3_198k_function, GLM-5.1-W8A8C8-A3_198k_functio... / GLM-5.1-W8A8C8-A3_198k_function.yaml: .github#244
+
+X Upload failed. See log:
+double-node (main, multi-node-GLM-5.1-W8A8C8-MTP-A3_198k_function, GLM-5.1-W8A8C8-A3_198k_functio... / GLM-5.1-W8A8C8-A3_198k_function.yaml: .github#226
+
+X Executing the custom container implementation failed. Please contact your self hosted runner administrator.
+double-node (main, multi-node-GLM-5.1-W8A8C8-MTP-A3_198k_function, GLM-5.1-W8A8C8-A3_198k_functio... / GLM-5.1-W8A8C8-A3_198k_function.yaml: .github#4500
+
+X Executing the custom container implementation failed. Please contact your self hosted runner administrator.
+double-node (main, multi-node-deepseek-v3.1, DeepSeek-V3.1-BF16.yaml, tests/e2e/nightly/multi_nod... / DeepSeek-V3.1-BF16.yaml: .github#246
+
+X Process completed with exit code 1.
+double-node (main, multi-node-deepseek-v3.1, DeepSeek-V3.1-BF16.yaml, tests/e2e/nightly/multi_nod... / DeepSeek-V3.1-BF16.yaml: .github#245
+
+X Error: failed to run script step: Error: command terminated with non-zero exit code: command terminated with exit code 1
+double-node (main, multi-node-deepseek-v3.1, DeepSeek-V3.1-BF16.yaml, tests/e2e/nightly/multi_nod... / DeepSeek-V3.1-BF16.yaml: .github#244
+
+X Upload failed. See log:
+double-node (main, multi-node-deepseek-v3.1, DeepSeek-V3.1-BF16.yaml, tests/e2e/nightly/multi_nod... / DeepSeek-V3.1-BF16.yaml: .github#226
+
+X Executing the custom container implementation failed. Please contact your self hosted runner administrator.
+double-node (main, multi-node-deepseek-v3.1, DeepSeek-V3.1-BF16.yaml, tests/e2e/nightly/multi_nod... / DeepSeek-V3.1-BF16.yaml: .github#246
+
+X Process completed with exit code 1.
+double-node (main, multi-node-deepseek-v3.1, DeepSeek-V3.1-BF16.yaml, tests/e2e/nightly/multi_nod... / DeepSeek-V3.1-BF16.yaml: .github#245
+
+X Error: failed to run script step: Error: command terminated with non-zero exit code: command terminated with exit code 1
+double-node (main, multi-node-deepseek-v3.1, DeepSeek-V3.1-BF16.yaml, tests/e2e/nightly/multi_nod... / DeepSeek-V3.1-BF16.yaml: .github#244
+
+X Upload failed. See log:
+double-node (main, multi-node-deepseek-v3.1, DeepSeek-V3.1-BF16.yaml, tests/e2e/nightly/multi_nod... / DeepSeek-V3.1-BF16.yaml: .github#226
+
+! No files were found with the provided path: /tmp/benchmark_results/. No artifacts will be uploaded.
+double-node (main, multi-node-GLM-5.2-w8a8-A3, GLM5_2-W8A8-A3-dual-nodes.yaml, tests/e2e/nightly/... / GLM5_2-W8A8-A3-dual-nodes.yaml: .github#22
+
+! No files found for path: /tmp/benchmark_results/, skipping upload
+double-node (main, multi-node-GLM-5.2-w8a8-A3, GLM5_2-W8A8-A3-dual-nodes.yaml, tests/e2e/nightly/... / GLM5_2-W8A8-A3-dual-nodes.yaml: .github#225
+
+X Executing the custom container implementation failed. Please contact your self hosted runner administrator.
+double-node (main, multi-node-GLM-5.2-w8a8-A3, GLM5_2-W8A8-A3-dual-nodes.yaml, tests/e2e/nightly/... / GLM5_2-W8A8-A3-dual-nodes.yaml: .github#246
+
+X Process completed with exit code 1.
+double-node (main, multi-node-GLM-5.2-w8a8-A3, GLM5_2-W8A8-A3-dual-nodes.yaml, tests/e2e/nightly/... / GLM5_2-W8A8-A3-dual-nodes.yaml: .github#245
+
+X Error: failed to run script step: Error: command terminated with non-zero exit code: command terminated with exit code 1
+double-node (main, multi-node-GLM-5.2-w8a8-A3, GLM5_2-W8A8-A3-dual-nodes.yaml, tests/e2e/nightly/... / GLM5_2-W8A8-A3-dual-nodes.yaml: .github#244
+
+X Upload failed. See log:
+double-node (main, multi-node-GLM-5.2-w8a8-A3, GLM5_2-W8A8-A3-dual-nodes.yaml, tests/e2e/nightly/... / GLM5_2-W8A8-A3-dual-nodes.yaml: .github#226
+
+X Executing the custom container implementation failed. Please contact your self hosted runner administrator.
+double-node (main, multi-node-GLM-5.2-w8a8-A3, GLM5_2-W8A8-A3-dual-nodes.yaml, tests/e2e/nightly/... / GLM5_2-W8A8-A3-dual-nodes.yaml: .github#4231
+
+X Process completed with exit code 1.
+double-node (main, multi-node-GLM-5.2-w8a8-A3, GLM5_2-W8A8-A3-dual-nodes.yaml, tests/e2e/nightly/... / GLM5_2-W8A8-A3-dual-nodes.yaml: .github#4230
+
+X Error: failed to run script step: Error: command terminated with non-zero exit code: command terminated with exit code 1
+double-node (main, multi-node-GLM-5.2-w8a8-A3, GLM5_2-W8A8-A3-dual-nodes.yaml, tests/e2e/nightly/... / GLM5_2-W8A8-A3-dual-nodes.yaml: .github#4229
+
+! No files were found with the provided path: /tmp/benchmark_results/. No artifacts will be uploaded.
+double-node (main, Minimax_m2.7_in128k_1k_prefix90_tpot50, Minimax_m2.7_in128k_1k_prefix90_tpot50... / Minimax_m2.7_in128k_1k_prefix90_tpot50.yaml: .github#22
+
+! No files found for path: /tmp/benchmark_results/, skipping upload
+double-node (main, Minimax_m2.7_in128k_1k_prefix90_tpot50, Minimax_m2.7_in128k_1k_prefix90_tpot50... / Minimax_m2.7_in128k_1k_prefix90_tpot50.yaml: .github#225
+
+X Executing the custom container implementation failed. Please contact your self hosted runner administrator.
+double-node (main, Minimax_m2.7_in128k_1k_prefix90_tpot50, Minimax_m2.7_in128k_1k_prefix90_tpot50... / Minimax_m2.7_in128k_1k_prefix90_tpot50.yaml: .github#246
+
+X Process completed with exit code 1.
+double-node (main, Minimax_m2.7_in128k_1k_prefix90_tpot50, Minimax_m2.7_in128k_1k_prefix90_tpot50... / Minimax_m2.7_in128k_1k_prefix90_tpot50.yaml: .github#245
+
+X Error: failed to run script step: Error: command terminated with non-zero exit code: command terminated with exit code 1
+double-node (main, Minimax_m2.7_in128k_1k_prefix90_tpot50, Minimax_m2.7_in128k_1k_prefix90_tpot50... / Minimax_m2.7_in128k_1k_prefix90_tpot50.yaml: .github#244
+
+X Upload failed. See log:
+double-node (main, Minimax_m2.7_in128k_1k_prefix90_tpot50, Minimax_m2.7_in128k_1k_prefix90_tpot50... / Minimax_m2.7_in128k_1k_prefix90_tpot50.yaml: .github#226
+
+X Executing the custom container implementation failed. Please contact your self hosted runner administrator.
+double-node (main, Minimax_m2.7_in128k_1k_prefix90_tpot50, Minimax_m2.7_in128k_1k_prefix90_tpot50... / Minimax_m2.7_in128k_1k_prefix90_tpot50.yaml: .github#712
+
+X Process completed with exit code 1.
+double-node (main, Minimax_m2.7_in128k_1k_prefix90_tpot50, Minimax_m2.7_in128k_1k_prefix90_tpot50... / Minimax_m2.7_in128k_1k_prefix90_tpot50.yaml: .github#711
+
+X Error: failed to run script step: Error: command terminated with non-zero exit code: command terminated with exit code 1
+double-node (main, Minimax_m2.7_in128k_1k_prefix90_tpot50, Minimax_m2.7_in128k_1k_prefix90_tpot50... / Minimax_m2.7_in128k_1k_prefix90_tpot50.yaml: .github#710
+
+X Executing the custom container implementation failed. Please contact your self hosted runner administrator.
+double-node (main, DeepSeek-V4-flash-w8a8-PD-prefix, DeepSeek-V4-flash-w8a8-PD-prefix.yaml, tests... / DeepSeek-V4-flash-w8a8-PD-prefix.yaml: .github#246
+
+X Process completed with exit code 1.
+double-node (main, DeepSeek-V4-flash-w8a8-PD-prefix, DeepSeek-V4-flash-w8a8-PD-prefix.yaml, tests... / DeepSeek-V4-flash-w8a8-PD-prefix.yaml: .github#245
+
+X Error: failed to run script step: Error: command terminated with non-zero exit code: command terminated with exit code 1
+double-node (main, DeepSeek-V4-flash-w8a8-PD-prefix, DeepSeek-V4-flash-w8a8-PD-prefix.yaml, tests... / DeepSeek-V4-flash-w8a8-PD-prefix.yaml: .github#244
+
+X Upload failed. See log:
+double-node (main, DeepSeek-V4-flash-w8a8-PD-prefix, DeepSeek-V4-flash-w8a8-PD-prefix.yaml, tests... / DeepSeek-V4-flash-w8a8-PD-prefix.yaml: .github#226
+
+X Executing the custom container implementation failed. Please contact your self hosted runner administrator.
+double-node (main, DeepSeek-V4-flash-w8a8-PD-prefix, DeepSeek-V4-flash-w8a8-PD-prefix.yaml, tests... / DeepSeek-V4-flash-w8a8-PD-prefix.yaml: .github#246
+
+X Process completed with exit code 1.
+double-node (main, DeepSeek-V4-flash-w8a8-PD-prefix, DeepSeek-V4-flash-w8a8-PD-prefix.yaml, tests... / DeepSeek-V4-flash-w8a8-PD-prefix.yaml: .github#245
+
+X Error: failed to run script step: Error: command terminated with non-zero exit code: command terminated with exit code 1
+double-node (main, DeepSeek-V4-flash-w8a8-PD-prefix, DeepSeek-V4-flash-w8a8-PD-prefix.yaml, tests... / DeepSeek-V4-flash-w8a8-PD-prefix.yaml: .github#244
+
+X Upload failed. See log:
+double-node (main, DeepSeek-V4-flash-w8a8-PD-prefix, DeepSeek-V4-flash-w8a8-PD-prefix.yaml, tests... / DeepSeek-V4-flash-w8a8-PD-prefix.yaml: .github#226
+
+! No files were found with the provided path: /tmp/benchmark_results/. No artifacts will be uploaded.
+double-node (main, Kimi-K2.6-W4A8-64k-1k-TPOT50-PD, Kimi-K2.6-W4A8-64k-1k-TPOT50-PD.yaml, tests/e... / Kimi-K2.6-W4A8-64k-1k-TPOT50-PD.yaml: .github#22
+
+! No files found for path: /tmp/benchmark_results/, skipping upload
+double-node (main, Kimi-K2.6-W4A8-64k-1k-TPOT50-PD, Kimi-K2.6-W4A8-64k-1k-TPOT50-PD.yaml, tests/e... / Kimi-K2.6-W4A8-64k-1k-TPOT50-PD.yaml: .github#225
+
+X Executing the custom container implementation failed. Please contact your self hosted runner administrator.
+double-node (main, Kimi-K2.6-W4A8-64k-1k-TPOT50-PD, Kimi-K2.6-W4A8-64k-1k-TPOT50-PD.yaml, tests/e... / Kimi-K2.6-W4A8-64k-1k-TPOT50-PD.yaml: .github#246
+
+X Process completed with exit code 1.
+double-node (main, Kimi-K2.6-W4A8-64k-1k-TPOT50-PD, Kimi-K2.6-W4A8-64k-1k-TPOT50-PD.yaml, tests/e... / Kimi-K2.6-W4A8-64k-1k-TPOT50-PD.yaml: .github#245
+
+X Error: failed to run script step: Error: command terminated with non-zero exit code: command terminated with exit code 1
+double-node (main, Kimi-K2.6-W4A8-64k-1k-TPOT50-PD, Kimi-K2.6-W4A8-64k-1k-TPOT50-PD.yaml, tests/e... / Kimi-K2.6-W4A8-64k-1k-TPOT50-PD.yaml: .github#244
+
+X Upload failed. See log:
+double-node (main, Kimi-K2.6-W4A8-64k-1k-TPOT50-PD, Kimi-K2.6-W4A8-64k-1k-TPOT50-PD.yaml, tests/e... / Kimi-K2.6-W4A8-64k-1k-TPOT50-PD.yaml: .github#226
+
+X Executing the custom container implementation failed. Please contact your self hosted runner administrator.
+double-node (main, Kimi-K2.6-W4A8-64k-1k-TPOT50-PD, Kimi-K2.6-W4A8-64k-1k-TPOT50-PD.yaml, tests/e... / Kimi-K2.6-W4A8-64k-1k-TPOT50-PD.yaml: .github#1286
+
+X Process completed with exit code 1.
+double-node (main, Kimi-K2.6-W4A8-64k-1k-TPOT50-PD, Kimi-K2.6-W4A8-64k-1k-TPOT50-PD.yaml, tests/e... / Kimi-K2.6-W4A8-64k-1k-TPOT50-PD.yaml: .github#1285
+
+X Error: failed to run script step: Error: command terminated with non-zero exit code: command terminated with exit code 1
+double-node (main, Kimi-K2.6-W4A8-64k-1k-TPOT50-PD, Kimi-K2.6-W4A8-64k-1k-TPOT50-PD.yaml, tests/e... / Kimi-K2.6-W4A8-64k-1k-TPOT50-PD.yaml: .github#1284
+
+! No files found for path: /vllm-workspace/vllm-ascend/benchmark_results/MiniMax-M3-W8A8-A3.json, skipping upload
+single-node (main, MiniMax-M3-W8A8-A3, linux-aarch64-nightly-a3-16, MiniMax-M3-W8A8-A3.yaml) / MiniMax-M3-W8A8-A3: .github#255
+
+! No files found for path: /vllm-workspace/vllm-ascend/benchmark_results/MiniMax-M3-BF16-A3.json, skipping upload
+single-node (main, MiniMax-M3-BF16-A3, linux-aarch64-nightly-a3-16, MiniMax-M3-BF16-A3.yaml) / MiniMax-M3-BF16-A3: .github#255
+
+! No files found for path: /vllm-workspace/vllm-ascend/benchmark_results/DeepSeek-V4-Flash-W8A8-A3.json, skipping upload
+single-node (main, DeepSeek-V4-Flash-W8A8-A3, linux-aarch64-nightly-a3-16, DeepSeek-V4-Flash-W8A8... / DeepSeek-V4-Flash-W8A8-A3: .github#255
+
+! No files found for path: /vllm-workspace/vllm-ascend/benchmark_results/kimi-k2-thinking.json, skipping upload
+single-node (main, kimi-k2-thinking, linux-aarch64-nightly-a3-16, Kimi-K2-Thinking.yaml) / kimi-k2-thinking: .github#255
+
+! No files were found with the provided path: /vllm-workspace/vllm-ascend/benchmark_results/main-deepseek-v3-2-w8a8.json. No artifacts will be uploaded.
+single-node (main, deepseek-v3-2-w8a8, linux-aarch64-nightly-a3-16, DeepSeek-V3.2-W8A8.yaml) / deepseek-v3-2-w8a8: .github#30
+
+! No files found for path: /vllm-workspace/vllm-ascend/benchmark_results/deepseek-v3-2-w8a8.json, skipping upload
+single-node (main, deepseek-v3-2-w8a8, linux-aarch64-nightly-a3-16, DeepSeek-V3.2-W8A8.yaml) / deepseek-v3-2-w8a8: .github#255
+
+X Executing the custom container implementation failed. Please contact your self hosted runner administrator.
+single-node (main, deepseek-v3-2-w8a8, linux-aarch64-nightly-a3-16, DeepSeek-V3.2-W8A8.yaml) / deepseek-v3-2-w8a8: .github#3444
+
+X Process completed with exit code 1.
+single-node (main, deepseek-v3-2-w8a8, linux-aarch64-nightly-a3-16, DeepSeek-V3.2-W8A8.yaml) / deepseek-v3-2-w8a8: .github#3443
+
+X Error: failed to run script step: Error: command terminated with non-zero exit code: command terminated with exit code 1
+single-node (main, deepseek-v3-2-w8a8, linux-aarch64-nightly-a3-16, DeepSeek-V3.2-W8A8.yaml) / deepseek-v3-2-w8a8: .github#3442
+
+! No files were found with the provided path: /vllm-workspace/vllm-ascend/benchmark_results/main-Qwen3.5-122B-A10B-W8A8-A3.json. No artifacts will be uploaded.
+single-node (main, Qwen3.5-122B-A10B-W8A8-A3, linux-aarch64-nightly-a3-16, Qwen3.5-122B-A10B-W8A8... / Qwen3.5-122B-A10B-W8A8-A3: .github#30
+
+! No files found for path: /vllm-workspace/vllm-ascend/benchmark_results/Qwen3.5-122B-A10B-W8A8-A3.json, skipping upload
+single-node (main, Qwen3.5-122B-A10B-W8A8-A3, linux-aarch64-nightly-a3-16, Qwen3.5-122B-A10B-W8A8... / Qwen3.5-122B-A10B-W8A8-A3: .github#255
+
+X Executing the custom container implementation failed. Please contact your self hosted runner administrator.
+single-node (main, Qwen3.5-122B-A10B-W8A8-A3, linux-aarch64-nightly-a3-16, Qwen3.5-122B-A10B-W8A8... / Qwen3.5-122B-A10B-W8A8-A3: .github#2279
+
+X Process completed with exit code 1.
+single-node (main, Qwen3.5-122B-A10B-W8A8-A3, linux-aarch64-nightly-a3-16, Qwen3.5-122B-A10B-W8A8... / Qwen3.5-122B-A10B-W8A8-A3: .github#2278
+
+X Error: failed to run script step: Error: command terminated with non-zero exit code: command terminated with exit code 1
+single-node (main, Qwen3.5-122B-A10B-W8A8-A3, linux-aarch64-nightly-a3-16, Qwen3.5-122B-A10B-W8A8... / Qwen3.5-122B-A10B-W8A8-A3: .github#2277
+
+! No files found for path: /vllm-workspace/vllm-ascend/benchmark_results/deepseek-r1-0528-w8a8.json, skipping upload
+single-node (main, deepseek-r1-0528-w8a8, linux-aarch64-nightly-a3-16, DeepSeek-R1-0528-W8A8.yaml) / deepseek-r1-0528-w8a8: .github#255
+
+! No files were found with the provided path: /vllm-workspace/vllm-ascend/benchmark_results/main-kimi-k2.5.json. No artifacts will be uploaded.
+single-node (main, kimi-k2.5, linux-aarch64-nightly-a3-16, Kimi-K2.5.yaml) / kimi-k2.5: .github#30
+
+! No files found for path: /vllm-workspace/vllm-ascend/benchmark_results/kimi-k2.5.json, skipping upload
+single-node (main, kimi-k2.5, linux-aarch64-nightly-a3-16, Kimi-K2.5.yaml) / kimi-k2.5: .github#255
+
+X Executing the custom container implementation failed. Please contact your self hosted runner administrator.
+single-node (main, kimi-k2.5, linux-aarch64-nightly-a3-16, Kimi-K2.5.yaml) / kimi-k2.5: .github#3410
+
+X Process completed with exit code 1.
+single-node (main, kimi-k2.5, linux-aarch64-nightly-a3-16, Kimi-K2.5.yaml) / kimi-k2.5: .github#3409
+
+X Error: failed to run script step: Error: command terminated with non-zero exit code: command terminated with exit code 1
+single-node (main, kimi-k2.5, linux-aarch64-nightly-a3-16, Kimi-K2.5.yaml) / kimi-k2.5: .github#3408
+
+! No files found for path: /vllm-workspace/vllm-ascend/benchmark_results/qwen3-32b-int8.json, skipping upload
+single-node (main, qwen3-32b-int8, linux-aarch64-nightly-a3-4, Qwen3-32B-Int8.yaml) / qwen3-32b-int8: .github#257
+
+! No files found for path: /vllm-workspace/vllm-ascend/benchmark_results/mtpx-deepseek-r1-0528-w8a8.json, skipping upload
+single-node (main, mtpx-deepseek-r1-0528-w8a8, linux-aarch64-nightly-a3-16, MTPX-DeepSeek-R1-0528... / mtpx-deepseek-r1-0528-w8a8: .github#255
+
+! No files found for path: /vllm-workspace/vllm-ascend/benchmark_results/Qwen3.5-27B-w8a8-A3.json, skipping upload
+single-node (main, Qwen3.5-27B-w8a8-A3, linux-aarch64-nightly-a3-2, Qwen3.5-27B-w8a8-A3.yaml) / Qwen3.5-27B-w8a8-A3: .github#257
+
+! No files found for path: /vllm-workspace/vllm-ascend/benchmark_results/qwen3-30b-a3b-w8a8.json, skipping upload
+single-node (main, qwen3-30b-a3b-w8a8, linux-aarch64-nightly-a3-4, Qwen3-30B-A3B-W8A8.yaml) / qwen3-30b-a3b-w8a8: .github#257
+
+! No files found for path: /vllm-workspace/vllm-ascend/benchmark_results/Qwen3-30B-A3B-W4A8-llm-compressor.json, skipping upload
+single-node (main, Qwen3-30B-A3B-W4A8-llm-compressor, linux-aarch64-nightly-a3-2, Qwen3-30B-A3B-W... / Qwen3-30B-A3B-W4A8-llm-compressor: .github#257
+
+! No files found for path: /vllm-workspace/vllm-ascend/benchmark_results/qwen3-32b-int8-prefix-cache.json, skipping upload
+single-node (main, qwen3-32b-int8-prefix-cache, linux-aarch64-nightly-a3-4, Prefix-Cache-Qwen3-32... / qwen3-32b-int8-prefix-cache: .github#257
+
+! No files found for path: /vllm-workspace/vllm-ascend/benchmark_results/Qwen3-32B-W8A8C8-A3.json, skipping upload
+single-node (main, Qwen3-32B-W8A8C8-A3, linux-aarch64-nightly-a3-4, Qwen3-32B-W8A8C8-A3.yaml) / Qwen3-32B-W8A8C8-A3: .github#257
+
+! No files found for path: /vllm-workspace/vllm-ascend/benchmark_results/Qwen3-32B-QuaRot.json, skipping upload
+single-node (main, Qwen3-32B-QuaRot, linux-aarch64-nightly-a3-2, Qwen3-32B-QuaRot-eagle3.yaml) / Qwen3-32B-QuaRot: .github#257
+
+! No files were found with the provided path: /vllm-workspace/vllm-ascend/benchmark_results/main-Qwen3-30B-QuaRot.json. No artifacts will be uploaded.
+single-node (main, Qwen3-30B-QuaRot, linux-aarch64-nightly-a3-2, Qwen3-30B-QuaRot-eagle3.yaml) / Qwen3-30B-QuaRot: .github#30
+
+! No files found for path: /vllm-workspace/vllm-ascend/benchmark_results/Qwen3-30B-QuaRot.json, skipping upload
+single-node (main, Qwen3-30B-QuaRot, linux-aarch64-nightly-a3-2, Qwen3-30B-QuaRot-eagle3.yaml) / Qwen3-30B-QuaRot: .github#257
+
+X Executing the custom container implementation failed. Please contact your self hosted runner administrator.
+single-node (main, Qwen3-30B-QuaRot, linux-aarch64-nightly-a3-2, Qwen3-30B-QuaRot-eagle3.yaml) / Qwen3-30B-QuaRot: .github#927
+
+X Process completed with exit code 1.
+single-node (main, Qwen3-30B-QuaRot, linux-aarch64-nightly-a3-2, Qwen3-30B-QuaRot-eagle3.yaml) / Qwen3-30B-QuaRot: .github#926
+
+X Error: failed to run script step: Error: command terminated with non-zero exit code: command terminated with exit code 1
+single-node (main, Qwen3-30B-QuaRot, linux-aarch64-nightly-a3-2, Qwen3-30B-QuaRot-eagle3.yaml) / Qwen3-30B-QuaRot: .github#925
+
+! No files found for path: /vllm-workspace/vllm-ascend/benchmark_results/glm-5.1-w8a8-prefill-mc2.json, skipping upload
+single-node (main, glm-5.1-w8a8-prefill-mc2, linux-aarch64-nightly-a3-16, GLM-5.1-W8A8-PrefillMC2... / glm-5.1-w8a8-prefill-mc2: .github#255
+
+! No files found for path: /vllm-workspace/vllm-ascend/benchmark_results/qwen3-235b-a22b-w8a8.json, skipping upload
+single-node (main, qwen3-235b-a22b-w8a8, linux-aarch64-nightly-a3-16, Qwen3-235B-A22B-W8A8.yaml) / qwen3-235b-a22b-w8a8: .github#255
+
+! No files were found with the provided path: /vllm-workspace/vllm-ascend/benchmark_results/main-Qwen3.5-397B-A17B-w8a8-mtp.json. No artifacts will be uploaded.
+single-node (main, Qwen3.5-397B-A17B-w8a8-mtp, linux-aarch64-nightly-a3-16, Qwen3.5-397B-A17B-W8A... / Qwen3.5-397B-A17B-w8a8-mtp: .github#30
+
+! No files found for path: /vllm-workspace/vllm-ascend/benchmark_results/Qwen3.5-397B-A17B-w8a8-mtp.json, skipping upload
+single-node (main, Qwen3.5-397B-A17B-w8a8-mtp, linux-aarch64-nightly-a3-16, Qwen3.5-397B-A17B-W8A... / Qwen3.5-397B-A17B-w8a8-mtp: .github#255
+
+X Executing the custom container implementation failed. Please contact your self hosted runner administrator.
+single-node (main, Qwen3.5-397B-A17B-w8a8-mtp, linux-aarch64-nightly-a3-16, Qwen3.5-397B-A17B-W8A... / Qwen3.5-397B-A17B-w8a8-mtp: .github#2886
+
+X Process completed with exit code 1.
+single-node (main, Qwen3.5-397B-A17B-w8a8-mtp, linux-aarch64-nightly-a3-16, Qwen3.5-397B-A17B-W8A... / Qwen3.5-397B-A17B-w8a8-mtp: .github#2885
+
+X Error: failed to run script step: Error: command terminated with non-zero exit code: command terminated with exit code 1
+single-node (main, Qwen3.5-397B-A17B-w8a8-mtp, linux-aarch64-nightly-a3-16, Qwen3.5-397B-A17B-W8A... / Qwen3.5-397B-A17B-w8a8-mtp: .github#2884
+
+! No files found for path: /vllm-workspace/vllm-ascend/benchmark_results/deepseek-r1-0528-w8a8-prefix-cache.json, skipping upload
+single-node (main, deepseek-r1-0528-w8a8-prefix-cache, linux-aarch64-nightly-a3-16, Prefix-Cache-... / deepseek-r1-0528-w8a8-prefix-cache: .github#255
+
+! No files found for path: /vllm-workspace/vllm-ascend/benchmark_results/glm-4.7-w8a8.json, skipping upload
+single-node (main, glm-4.7-w8a8, linux-aarch64-nightly-a3-16, GLM-4.7.yaml) / glm-4.7-w8a8: .github#255
+
+! No files found for path: /vllm-workspace/vllm-ascend/benchmark_results/qwen3-vl-235b-a22b-instruct-w8a8.json, skipping upload
+single-node (main, qwen3-vl-235b-a22b-instruct-w8a8, linux-aarch64-nightly-a3-16, Qwen3-VL-235B-A... / qwen3-vl-235b-a22b-instruct-w8a8: .github#255
+
+! No files were found with the provided path: /vllm-workspace/vllm-ascend/benchmark_results/main-Kimi-K2.6-w4a8-A3.json. No artifacts will be uploaded.
+single-node (main, Kimi-K2.6-w4a8-A3, linux-aarch64-nightly-a3-16, Kimi-K2.6-w4a8-A3.yaml) / Kimi-K2.6-w4a8-A3: .github#30
+
+! No files found for path: /vllm-workspace/vllm-ascend/benchmark_results/Kimi-K2.6-w4a8-A3.json, skipping upload
+single-node (main, Kimi-K2.6-w4a8-A3, linux-aarch64-nightly-a3-16, Kimi-K2.6-w4a8-A3.yaml) / Kimi-K2.6-w4a8-A3: .github#255
+
+X Executing the custom container implementation failed. Please contact your self hosted runner administrator.
+single-node (main, Kimi-K2.6-w4a8-A3, linux-aarch64-nightly-a3-16, Kimi-K2.6-w4a8-A3.yaml) / Kimi-K2.6-w4a8-A3: .github#3474
+
+X Process completed with exit code 1.
+single-node (main, Kimi-K2.6-w4a8-A3, linux-aarch64-nightly-a3-16, Kimi-K2.6-w4a8-A3.yaml) / Kimi-K2.6-w4a8-A3: .github#3473
+
+X Error: failed to run script step: Error: command terminated with non-zero exit code: command terminated with exit code 1
+single-node (main, Kimi-K2.6-w4a8-A3, linux-aarch64-nightly-a3-16, Kimi-K2.6-w4a8-A3.yaml) / Kimi-K2.6-w4a8-A3: .github#3472
+
+! No files found for path: /vllm-workspace/vllm-ascend/benchmark_results/Minimax_m2.7_w8a8_A3.json, skipping upload
+single-node (main, Minimax_m2.7_w8a8_A3, linux-aarch64-nightly-a3-16, Minimax_m2.7_w8a8_A3.yaml) / Minimax_m2.7_w8a8_A3: .github#255
+
+! No files found for path: /vllm-workspace/vllm-ascend/benchmark_results/Qwen3_32b_w8a8_ml_A3.json, skipping upload
+single-node (main, Qwen3_32b_w8a8_ml_A3, linux-aarch64-a3-16, Qwen3_32b_w8a8_ml_A3.yaml) / Qwen3_32b_w8a8_ml_A3: .github#255
+
+! No files found for path: /vllm-workspace/vllm-ascend/benchmark_results/Deepseek_R1_W8A8_A3.json, skipping upload
+single-node (main, Deepseek_R1_W8A8_A3, linux-aarch64-a3-16, Deepseek_R1_W8A8_A3.yaml) / Deepseek_R1_W8A8_A3: .github#255
+
+! No files found for path: /vllm-workspace/vllm-ascend/benchmark_results/Qwen3.8-27B-w8a8-A3.json, skipping upload
+single-node (main, Qwen3.8-27B-w8a8-A3, linux-aarch64-a3-2, Qwen3.8-27B-w8a8-A3.yaml) / Qwen3.8-27B-w8a8-A3: .github#255
+
+! No files found for path: /vllm-workspace/vllm-ascend/benchmark_results/Qwq_32b_A3.json, skipping upload
+single-node (main, Qwq_32b_A3, linux-aarch64-a3-16, Qwq_32b_A3.yaml) / Qwq_32b_A3: .github#255
+
+! No files found for path: /vllm-workspace/vllm-ascend/benchmark_results/Qwen3_32b_W8A8_wl_A3.json, skipping upload
+single-node (main, Qwen3_32b_W8A8_wl_A3, linux-aarch64-a3-16, Qwen3_32b_W8A8_wl_A3.yaml) / Qwen3_32b_W8A8_wl_A3: .github#255
+
+! No files found for path: /vllm-workspace/vllm-ascend/benchmark_results/Deepseek_R1_W8A8_Reasoning_output_A3.json, skipping upload
+single-node (main, Deepseek_R1_W8A8_Reasoning_output_A3, linux-aarch64-a3-16, Deepseek_R1_W8A8_Re... / Deepseek_R1_W8A8_Reasoning_output_A3: .github#255
+
+! No files found for path: /vllm-workspace/vllm-ascend/benchmark_results/qwen_3_6_27b_w8a8_A3.json, skipping upload
+single-node (main, qwen_3_6_27b_w8a8_A3, linux-aarch64-a3-16, qwen_3_6_27b_w8a8_A3.yaml) / qwen_3_6_27b_w8a8_A3: .github#255
+
+
+ARTIFACTS
+nightly-a3
+main-Kimi-K2.6-W4A8-64k-1k-TPOT50-PD-ascend-logs
+main-GLM-5.1-W8A8C8-A3_198k_function-ascend-logs
+main-Minimax_m2.7_in128k_1k_prefix90_tpot50-ascend-logs
+main-GLM5_2-W8A8-A3-dual-nodes-ascend-logs
+main-DeepSeek-V4-flash-w8a8-PD-prefix-ascend-logs
+main-GLM-5.1-W8A8C8-A3_128k_90_50-ascend-logs
+main-DeepSeek-V3.1-BF16-ascend-logs
+main-Qwen3-VL-235B-disagg-pd-ascend-logs
+main-GLM5_1-W8A8-A3-dual-nodes-ascend-logs
+main-Qwen3-235B-W8A8-EPLB-ascend-logs
+main-Qwen3-235B-A22B-ascend-logs
+main-DeepSeek-V3_2-W8A8-A3-dual-nodes-ascend-logs
+main-Qwen3-235B-disagg-pd-ascend-logs
+main-QWEN3_235B_PD_3_5K_1_5k-ascend-logs
+main-GLM-5.1-W8A8C8-128k-1k-90-50-PD-ascend-logs
+main-DeepSeek-V4-Pro-w4a8-prefix-cache-PD-ascend-logs
+main-DeepSeek-V4-Pro-w4a8-1M-PD-ascend-logs
+main-DeepSeek-V3_2-W8A8-EP-ascend-logs
+
+To see what failed, try: gh run view 33410221539 --log-failed
+View this run on GitHub: https://github.com/vllm-project/vllm-ascend/actions/runs/33410221539
+
+════════════════════════════════════════════
+ 失败 / 取消 Job 详情（共 16 个）
+════════════════════════════════════════════
+
+── [FAILURE] multi-node (main, multi-node-deepseek-v3.2-W8A8-EP, DeepSeek-V3_2-W8A8-EP.yaml, tests/e2e/nightly... / DeepSeek-V3_2-W8A8-EP.yaml
+   Runner : linux-aarch64-a3-0-dnlzn-runner-lcbsn
+   时间   : 2026-08-31T15:50:28Z ~ 2026-08-31T16:22:22Z
+   ── 运行时错误（高优先级）
+multi-node (main, multi-node-deepseek-v3.2-W8A8-EP, DeepSeek-V3_2-W8A8-EP.yaml, tests/e2e/nightly... / DeepSeek-V3_2-W8A8-EP.yaml	UNKNOWN STEP	2026-08-31T16:06:03.1398158Z [2026-08-31 16:06:03.137011][UC][I] No available shared memory broadcast block found in 60 seconds. This typically happens when some processes are hanging or doing some time-consuming work (e.g. compilation, weight/kv cache quantization). [334,334][shm_broadcast.py:802,acquire_read]
+multi-node (main, multi-node-deepseek-v3.2-W8A8-EP, DeepSeek-V3_2-W8A8-EP.yaml, tests/e2e/nightly... / DeepSeek-V3_2-W8A8-EP.yaml	UNKNOWN STEP	2026-08-31T16:09:51.0224483Z [2026-08-31 16:09:51.020122][UC][I] No available shared memory broadcast block found in 60 seconds. This typically happens when some processes are hanging or doing some time-consuming work (e.g. compilation, weight/kv cache quantization). [334,334][shm_broadcast.py:802,acquire_read]
+multi-node (main, multi-node-deepseek-v3.2-W8A8-EP, DeepSeek-V3_2-W8A8-EP.yaml, tests/e2e/nightly... / DeepSeek-V3_2-W8A8-EP.yaml	UNKNOWN STEP	2026-08-31T16:10:51.0704026Z [2026-08-31 16:10:51.068077][UC][I] No available shared memory broadcast block found in 60 seconds. This typically happens when some processes are hanging or doing some time-consuming work (e.g. compilation, weight/kv cache quantization). [334,334][shm_broadcast.py:802,acquire_read]
+multi-node (main, multi-node-deepseek-v3.2-W8A8-EP, DeepSeek-V3_2-W8A8-EP.yaml, tests/e2e/nightly... / DeepSeek-V3_2-W8A8-EP.yaml	UNKNOWN STEP	2026-08-31T16:11:51.1188596Z [2026-08-31 16:11:51.116605][UC][I] No available shared memory broadcast block found in 60 seconds. This typically happens when some processes are hanging or doing some time-consuming work (e.g. compilation, weight/kv cache quantization). [334,334][shm_broadcast.py:802,acquire_read]
+multi-node (main, multi-node-deepseek-v3.2-W8A8-EP, DeepSeek-V3_2-W8A8-EP.yaml, tests/e2e/nightly... / DeepSeek-V3_2-W8A8-EP.yaml	UNKNOWN STEP	2026-08-31T16:12:51.1663829Z [2026-08-31 16:12:51.164087][UC][I] No available shared memory broadcast block found in 60 seconds. This typically happens when some processes are hanging or doing some time-consuming work (e.g. compilation, weight/kv cache quantization). [334,334][shm_broadcast.py:802,acquire_read]
+multi-node (main, multi-node-deepseek-v3.2-W8A8-EP, DeepSeek-V3_2-W8A8-EP.yaml, tests/e2e/nightly... / DeepSeek-V3_2-W8A8-EP.yaml	UNKNOWN STEP	2026-08-31T16:13:51.2146969Z [2026-08-31 16:13:51.212071][UC][I] No available shared memory broadcast block found in 60 seconds. This typically happens when some processes are hanging or doing some time-consuming work (e.g. compilation, weight/kv cache quantization). [334,334][shm_broadcast.py:802,acquire_read]
+multi-node (main, multi-node-deepseek-v3.2-W8A8-EP, DeepSeek-V3_2-W8A8-EP.yaml, tests/e2e/nightly... / DeepSeek-V3_2-W8A8-EP.yaml	UNKNOWN STEP	2026-08-31T16:14:51.2633541Z [2026-08-31 16:14:51.261026][UC][I] No available shared memory broadcast block found in 60 seconds. This typically happens when some processes are hanging or doing some time-consuming work (e.g. compilation, weight/kv cache quantization). [334,334][shm_broadcast.py:802,acquire_read]
+multi-node (main, multi-node-deepseek-v3.2-W8A8-EP, DeepSeek-V3_2-W8A8-EP.yaml, tests/e2e/nightly... / DeepSeek-V3_2-W8A8-EP.yaml	UNKNOWN STEP	2026-08-31T16:15:51.3103665Z [2026-08-31 16:15:51.308060][UC][I] No available shared memory broadcast block found in 60 seconds. This typically happens when some processes are hanging or doing some time-consuming work (e.g. compilation, weight/kv cache quantization). [334,334][shm_broadcast.py:802,acquire_read]
+multi-node (main, multi-node-deepseek-v3.2-W8A8-EP, DeepSeek-V3_2-W8A8-EP.yaml, tests/e2e/nightly... / DeepSeek-V3_2-W8A8-EP.yaml	UNKNOWN STEP	2026-08-31T16:16:51.3584855Z [2026-08-31 16:16:51.356157][UC][I] No available shared memory broadcast block found in 60 seconds. This typically happens when some processes are hanging or doing some time-consuming work (e.g. compilation, weight/kv cache quantization). [334,334][shm_broadcast.py:802,acquire_read]
+multi-node (main, multi-node-deepseek-v3.2-W8A8-EP, DeepSeek-V3_2-W8A8-EP.yaml, tests/e2e/nightly... / DeepSeek-V3_2-W8A8-EP.yaml	UNKNOWN STEP	2026-08-31T16:17:51.4069038Z [2026-08-31 16:17:51.404551][UC][I] No available shared memory broadcast block found in 60 seconds. This typically happens when some processes are hanging or doing some time-consuming work (e.g. compilation, weight/kv cache quantization). [334,334][shm_broadcast.py:802,acquire_read]
+multi-node (main, multi-node-deepseek-v3.2-W8A8-EP, DeepSeek-V3_2-W8A8-EP.yaml, tests/e2e/nightly... / DeepSeek-V3_2-W8A8-EP.yaml	UNKNOWN STEP	2026-08-31T16:18:16.2987588Z [2026-08-31 16:18:16.296519][UC][E] EngineCore encountered a fatal error.
+multi-node (main, multi-node-deepseek-v3.2-W8A8-EP, DeepSeek-V3_2-W8A8-EP.yaml, tests/e2e/nightly... / DeepSeek-V3_2-W8A8-EP.yaml	UNKNOWN STEP	2026-08-31T16:18:16.3338223Z     raise RuntimeError("cancelled")
+multi-node (main, multi-node-deepseek-v3.2-W8A8-EP, DeepSeek-V3_2-W8A8-EP.yaml, tests/e2e/nightly... / DeepSeek-V3_2-W8A8-EP.yaml	UNKNOWN STEP	2026-08-31T16:18:16.3347937Z RuntimeError: cancelled [334,334][core.py:1351,run_engine_core]
+multi-node (main, multi-node-deepseek-v3.2-W8A8-EP, DeepSeek-V3_2-W8A8-EP.yaml, tests/e2e/nightly... / DeepSeek-V3_2-W8A8-EP.yaml	UNKNOWN STEP	2026-08-31T16:18:16.3425527Z vllm.v1.engine.exceptions.EngineDeadError: EngineCore encountered an issue. See stack trace (above) for the root cause. [191,191][async_llm.py:724,output_handler]
+multi-node (main, multi-node-deepseek-v3.2-W8A8-EP, DeepSeek-V3_2-W8A8-EP.yaml, tests/e2e/nightly... / DeepSeek-V3_2-W8A8-EP.yaml	UNKNOWN STEP	2026-08-31T16:18:58.1777672Z httpcore.ConnectError: All connection attempts failed
+   ── 最后输出（定位失败阶段）
+
+── [FAILURE] multi-node (main, DeepSeek-V4-Pro-w4a8-prefix-cache-PD, DeepSeek-V4-Pro-w4a8-prefix-cache-PD.yaml... / DeepSeek-V4-Pro-w4a8-prefix-cache-PD.yaml
+   Runner : linux-aarch64-a3-0-dnlzn-runner-7flsj
+   时间   : 2026-08-31T16:22:51Z ~ 2026-08-31T17:27:52Z
+   ── 运行时错误（高优先级）
+multi-node (main, DeepSeek-V4-Pro-w4a8-prefix-cache-PD, DeepSeek-V4-Pro-w4a8-prefix-cache-PD.yaml... / DeepSeek-V4-Pro-w4a8-prefix-cache-PD.yaml	UNKNOWN STEP	2026-08-31T17:25:33.8939038Z E       AssertionError: some aisbench cases failed, info were shown above.
+multi-node (main, DeepSeek-V4-Pro-w4a8-prefix-cache-PD, DeepSeek-V4-Pro-w4a8-prefix-cache-PD.yaml... / DeepSeek-V4-Pro-w4a8-prefix-cache-PD.yaml	UNKNOWN STEP	2026-08-31T17:25:33.8957759Z tools/aisbench.py:303: AssertionError
+multi-node (main, DeepSeek-V4-Pro-w4a8-prefix-cache-PD, DeepSeek-V4-Pro-w4a8-prefix-cache-PD.yaml... / DeepSeek-V4-Pro-w4a8-prefix-cache-PD.yaml	UNKNOWN STEP	2026-08-31T17:25:47.2085403Z ##[error]Process completed with exit code 1.
+multi-node (main, DeepSeek-V4-Pro-w4a8-prefix-cache-PD, DeepSeek-V4-Pro-w4a8-prefix-cache-PD.yaml... / DeepSeek-V4-Pro-w4a8-prefix-cache-PD.yaml	UNKNOWN STEP	2026-08-31T17:27:06.0830147Z ##[error]Process completed with exit code 1.
+   ── 最后输出（定位失败阶段）
+
+── [FAILURE] multi-node (main, GLM-5.1-w8a8c8-128k-1k-90-50-PD, GLM-5.1-W8A8C8-128k-1k-90-50-PD.yaml, tests/e2... / GLM-5.1-W8A8C8-128k-1k-90-50-PD.yaml
+   Runner : linux-aarch64-a3-0-dnlzn-runner-969kp
+   时间   : 2026-08-31T16:34:11Z ~ 2026-08-31T17:48:57Z
+   ── 运行时错误（高优先级）
+multi-node (main, GLM-5.1-w8a8c8-128k-1k-90-50-PD, GLM-5.1-W8A8C8-128k-1k-90-50-PD.yaml, tests/e2... / GLM-5.1-W8A8C8-128k-1k-90-50-PD.yaml	UNKNOWN STEP	2026-08-31T17:46:31.3245816Z E       AssertionError: some aisbench cases failed, info were shown above.
+multi-node (main, GLM-5.1-w8a8c8-128k-1k-90-50-PD, GLM-5.1-W8A8C8-128k-1k-90-50-PD.yaml, tests/e2... / GLM-5.1-W8A8C8-128k-1k-90-50-PD.yaml	UNKNOWN STEP	2026-08-31T17:46:31.3264483Z tools/aisbench.py:303: AssertionError
+multi-node (main, GLM-5.1-w8a8c8-128k-1k-90-50-PD, GLM-5.1-W8A8C8-128k-1k-90-50-PD.yaml, tests/e2... / GLM-5.1-W8A8C8-128k-1k-90-50-PD.yaml	UNKNOWN STEP	2026-08-31T17:46:44.5681022Z ##[error]Process completed with exit code 1.
+multi-node (main, GLM-5.1-w8a8c8-128k-1k-90-50-PD, GLM-5.1-W8A8C8-128k-1k-90-50-PD.yaml, tests/e2... / GLM-5.1-W8A8C8-128k-1k-90-50-PD.yaml	UNKNOWN STEP	2026-08-31T17:48:05.6460711Z ##[error]Process completed with exit code 1.
+   ── 最后输出（定位失败阶段）
+
+── [FAILURE] double-node (main, multi-node-qwen-disagg-pd, Qwen3-235B-disagg-pd.yaml, tests/e2e/nightly/multi_... / Qwen3-235B-disagg-pd.yaml
+   Runner : linux-aarch64-a3-0-dnlzn-runner-fhktd
+   时间   : 2026-08-31T17:50:27Z ~ 2026-08-31T18:44:48Z
+   ── 运行时错误（高优先级）
+double-node (main, multi-node-qwen-disagg-pd, Qwen3-235B-disagg-pd.yaml, tests/e2e/nightly/multi_... / Qwen3-235B-disagg-pd.yaml	UNKNOWN STEP	2026-08-31T18:01:17.0050428Z [2026-08-31 18:01:17.003248][UC][I] No available shared memory broadcast block found in 60 seconds. This typically happens when some processes are hanging or doing some time-consuming work (e.g. compilation, weight/kv cache quantization). [252,252][shm_broadcast.py:802,acquire_read]
+double-node (main, multi-node-qwen-disagg-pd, Qwen3-235B-disagg-pd.yaml, tests/e2e/nightly/multi_... / Qwen3-235B-disagg-pd.yaml	UNKNOWN STEP	2026-08-31T18:01:17.7973911Z [2026-08-31 18:01:17.795521][UC][I] No available shared memory broadcast block found in 60 seconds. This typically happens when some processes are hanging or doing some time-consuming work (e.g. compilation, weight/kv cache quantization). [253,253][shm_broadcast.py:802,acquire_read]
+double-node (main, multi-node-qwen-disagg-pd, Qwen3-235B-disagg-pd.yaml, tests/e2e/nightly/multi_... / Qwen3-235B-disagg-pd.yaml	UNKNOWN STEP	2026-08-31T18:02:44.1527811Z [2026-08-31 18:02:44.150561][UC][I] No available shared memory broadcast block found in 60 seconds. This typically happens when some processes are hanging or doing some time-consuming work (e.g. compilation, weight/kv cache quantization). [253,253][shm_broadcast.py:802,acquire_read]
+double-node (main, multi-node-qwen-disagg-pd, Qwen3-235B-disagg-pd.yaml, tests/e2e/nightly/multi_... / Qwen3-235B-disagg-pd.yaml	UNKNOWN STEP	2026-08-31T18:02:44.4471281Z [2026-08-31 18:02:44.442455][UC][I] No available shared memory broadcast block found in 60 seconds. This typically happens when some processes are hanging or doing some time-consuming work (e.g. compilation, weight/kv cache quantization). [252,252][shm_broadcast.py:802,acquire_read]
+double-node (main, multi-node-qwen-disagg-pd, Qwen3-235B-disagg-pd.yaml, tests/e2e/nightly/multi_... / Qwen3-235B-disagg-pd.yaml	UNKNOWN STEP	2026-08-31T18:42:26.8685007Z E       AssertionError: some aisbench cases failed, info were shown above.
+double-node (main, multi-node-qwen-disagg-pd, Qwen3-235B-disagg-pd.yaml, tests/e2e/nightly/multi_... / Qwen3-235B-disagg-pd.yaml	UNKNOWN STEP	2026-08-31T18:42:26.8703359Z tools/aisbench.py:303: AssertionError
+double-node (main, multi-node-qwen-disagg-pd, Qwen3-235B-disagg-pd.yaml, tests/e2e/nightly/multi_... / Qwen3-235B-disagg-pd.yaml	UNKNOWN STEP	2026-08-31T18:42:41.1836965Z ##[error]Process completed with exit code 1.
+double-node (main, multi-node-qwen-disagg-pd, Qwen3-235B-disagg-pd.yaml, tests/e2e/nightly/multi_... / Qwen3-235B-disagg-pd.yaml	UNKNOWN STEP	2026-08-31T18:43:59.4632199Z ##[error]Process completed with exit code 1.
+   ── 最后输出（定位失败阶段）
+
+── [FAILURE] double-node (main, multi-node-GLM-5.1-w8a8-A3, GLM5_1-W8A8-A3-dual-nodes.yaml, tests/e2e/nightly/... / GLM5_1-W8A8-A3-dual-nodes.yaml
+   Runner : linux-aarch64-a3-0-dnlzn-runner-vthnd
+   时间   : 2026-08-31T17:50:36Z ~ 2026-08-31T19:05:45Z
+FETCH_FAIL rc=124

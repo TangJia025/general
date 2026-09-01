@@ -1,0 +1,151 @@
+════════════════════════════════════════════
+ Run 33384013585 | vllm-project/vllm-ascend
+════════════════════════════════════════════
+
+X main Nightly-A3 · 33384013585
+Triggered via workflow_dispatch about 21 hours ago
+
+JOBS
+✓ Parse trigger and determine test scope in 14s (ID 99462442980)
+- Build nightly-a3 image in 0s (ID 99462443952)
+✓ Export global env vars as job outputs in 4m34s (ID 99462578988)
+X multi-node (main, kimi-k3-w4a8-a3, Kimi-K3-W4A8-A3.yaml, 4) / Kimi-K3-W4A8-A3.yaml in 3h15m39s (ID 99463773447)
+  ✓ Set up job
+  ✓ Initialize containers
+  ✓ Decode kubeconfig
+  ✓ Checkout code
+  ✓ Set job variables
+  ✓ Prepare scripts
+  ✓ Clear resources
+  ✓ Launch cluster
+  ✓ Wait for pods ready
+  X Stream logs
+  - Update good_table.csv on success
+  ✓ Fetch benchmark results from PVC
+  ✓ Post process
+  ✓ Collect Ascend logs
+  ✓ Upload Ascend logs
+  ✓ Upload Ascend logs (GitHub Artifacts)
+  ✓ Set benchmark artifact timestamp
+  ✓ Upload benchmark results
+  ✓ Upload benchmark results (GitHub Artifacts)
+  ✓ Post Checkout code
+  ✓ Stop containers
+  ✓ Complete job
+- multi-node (main, multi-node-deepseek-v3.2-W8A8-EP, DeepSeek-V3_2-W8A8-EP.yaml, tests/e2e/nightly... / inputs.config_file_path in 0s (ID 99463774451)
+- multi-node (main, DeepSeek-V4-Pro-w4a8-1M-PD, DeepSeek-V4-Pro-w4a8-1M-PD.yaml, tests/e2e/nightly/... / inputs.config_file_path (ID 99463775926)
+- multi-node (main, DeepSeek-V4-Pro-w4a8-prefix-cache-PD, DeepSeek-V4-Pro-w4a8-prefix-cache-PD.yaml... / inputs.config_file_path in 0s (ID 99463776495)
+- multi-node (main, GLM-5.1-w8a8c8-128k-1k-90-50-PD, GLM-5.1-W8A8C8-128k-1k-90-50-PD.yaml, tests/e2... / inputs.config_file_path in 0s (ID 99463777336)
+- double-node (main, multi-node-dpsk3.2-2node, DeepSeek-V3_2-W8A8-A3-dual-nodes.yaml, tests/e2e/nig... / inputs.config_file_path in 0s (ID 99516983484)
+- double-node (main, multi-node-GLM-5.1-w8a8-A3, GLM5_1-W8A8-A3-dual-nodes.yaml, tests/e2e/nightly/... / inputs.config_file_path in 0s (ID 99516983576)
+- double-node (main, multi-node-qwen3-dp, Qwen3-235B-A22B.yaml, tests/e2e/nightly/multi_node/intern... / inputs.config_file_path in 0s (ID 99516984107)
+- double-node (main, multi-node-qwen-disagg-pd, Qwen3-235B-disagg-pd.yaml, tests/e2e/nightly/multi_... / inputs.config_file_path in 0s (ID 99516984198)
+- double-node (main, multi-node-qwen-vl-disagg-pd, Qwen3-VL-235B-disagg-pd.yaml, tests/e2e/nightly/... / inputs.config_file_path in 0s (ID 99516985225)
+- double-node (main, multi-node-GLM-5.1-W8A8C8-A3_128k_90_50, GLM-5.1-W8A8C8-A3_128k_90_50.yaml, te... / inputs.config_file_path in 0s (ID 99516985306)
+- double-node (main, multi-node-GLM-5.1-W8A8C8-MTP-A3_198k_function, GLM-5.1-W8A8C8-A3_198k_functio... / inputs.config_file_path in 0s (ID 99516985665)
+- double-node (main, multi-node-qwenw8a8-2node-eplb, Qwen3-235B-W8A8-EPLB.yaml, tests/e2e/nightly/m... / inputs.config_file_path in 0s (ID 99516985883)
+- double-node (main, Minimax_m2.7_in128k_1k_prefix90_tpot50, Minimax_m2.7_in128k_1k_prefix90_tpot50... / inputs.config_file_path (ID 99516987214)
+- double-node (main, multi-node-GLM-5.2-w8a8-A3, GLM5_2-W8A8-A3-dual-nodes.yaml, tests/e2e/nightly/... / inputs.config_file_path (ID 99516987261)
+- double-node (main, DeepSeek-V4-flash-w8a8-PD-prefix, DeepSeek-V4-flash-w8a8-PD-prefix.yaml, tests... / inputs.config_file_path (ID 99516987621)
+- double-node (main, multi-node-deepseek-v3.1, DeepSeek-V3.1-BF16.yaml, tests/e2e/nightly/multi_nod... / inputs.config_file_path (ID 99516988219)
+- double-node (main, Kimi-K2.6-W4A8-64k-1k-TPOT50-PD, Kimi-K2.6-W4A8-64k-1k-TPOT50-PD.yaml, tests/e... / inputs.config_file_path in 0s (ID 99516989694)
+- clear-pre-logs in 0s (ID 99516990140)
+- single-node (main, MiniMax-M3-BF16-A3, linux-aarch64-nightly-a3-16, MiniMax-M3-BF16-A3.yaml) / inputs.name || inputs.config_file_path || inputs.tests (ID 99516993079)
+- single-node (main, qwen3-32b-int8, linux-aarch64-nightly-a3-4, Qwen3-32B-Int8.yaml) / inputs.name || inputs.config_file_path || inputs.tests (ID 99516993301)
+- single-node (main, qwen3-32b-int8-prefix-cache, linux-aarch64-nightly-a3-4, Prefix-Cache-Qwen3-32... / inputs.name || inputs.config_file_path || inputs.tests (ID 99516993305)
+- single-node (main, DeepSeek-V4-Flash-W8A8-A3, linux-aarch64-nightly-a3-16, DeepSeek-V4-Flash-W8A8... / inputs.name || inputs.config_file_path || inputs.tests (ID 99516993425)
+- single-node (main, deepseek-r1-0528-w8a8, linux-aarch64-nightly-a3-16, DeepSeek-R1-0528-W8A8.yaml) / inputs.name || inputs.config_file_path || inputs.tests (ID 99516993667)
+- single-node (main, qwen3-30b-a3b-w8a8, linux-aarch64-nightly-a3-4, Qwen3-30B-A3B-W8A8.yaml) / inputs.name || inputs.config_file_path || inputs.tests (ID 99516993680)
+- single-node (main, kimi-k2-thinking, linux-aarch64-nightly-a3-16, Kimi-K2-Thinking.yaml) / inputs.name || inputs.config_file_path || inputs.tests (ID 99516993725)
+- single-node (main, qwen3-32b-bf16-gpqa-acc, linux-aarch64-nightly-a3-4, tests/e2e/nightly/test_qw... / inputs.name || inputs.config_file_path || inputs.tests (ID 99516993747)
+- single-node (main, mtpx-deepseek-r1-0528-w8a8, linux-aarch64-nightly-a3-16, MTPX-DeepSeek-R1-0528... / inputs.name || inputs.config_file_path || inputs.tests (ID 99516993778)
+- single-node (main, Qwen3.5-122B-A10B-W8A8-A3, linux-aarch64-nightly-a3-16, Qwen3.5-122B-A10B-W8A8... / inputs.name || inputs.config_file_path || inputs.tests (ID 99516993857)
+- single-node (main, MiniMax-M3-W8A8-A3, linux-aarch64-nightly-a3-16, MiniMax-M3-W8A8-A3.yaml) / inputs.name || inputs.config_file_path || inputs.tests (ID 99516993879)
+- single-node (main, qwen3-30b-acc, linux-aarch64-nightly-a3-4, tests/e2e/weekly/single_node/models... / inputs.name || inputs.config_file_path || inputs.tests (ID 99516993888)
+- single-node (main, qwen3-32b-w8a8-aime2024-acc, linux-aarch64-nightly-a3-4, tests/e2e/nightly/tes... / inputs.name || inputs.config_file_path || inputs.tests (ID 99516993961)
+- single-node (main, kimi-k2.5, linux-aarch64-nightly-a3-16, Kimi-K2.5.yaml) / inputs.name || inputs.config_file_path || inputs.tests (ID 99516994244)
+- single-node (main, Qwen3.5-27B-w8a8-A3, linux-aarch64-nightly-a3-2, Qwen3.5-27B-w8a8-A3.yaml) / inputs.name || inputs.config_file_path || inputs.tests (ID 99516994298)
+- single-node (main, Qwen3-32B-W8A8C8-A3, linux-aarch64-nightly-a3-4, Qwen3-32B-W8A8C8-A3.yaml) / inputs.name || inputs.config_file_path || inputs.tests (ID 99516994353)
+- single-node (main, Qwen3-32B-QuaRot, linux-aarch64-nightly-a3-2, Qwen3-32B-QuaRot-eagle3.yaml) / inputs.name || inputs.config_file_path || inputs.tests (ID 99516994413)
+- single-node (main, Qwen3-30B-A3B-W4A8-llm-compressor, linux-aarch64-nightly-a3-2, Qwen3-30B-A3B-W... / inputs.name || inputs.config_file_path || inputs.tests (ID 99516994571)
+- single-node (main, Qwen3-30B-QuaRot, linux-aarch64-nightly-a3-2, Qwen3-30B-QuaRot-eagle3.yaml) / inputs.name || inputs.config_file_path || inputs.tests (ID 99516994664)
+- single-node (main, deepseek-v3-2-w8a8, linux-aarch64-nightly-a3-16, DeepSeek-V3.2-W8A8.yaml) / inputs.name || inputs.config_file_path || inputs.tests (ID 99516994672)
+- single-node (main, Qwen3.5-397B-A17B-w8a8-mtp, linux-aarch64-nightly-a3-16, Qwen3.5-397B-A17B-W8A... / inputs.name || inputs.config_file_path || inputs.tests (ID 99516997963)
+- single-node (main, qwen3-vl-235b-a22b-instruct-w8a8, linux-aarch64-nightly-a3-16, Qwen3-VL-235B-A... / inputs.name || inputs.config_file_path || inputs.tests (ID 99516998405)
+- single-node (main, glm-5.1-w8a8-prefill-mc2, linux-aarch64-nightly-a3-16, GLM-5.1-W8A8-PrefillMC2... / inputs.name || inputs.config_file_path || inputs.tests (ID 99516998686)
+- single-node (main, glm-4.7-w8a8, linux-aarch64-nightly-a3-16, GLM-4.7.yaml) / inputs.name || inputs.config_file_path || inputs.tests (ID 99516998789)
+- single-node (main, qwen3-235b-a22b-w8a8, linux-aarch64-nightly-a3-16, Qwen3-235B-A22B-W8A8.yaml) / inputs.name || inputs.config_file_path || inputs.tests (ID 99516998821)
+- single-node (main, Minimax_m2.7_w8a8_A3, linux-aarch64-nightly-a3-16, Minimax_m2.7_w8a8_A3.yaml) / inputs.name || inputs.config_file_path || inputs.tests (ID 99516999005)
+- single-node (main, Kimi-K2.6-w4a8-A3, linux-aarch64-nightly-a3-16, Kimi-K2.6-w4a8-A3.yaml) / inputs.name || inputs.config_file_path || inputs.tests (ID 99516999008)
+- single-node (main, deepseek-r1-0528-w8a8-prefix-cache, linux-aarch64-nightly-a3-16, Prefix-Cache-... / inputs.name || inputs.config_file_path || inputs.tests (ID 99516999013)
+- single-node (main, Qwen3_32b_w8a8_ml_A3, linux-aarch64-a3-16, Qwen3_32b_w8a8_ml_A3.yaml) / inputs.name || inputs.config_file_path || inputs.tests (ID 99516999138)
+✓ Merge benchmark artifacts into nightly-a3.zip in 19s (ID 99517000665)
+- single-node (main, Qwen3.8-27B-w8a8-A3, linux-aarch64-a3-2, Qwen3.8-27B-w8a8-A3.yaml) / inputs.name || inputs.config_file_path || inputs.tests in 0s (ID 99517000905)
+- single-node (main, Deepseek_R1_W8A8_A3, linux-aarch64-a3-16, Deepseek_R1_W8A8_A3.yaml) / inputs.name || inputs.config_file_path || inputs.tests in 0s (ID 99517001343)
+- Remove node taints in 0s (ID 99517002843)
+
+ANNOTATIONS
+X Executing the custom container implementation failed. Please contact your self hosted runner administrator.
+multi-node (main, kimi-k3-w4a8-a3, Kimi-K3-W4A8-A3.yaml, 4) / Kimi-K3-W4A8-A3.yaml: .github#247
+
+X Process completed with exit code 1.
+multi-node (main, kimi-k3-w4a8-a3, Kimi-K3-W4A8-A3.yaml, 4) / Kimi-K3-W4A8-A3.yaml: .github#246
+
+X Error: failed to run script step: Error: command terminated with non-zero exit code: command terminated with exit code 1
+multi-node (main, kimi-k3-w4a8-a3, Kimi-K3-W4A8-A3.yaml, 4) / Kimi-K3-W4A8-A3.yaml: .github#245
+
+X Upload failed. See log:
+multi-node (main, kimi-k3-w4a8-a3, Kimi-K3-W4A8-A3.yaml, 4) / Kimi-K3-W4A8-A3.yaml: .github#226
+
+X Executing the custom container implementation failed. Please contact your self hosted runner administrator.
+multi-node (main, kimi-k3-w4a8-a3, Kimi-K3-W4A8-A3.yaml, 4) / Kimi-K3-W4A8-A3.yaml: .github#246
+
+X Process completed with exit code 1.
+multi-node (main, kimi-k3-w4a8-a3, Kimi-K3-W4A8-A3.yaml, 4) / Kimi-K3-W4A8-A3.yaml: .github#245
+
+X Error: failed to run script step: Error: command terminated with non-zero exit code: command terminated with exit code 1
+multi-node (main, kimi-k3-w4a8-a3, Kimi-K3-W4A8-A3.yaml, 4) / Kimi-K3-W4A8-A3.yaml: .github#244
+
+X Upload failed. See log:
+multi-node (main, kimi-k3-w4a8-a3, Kimi-K3-W4A8-A3.yaml, 4) / Kimi-K3-W4A8-A3.yaml: .github#226
+
+X Executing the custom container implementation failed. Please contact your self hosted runner administrator.
+multi-node (main, kimi-k3-w4a8-a3, Kimi-K3-W4A8-A3.yaml, 4) / Kimi-K3-W4A8-A3.yaml: .github#10914
+
+X Process completed with exit code 1.
+multi-node (main, kimi-k3-w4a8-a3, Kimi-K3-W4A8-A3.yaml, 4) / Kimi-K3-W4A8-A3.yaml: .github#10913
+
+X Error: failed to run script step: Error: command terminated with non-zero exit code: command terminated with exit code 1
+multi-node (main, kimi-k3-w4a8-a3, Kimi-K3-W4A8-A3.yaml, 4) / Kimi-K3-W4A8-A3.yaml: .github#10912
+
+
+ARTIFACTS
+nightly-a3
+main-Kimi-K3-W4A8-A3-ascend-logs
+
+To see what failed, try: gh run view 33384013585 --log-failed
+View this run on GitHub: https://github.com/vllm-project/vllm-ascend/actions/runs/33384013585
+
+════════════════════════════════════════════
+ 失败 / 取消 Job 详情（共 1 个）
+════════════════════════════════════════════
+
+── [FAILURE] multi-node (main, kimi-k3-w4a8-a3, Kimi-K3-W4A8-A3.yaml, 4) / Kimi-K3-W4A8-A3.yaml
+   Runner : linux-aarch64-a3-0-dnlzn-runner-fqstm
+   时间   : 2026-08-31T10:53:55Z ~ 2026-08-31T14:09:34Z
+   ── 运行时错误（高优先级）
+multi-node (main, kimi-k3-w4a8-a3, Kimi-K3-W4A8-A3.yaml, 4) / Kimi-K3-W4A8-A3.yaml	UNKNOWN STEP	2026-08-31T11:52:20.8613152Z .[2026-08-31 11:52:20.858739][UC][I] No available shared memory broadcast block found in 60 seconds. This typically happens when some processes are hanging or doing some time-consuming work (e.g. compilation, weight/kv cache quantization). [23132,23132][shm_broadcast.py:802,acquire_read]
+multi-node (main, kimi-k3-w4a8-a3, Kimi-K3-W4A8-A3.yaml, 4) / Kimi-K3-W4A8-A3.yaml	UNKNOWN STEP	2026-08-31T11:53:29.1438132Z [2026-08-31 11:53:29.137617][UC][I] No available shared memory broadcast block found in 60 seconds. This typically happens when some processes are hanging or doing some time-consuming work (e.g. compilation, weight/kv cache quantization). [23132,23132][shm_broadcast.py:802,acquire_read]
+multi-node (main, kimi-k3-w4a8-a3, Kimi-K3-W4A8-A3.yaml, 4) / Kimi-K3-W4A8-A3.yaml	UNKNOWN STEP	2026-08-31T14:05:51.4774771Z E       AssertionError: some aisbench cases failed, info were shown above.
+multi-node (main, kimi-k3-w4a8-a3, Kimi-K3-W4A8-A3.yaml, 4) / Kimi-K3-W4A8-A3.yaml	UNKNOWN STEP	2026-08-31T14:05:51.4780616Z tools/aisbench.py:304: AssertionError
+multi-node (main, kimi-k3-w4a8-a3, Kimi-K3-W4A8-A3.yaml, 4) / Kimi-K3-W4A8-A3.yaml	UNKNOWN STEP	2026-08-31T14:06:04.9361248Z ##[error]Process completed with exit code 1.
+multi-node (main, kimi-k3-w4a8-a3, Kimi-K3-W4A8-A3.yaml, 4) / Kimi-K3-W4A8-A3.yaml	UNKNOWN STEP	2026-08-31T14:08:30.8719692Z ##[error]Process completed with exit code 1.
+multi-node (main, kimi-k3-w4a8-a3, Kimi-K3-W4A8-A3.yaml, 4) / Kimi-K3-W4A8-A3.yaml	UNKNOWN STEP	2026-08-31T14:08:51.8608950Z ##[error]Process completed with exit code 1.
+   ── 最后输出（定位失败阶段）
+
+════════════════════════════════════════════
+ 补充命令（按需使用）：
+   完整日志 : gh run view --job <id> --log --repo vllm-project/vllm-ascend
+   PR diff  : gh pr diff <pr> --repo vllm-project/vllm-ascend --name-only
+   kubectl  : kubectl get pods --all-namespaces | grep <runner_name>
+════════════════════════════════════════════

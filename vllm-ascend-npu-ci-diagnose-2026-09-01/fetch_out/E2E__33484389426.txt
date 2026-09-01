@@ -1,0 +1,65 @@
+════════════════════════════════════════════
+ Run 33484389426 | vllm-project/vllm-ascend
+════════════════════════════════════════════
+
+X backport/record-stream-v0.26.0rc E2E vllm-project/vllm-ascend#15409 · 33484389426
+Triggered via pull_request about 41 minutes ago
+
+JOBS
+✓ pre-commit in 5m35s (ID 99780989545)
+✓ Recommend tests from coverage in 1m23s (ID 99780989875)
+✓ select-tests in 1m5s (ID 99782569699)
+✓ Generate hitest recommendations / run-hitest in 56s (ID 99782933853)
+X ci-gate in 8s (ID 99782934431)
+  ✓ Set up job
+  X Check all required jobs
+  ✓ Complete job
+✓ Analyze failure report / cross-reference failures with recommendations in 57s (ID 99782934705)
+- ensure-csrc-cache in 0s (ID 99782935157)
+- run-selected-tests in 0s (ID 99782935368)
+- run-selected-tests-upstream in 0s (ID 99782935765)
+
+ANNOTATIONS
+! Node.js 20 is deprecated. The following actions target Node.js 20 but are being forced to run on Node.js 24: actions/upload-artifact@v4. For more information see: https://github.blog/changelog/2025-09-19-deprecation-of-node-20-on-github-actions-runners/
+Generate hitest recommendations / run-hitest: .github#3
+
+! No files were found with the provided path: .github/workflows/scripts/recommended_pytest_paths.txt. No artifacts will be uploaded.
+Generate hitest recommendations / run-hitest: .github#14
+
+X Process completed with exit code 98.
+Generate hitest recommendations / run-hitest: .github#61
+
+X hitest.sh exited with non-zero code: 98
+Generate hitest recommendations / run-hitest: .github#60
+
+X Process completed with exit code 1.
+ci-gate: .github#54
+
+X Selected tests are required; add the ready label
+ci-gate: .github#53
+
+
+ARTIFACTS
+failure-analysis-report
+
+To see what failed, try: gh run view 33484389426 --log-failed
+View this run on GitHub: https://github.com/vllm-project/vllm-ascend/actions/runs/33484389426
+
+════════════════════════════════════════════
+ 失败 / 取消 Job 详情（共 1 个）
+════════════════════════════════════════════
+
+── [FAILURE] ci-gate
+   Runner : linux-amd64-cpu-2-hk-lwxb6-runner-ppd45
+   时间   : 2026-09-01T08:02:35Z ~ 2026-09-01T08:02:43Z
+   ── 运行时错误（高优先级）
+ci-gate	Check all required jobs	2026-09-01T08:02:37.5485788Z ##[error]Process completed with exit code 1.
+   ── 编译/安装错误（次优先级）
+   ── 最后输出（定位失败阶段）
+
+════════════════════════════════════════════
+ 补充命令（按需使用）：
+   完整日志 : gh run view --job <id> --log --repo vllm-project/vllm-ascend
+   PR diff  : gh pr diff <pr> --repo vllm-project/vllm-ascend --name-only
+   kubectl  : kubectl get pods --all-namespaces | grep <runner_name>
+════════════════════════════════════════════

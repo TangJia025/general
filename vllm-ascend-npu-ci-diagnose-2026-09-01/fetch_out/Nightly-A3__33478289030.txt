@@ -1,0 +1,151 @@
+════════════════════════════════════════════
+ Run 33478289030 | vllm-project/vllm-ascend
+════════════════════════════════════════════
+
+X main Nightly-A3 · 33478289030
+Triggered via workflow_dispatch about 2 hours ago
+
+JOBS
+✓ Parse trigger and determine test scope in 13s (ID 99762080597)
+- Build nightly-a3 image (ID 99762081465)
+✓ Export global env vars as job outputs in 3m31s (ID 99762200743)
+X multi-node (main, multi-node-deepseek-v3.2-W8A8-EP, DeepSeek-V3_2-W8A8-EP.yaml, tests/e2e/nightly... / DeepSeek-V3_2-W8A8-EP.yaml in 22m57s (ID 99763045110)
+  ✓ Set up job
+  ✓ Initialize containers
+  ✓ Decode kubeconfig
+  ✓ Checkout code
+  ✓ Set job variables
+  ✓ Prepare scripts
+  ✓ Clear resources
+  ✓ Launch cluster
+  X Wait for pods ready
+  - Stream logs
+  - Update good_table.csv on success
+  ✓ Fetch benchmark results from PVC
+  ✓ Post process
+  ✓ Collect Ascend logs
+  ✓ Upload Ascend logs
+  ✓ Upload Ascend logs (GitHub Artifacts)
+  ✓ Set benchmark artifact timestamp
+  ✓ Upload benchmark results
+  ✓ Upload benchmark results (GitHub Artifacts)
+  ✓ Post Checkout code
+  ✓ Stop containers
+  ✓ Complete job
+- multi-node (main, DeepSeek-V4-Pro-w4a8-1M-PD, DeepSeek-V4-Pro-w4a8-1M-PD.yaml, tests/e2e/nightly/... / inputs.config_file_path (ID 99763046222)
+- multi-node (main, DeepSeek-V4-Pro-w4a8-prefix-cache-PD, DeepSeek-V4-Pro-w4a8-prefix-cache-PD.yaml... / inputs.config_file_path in 0s (ID 99763047325)
+- multi-node (main, GLM-5.1-w8a8c8-128k-1k-90-50-PD, GLM-5.1-W8A8C8-128k-1k-90-50-PD.yaml, tests/e2... / inputs.config_file_path in 0s (ID 99763047909)
+- multi-node (main, QWEN3_235B_PD_3_5K_1_5k, QWEN3_235B_PD_3_5K_1_5k.yaml, tests/e2e/nightly/multi_... / inputs.config_file_path in 0s (ID 99763048744)
+- double-node (main, multi-node-qwen-disagg-pd, Qwen3-235B-disagg-pd.yaml, tests/e2e/nightly/multi_... / inputs.config_file_path in 0s (ID 99768334075)
+- double-node (main, multi-node-GLM-5.1-w8a8-A3, GLM5_1-W8A8-A3-dual-nodes.yaml, tests/e2e/nightly/... / inputs.config_file_path in 0s (ID 99768334172)
+- double-node (main, multi-node-qwen3-dp, Qwen3-235B-A22B.yaml, tests/e2e/nightly/multi_node/intern... / inputs.config_file_path in 0s (ID 99768334367)
+- double-node (main, multi-node-dpsk3.2-2node, DeepSeek-V3_2-W8A8-A3-dual-nodes.yaml, tests/e2e/nig... / inputs.config_file_path in 0s (ID 99768334516)
+- double-node (main, multi-node-qwen-vl-disagg-pd, Qwen3-VL-235B-disagg-pd.yaml, tests/e2e/nightly/... / inputs.config_file_path in 0s (ID 99768334700)
+- double-node (main, multi-node-GLM-5.1-W8A8C8-A3_128k_90_50, GLM-5.1-W8A8C8-A3_128k_90_50.yaml, te... / inputs.config_file_path in 0s (ID 99768334952)
+- double-node (main, multi-node-qwenw8a8-2node-eplb, Qwen3-235B-W8A8-EPLB.yaml, tests/e2e/nightly/m... / inputs.config_file_path (ID 99768335410)
+- double-node (main, multi-node-deepseek-v3.1, DeepSeek-V3.1-BF16.yaml, tests/e2e/nightly/multi_nod... / inputs.config_file_path (ID 99768335823)
+- double-node (main, multi-node-GLM-5.1-W8A8C8-MTP-A3_198k_function, GLM-5.1-W8A8C8-A3_198k_functio... / inputs.config_file_path (ID 99768335912)
+- double-node (main, multi-node-GLM-5.2-w8a8-A3, GLM5_2-W8A8-A3-dual-nodes.yaml, tests/e2e/nightly/... / inputs.config_file_path (ID 99768336033)
+- double-node (main, Minimax_m2.7_in128k_1k_prefix90_tpot50, Minimax_m2.7_in128k_1k_prefix90_tpot50... / inputs.config_file_path (ID 99768336316)
+- double-node (main, DeepSeek-V4-flash-w8a8-PD-prefix, DeepSeek-V4-flash-w8a8-PD-prefix.yaml, tests... / inputs.config_file_path in 0s (ID 99768336748)
+- double-node (main, Kimi-K2.6-W4A8-64k-1k-TPOT50-PD, Kimi-K2.6-W4A8-64k-1k-TPOT50-PD.yaml, tests/e... / inputs.config_file_path in 0s (ID 99768336944)
+- clear-pre-logs in 0s (ID 99768337488)
+- single-node (main, mtpx-deepseek-r1-0528-w8a8, linux-aarch64-nightly-a3-16, MTPX-DeepSeek-R1-0528... / inputs.name || inputs.config_file_path || inputs.tests in 0s (ID 99768338867)
+- single-node (main, DeepSeek-V4-Flash-W8A8-A3, linux-aarch64-nightly-a3-16, DeepSeek-V4-Flash-W8A8... / inputs.name || inputs.config_file_path || inputs.tests in 0s (ID 99768338961)
+- single-node (main, kimi-k2-thinking, linux-aarch64-nightly-a3-16, Kimi-K2-Thinking.yaml) / inputs.name || inputs.config_file_path || inputs.tests (ID 99768339116)
+- single-node (main, MiniMax-M3-W8A8-A3, linux-aarch64-nightly-a3-16, MiniMax-M3-W8A8-A3.yaml) / inputs.name || inputs.config_file_path || inputs.tests (ID 99768339189)
+- single-node (main, kimi-k2.5, linux-aarch64-nightly-a3-16, Kimi-K2.5.yaml) / inputs.name || inputs.config_file_path || inputs.tests (ID 99768339209)
+- single-node (main, Qwen3.5-122B-A10B-W8A8-A3, linux-aarch64-nightly-a3-16, Qwen3.5-122B-A10B-W8A8... / inputs.name || inputs.config_file_path || inputs.tests (ID 99768339225)
+- single-node (main, deepseek-r1-0528-w8a8, linux-aarch64-nightly-a3-16, DeepSeek-R1-0528-W8A8.yaml) / inputs.name || inputs.config_file_path || inputs.tests (ID 99768339299)
+- single-node (main, Qwen3-30B-A3B-W4A8-llm-compressor, linux-aarch64-nightly-a3-2, Qwen3-30B-A3B-W... / inputs.name || inputs.config_file_path || inputs.tests (ID 99768339510)
+- single-node (main, deepseek-v3-2-w8a8, linux-aarch64-nightly-a3-16, DeepSeek-V3.2-W8A8.yaml) / inputs.name || inputs.config_file_path || inputs.tests (ID 99768339606)
+- single-node (main, Qwen3-32B-QuaRot, linux-aarch64-nightly-a3-2, Qwen3-32B-QuaRot-eagle3.yaml) / inputs.name || inputs.config_file_path || inputs.tests (ID 99768339647)
+- single-node (main, MiniMax-M3-BF16-A3, linux-aarch64-nightly-a3-16, MiniMax-M3-BF16-A3.yaml) / inputs.name || inputs.config_file_path || inputs.tests (ID 99768339741)
+- single-node (main, qwen3-32b-int8, linux-aarch64-nightly-a3-4, Qwen3-32B-Int8.yaml) / inputs.name || inputs.config_file_path || inputs.tests (ID 99768339753)
+- single-node (main, qwen3-32b-int8-prefix-cache, linux-aarch64-nightly-a3-4, Prefix-Cache-Qwen3-32... / inputs.name || inputs.config_file_path || inputs.tests (ID 99768339777)
+- single-node (main, Qwen3-32B-W8A8C8-A3, linux-aarch64-nightly-a3-4, Qwen3-32B-W8A8C8-A3.yaml) / inputs.name || inputs.config_file_path || inputs.tests (ID 99768340010)
+- single-node (main, Qwen3.5-27B-w8a8-A3, linux-aarch64-nightly-a3-2, Qwen3.5-27B-w8a8-A3.yaml) / inputs.name || inputs.config_file_path || inputs.tests (ID 99768340013)
+- single-node (main, qwen3-32b-w8a8-aime2024-acc, linux-aarch64-nightly-a3-4, tests/e2e/nightly/tes... / inputs.name || inputs.config_file_path || inputs.tests (ID 99768340037)
+- single-node (main, qwen3-32b-bf16-gpqa-acc, linux-aarch64-nightly-a3-4, tests/e2e/nightly/test_qw... / inputs.name || inputs.config_file_path || inputs.tests (ID 99768340109)
+- single-node (main, qwen3-30b-acc, linux-aarch64-nightly-a3-4, tests/e2e/weekly/single_node/models... / inputs.name || inputs.config_file_path || inputs.tests (ID 99768340169)
+- single-node (main, qwen3-30b-a3b-w8a8, linux-aarch64-nightly-a3-4, Qwen3-30B-A3B-W8A8.yaml) / inputs.name || inputs.config_file_path || inputs.tests (ID 99768340219)
+- single-node (main, Qwen3-30B-QuaRot, linux-aarch64-nightly-a3-2, Qwen3-30B-QuaRot-eagle3.yaml) / inputs.name || inputs.config_file_path || inputs.tests (ID 99768340250)
+- single-node (main, glm-5.1-w8a8-prefill-mc2, linux-aarch64-nightly-a3-16, GLM-5.1-W8A8-PrefillMC2... / inputs.name || inputs.config_file_path || inputs.tests in 0s (ID 99768342802)
+- single-node (main, Qwen3_32b_w8a8_ml_A3, linux-aarch64-a3-800t-16, Qwen3_32b_w8a8_ml_A3.yaml) / inputs.name || inputs.config_file_path || inputs.tests in 0s (ID 99768343012)
+- single-node (main, Minimax_m2.7_w8a8_A3, linux-aarch64-nightly-a3-16, Minimax_m2.7_w8a8_A3.yaml) / inputs.name || inputs.config_file_path || inputs.tests in 0s (ID 99768343085)
+- single-node (main, deepseek-r1-0528-w8a8-prefix-cache, linux-aarch64-nightly-a3-16, Prefix-Cache-... / inputs.name || inputs.config_file_path || inputs.tests in 0s (ID 99768343119)
+- single-node (main, qwen3-vl-235b-a22b-instruct-w8a8, linux-aarch64-nightly-a3-16, Qwen3-VL-235B-A... / inputs.name || inputs.config_file_path || inputs.tests in 0s (ID 99768343242)
+- single-node (main, glm-4.7-w8a8, linux-aarch64-nightly-a3-16, GLM-4.7.yaml) / inputs.name || inputs.config_file_path || inputs.tests (ID 99768343336)
+- single-node (main, qwen3-235b-a22b-w8a8, linux-aarch64-nightly-a3-16, Qwen3-235B-A22B-W8A8.yaml) / inputs.name || inputs.config_file_path || inputs.tests (ID 99768343435)
+- single-node (main, Qwen3.5-397B-A17B-w8a8-mtp, linux-aarch64-nightly-a3-16, Qwen3.5-397B-A17B-W8A... / inputs.name || inputs.config_file_path || inputs.tests (ID 99768343458)
+- single-node (main, Kimi-K2.6-w4a8-A3, linux-aarch64-nightly-a3-16, Kimi-K2.6-w4a8-A3.yaml) / inputs.name || inputs.config_file_path || inputs.tests (ID 99768343509)
+✓ Merge benchmark artifacts into nightly-a3.zip in 12s (ID 99768344946)
+- single-node (main, Qwen3.8-27B-w8a8-A3, linux-aarch64-a3-800t-2, Qwen3.8-27B-w8a8-A3.yaml) / inputs.name || inputs.config_file_path || inputs.tests in 0s (ID 99768345110)
+- single-node (main, Qwq_32b_A3, linux-aarch64-a3-800t-16, Qwq_32b_A3.yaml) / inputs.name || inputs.config_file_path || inputs.tests in 0s (ID 99768345179)
+- single-node (main, Deepseek_R1_W8A8_A3, linux-aarch64-a3-800t-16, Deepseek_R1_W8A8_A3.yaml) / inputs.name || inputs.config_file_path || inputs.tests in 0s (ID 99768345376)
+- single-node (main, Deepseek_R1_W8A8_Reasoning_output_A3, linux-aarch64-a3-800t-16, Deepseek_R1_W8... / inputs.name || inputs.config_file_path || inputs.tests in 0s (ID 99768345410)
+- single-node (main, Qwen3_32b_W8A8_wl_A3, linux-aarch64-a3-800t-16, Qwen3_32b_W8A8_wl_A3.yaml) / inputs.name || inputs.config_file_path || inputs.tests in 0s (ID 99768345569)
+- single-node (main, qwen_3_6_27b_w8a8_A3, linux-aarch64-a3-800t-16, qwen_3_6_27b_w8a8_A3.yaml) / inputs.name || inputs.config_file_path || inputs.tests in 0s (ID 99768345678)
+- Remove node taints in 0s (ID 99768346590)
+
+ANNOTATIONS
+! No files were found with the provided path: /tmp/benchmark_results/. No artifacts will be uploaded.
+multi-node (main, multi-node-deepseek-v3.2-W8A8-EP, DeepSeek-V3_2-W8A8-EP.yaml, tests/e2e/nightly... / DeepSeek-V3_2-W8A8-EP.yaml: .github#22
+
+! No files found for path: /tmp/benchmark_results/, skipping upload
+multi-node (main, multi-node-deepseek-v3.2-W8A8-EP, DeepSeek-V3_2-W8A8-EP.yaml, tests/e2e/nightly... / DeepSeek-V3_2-W8A8-EP.yaml: .github#225
+
+X Executing the custom container implementation failed. Please contact your self hosted runner administrator.
+multi-node (main, multi-node-deepseek-v3.2-W8A8-EP, DeepSeek-V3_2-W8A8-EP.yaml, tests/e2e/nightly... / DeepSeek-V3_2-W8A8-EP.yaml: .github#246
+
+X Process completed with exit code 1.
+multi-node (main, multi-node-deepseek-v3.2-W8A8-EP, DeepSeek-V3_2-W8A8-EP.yaml, tests/e2e/nightly... / DeepSeek-V3_2-W8A8-EP.yaml: .github#245
+
+X Error: failed to run script step: Error: command terminated with non-zero exit code: command terminated with exit code 1
+multi-node (main, multi-node-deepseek-v3.2-W8A8-EP, DeepSeek-V3_2-W8A8-EP.yaml, tests/e2e/nightly... / DeepSeek-V3_2-W8A8-EP.yaml: .github#244
+
+X Upload failed. See log:
+multi-node (main, multi-node-deepseek-v3.2-W8A8-EP, DeepSeek-V3_2-W8A8-EP.yaml, tests/e2e/nightly... / DeepSeek-V3_2-W8A8-EP.yaml: .github#226
+
+X Executing the custom container implementation failed. Please contact your self hosted runner administrator.
+multi-node (main, multi-node-deepseek-v3.2-W8A8-EP, DeepSeek-V3_2-W8A8-EP.yaml, tests/e2e/nightly... / DeepSeek-V3_2-W8A8-EP.yaml: .github#1512
+
+X Process completed with exit code 1.
+multi-node (main, multi-node-deepseek-v3.2-W8A8-EP, DeepSeek-V3_2-W8A8-EP.yaml, tests/e2e/nightly... / DeepSeek-V3_2-W8A8-EP.yaml: .github#1511
+
+X Error: failed to run script step: Error: command terminated with non-zero exit code: command terminated with exit code 1
+multi-node (main, multi-node-deepseek-v3.2-W8A8-EP, DeepSeek-V3_2-W8A8-EP.yaml, tests/e2e/nightly... / DeepSeek-V3_2-W8A8-EP.yaml: .github#1510
+
+X No artifacts found matching pattern 'nightly-test-benchmark-results-*'
+Merge benchmark artifacts into nightly-a3.zip: .github#13
+
+
+ARTIFACTS
+main-DeepSeek-V3_2-W8A8-EP-ascend-logs
+
+To see what failed, try: gh run view 33478289030 --log-failed
+View this run on GitHub: https://github.com/vllm-project/vllm-ascend/actions/runs/33478289030
+
+════════════════════════════════════════════
+ 失败 / 取消 Job 详情（共 1 个）
+════════════════════════════════════════════
+
+── [FAILURE] multi-node (main, multi-node-deepseek-v3.2-W8A8-EP, DeepSeek-V3_2-W8A8-EP.yaml, tests/e2e/nightly... / DeepSeek-V3_2-W8A8-EP.yaml
+   Runner : linux-aarch64-a3-0-dnlzn-runner-dr66s
+   时间   : 2026-09-01T06:40:42Z ~ 2026-09-01T07:03:39Z
+   ── 运行时错误（高优先级）
+multi-node (main, multi-node-deepseek-v3.2-W8A8-EP, DeepSeek-V3_2-W8A8-EP.yaml, tests/e2e/nightly... / DeepSeek-V3_2-W8A8-EP.yaml	UNKNOWN STEP	2026-09-01T07:01:27.5868060Z ##[error]Process completed with exit code 1.
+multi-node (main, multi-node-deepseek-v3.2-W8A8-EP, DeepSeek-V3_2-W8A8-EP.yaml, tests/e2e/nightly... / DeepSeek-V3_2-W8A8-EP.yaml	UNKNOWN STEP	2026-09-01T07:02:49.1825697Z ##[error]Process completed with exit code 1.
+   ── 编译/安装错误（次优先级）
+multi-node (main, multi-node-deepseek-v3.2-W8A8-EP, DeepSeek-V3_2-W8A8-EP.yaml, tests/e2e/nightly... / DeepSeek-V3_2-W8A8-EP.yaml	UNKNOWN STEP	2026-09-01T07:01:27.5830039Z ##[error]Error: failed to run script step: Error: command terminated with non-zero exit code: command terminated with exit code 1
+multi-node (main, multi-node-deepseek-v3.2-W8A8-EP, DeepSeek-V3_2-W8A8-EP.yaml, tests/e2e/nightly... / DeepSeek-V3_2-W8A8-EP.yaml	UNKNOWN STEP	2026-09-01T07:02:46.4729596Z ^[[36;1m    echo "::error::Upload failed. See log:"^[[0m
+multi-node (main, multi-node-deepseek-v3.2-W8A8-EP, DeepSeek-V3_2-W8A8-EP.yaml, tests/e2e/nightly... / DeepSeek-V3_2-W8A8-EP.yaml	UNKNOWN STEP	2026-09-01T07:02:49.1768875Z ##[error]Error: failed to run script step: Error: command terminated with non-zero exit code: command terminated with exit code 1
+multi-node (main, multi-node-deepseek-v3.2-W8A8-EP, DeepSeek-V3_2-W8A8-EP.yaml, tests/e2e/nightly... / DeepSeek-V3_2-W8A8-EP.yaml	UNKNOWN STEP	2026-09-01T07:03:04.4805146Z ^[[36;1m    echo "::error::Upload failed. See log:"^[[0m
+   ── 最后输出（定位失败阶段）
+
+════════════════════════════════════════════
+ 补充命令（按需使用）：
+   完整日志 : gh run view --job <id> --log --repo vllm-project/vllm-ascend
+   PR diff  : gh pr diff <pr> --repo vllm-project/vllm-ascend --name-only
+   kubectl  : kubectl get pods --all-namespaces | grep <runner_name>
+════════════════════════════════════════════

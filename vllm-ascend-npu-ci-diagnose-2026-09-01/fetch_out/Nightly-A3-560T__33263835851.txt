@@ -1,0 +1,176 @@
+════════════════════════════════════════════
+ Run 33263835851 | vllm-project/vllm-ascend
+════════════════════════════════════════════
+
+X main Nightly-A3-560T · 33263835851
+Triggered via workflow_dispatch about 2 days ago
+
+JOBS
+✓ Parse trigger and determine test scope in 15s (ID 99130233796)
+- Build nightly-a3 image in 0s (ID 99130234460)
+✓ Export global env vars as job outputs in 4m42s (ID 99130306932)
+✓ Wait for all double-node pods launched / Poll GitHub commit statuses in 2s (ID 99130892004)
+- multi-node (main, multi-node-deepseek-v3.2-W8A8-EP, DeepSeek-V3_2-W8A8-EP.yaml, 4) / inputs.config_file_path (ID 99130892150)
+- multi-node (main, multi-node-GLM-5.2-w8a8-A3, GLM5_2-W8A8-A3-dual-nodes.yaml, 2) / inputs.config_file_path (ID 99130892298)
+- multi-node (main, multi-node-deepseek-v3.1, DeepSeek-V3.1-BF16.yaml, 2) / inputs.config_file_path (ID 99130892337)
+- double-node (main, multi-node-GLM-5.1-w8a8-A3, GLM5_1-W8A8-A3-dual-nodes.yaml, 2) / inputs.config_file_path in 0s (ID 99130892715)
+- double-node (main, multi-node-qwen3-dp, Qwen3-235B-A22B.yaml, 2) / inputs.config_file_path in 0s (ID 99130892746)
+- double-node (main, multi-node-dpsk3.2-2node, DeepSeek-V3_2-W8A8-A3-dual-nodes.yaml, 2) / inputs.config_file_path in 0s (ID 99130892838)
+- double-node (main, multi-node-qwen-disagg-pd, Qwen3-235B-disagg-pd.yaml, 2) / inputs.config_file_path in 0s (ID 99130892991)
+- double-node (main, multi-node-qwenw8a8-2node-eplb, Qwen3-235B-W8A8-EPLB.yaml, 2) / inputs.config_file_path in 0s (ID 99130893215)
+- double-node (main, multi-node-qwen-vl-disagg-pd, Qwen3-VL-235B-disagg-pd.yaml, 2) / inputs.config_file_path in 0s (ID 99130893594)
+- clear-pre-logs in 0s (ID 99130894016)
+X single-node (main, kimi-k2.5, linux-aarch64-a3-16-cn12-001, Kimi-K2.5.yaml) / kimi-k2.5 in 18m33s (ID 99130900531)
+  ✓ Set up job
+  ✓ Initialize containers
+  ✓ Check npu and CANN info
+  ✓ uninstall vlm vllm-ascend and remove code (if pr test)
+  ✓ Checkout vllm-project/vllm-ascend repo
+  ✓ Move code to /vllm-workspace
+  ✓ Set MAX_JOBS based on runner
+  ✓ Install vllm-project/vllm-ascend
+  ✓ Install aisbench
+  ✓ Show vLLM and vLLM-Ascend version
+  ✓ Install clang
+  ✓ Validate Inputs
+  - Run Pytest (py-driven)
+  X Run Pytest (YAML-driven)
+  - Update good_table.csv on success
+  - Capture test result
+  - Classify failure
+  - Skip - env issue
+  - Check commit age
+  - Skip - old commit
+  - Process - recent real failure
+  - On success
+  ✓ Set benchmark artifact timestamp
+  ✓ Upload benchmark results
+  ✓ Upload benchmark results (GitHub Artifacts)
+  ✓ Post Checkout vllm-project/vllm-ascend repo
+  ✓ Stop containers
+  ✓ Complete job
+- single-node (main, Qwen3.5-27B-w8a8-A3, linux-aarch64-a3-2-cn12-001, Qwen3.5-27B-w8a8-A3.yaml) / inputs.name || inputs.config_file_path || inputs.tests in 0s (ID 99130901138)
+- single-node (main, qwen3-235b-a22b-w8a8, linux-aarch64-a3-16-cn12-001, Qwen3-235B-A22B-W8A8.yaml) / inputs.name || inputs.config_file_path || inputs.tests in 0s (ID 99130901155)
+- single-node (main, kimi-k2-thinking, linux-aarch64-a3-16-cn12-001, Kimi-K2-Thinking.yaml) / inputs.name || inputs.config_file_path || inputs.tests in 0s (ID 99130901158)
+- single-node (main, deepseek-v3-2-w8a8, linux-aarch64-a3-16-cn12-001, DeepSeek-V3.2-W8A8.yaml) / inputs.name || inputs.config_file_path || inputs.tests in 0s (ID 99130901172)
+- single-node (main, DeepSeek-V4-Flash-W8A8-A3, linux-aarch64-a3-16-cn12-001, DeepSeek-V4-Flash-W8A... / inputs.name || inputs.config_file_path || inputs.tests in 0s (ID 99130901211)
+- single-node (main, Qwen3.5-122B-A10B-W8A8-A3, linux-aarch64-a3-16-cn12-001, Qwen3.5-122B-A10B-W8A... / inputs.name || inputs.config_file_path || inputs.tests in 0s (ID 99130901218)
+- single-node (main, qwen3-32b-int8, linux-aarch64-a3-4-cn12-001, Qwen3-32B-Int8.yaml) / inputs.name || inputs.config_file_path || inputs.tests in 0s (ID 99130901348)
+- single-node (main, Qwen3-30B-QuaRot, linux-aarch64-a3-2-cn12-001, Qwen3-30B-QuaRot-eagle3.yaml) / inputs.name || inputs.config_file_path || inputs.tests in 0s (ID 99130901415)
+- single-node (main, glm-5.1-w8a8-prefill-mc2, linux-aarch64-a3-16-cn12-001, GLM-5.1-W8A8-PrefillMC... / inputs.name || inputs.config_file_path || inputs.tests in 0s (ID 99130901465)
+- single-node (main, qwen3-32b-bf16-gpqa-acc, linux-aarch64-a3-4-cn12-001, tests/e2e/nightly/test_q... / inputs.name || inputs.config_file_path || inputs.tests in 0s (ID 99130901467)
+- single-node (main, qwen3-30b-a3b-w8a8, linux-aarch64-a3-4-cn12-001, Qwen3-30B-A3B-W8A8.yaml) / inputs.name || inputs.config_file_path || inputs.tests in 0s (ID 99130901471)
+- single-node (main, deepseek-r1-0528-w8a8, linux-aarch64-a3-16-cn12-001, DeepSeek-R1-0528-W8A8.yaml) / inputs.name || inputs.config_file_path || inputs.tests in 0s (ID 99130901475)
+- single-node (main, Qwen3-30B-A3B-W4A8-llm-compressor, linux-aarch64-a3-2-cn12-001, Qwen3-30B-A3B-... / inputs.name || inputs.config_file_path || inputs.tests in 0s (ID 99130901487)
+- single-node (main, Qwen3-32B-QuaRot, linux-aarch64-a3-2-cn12-001, Qwen3-32B-QuaRot-eagle3.yaml) / inputs.name || inputs.config_file_path || inputs.tests in 0s (ID 99130901489)
+- single-node (main, mtpx-deepseek-r1-0528-w8a8, linux-aarch64-a3-16-cn12-001, MTPX-DeepSeek-R1-052... / inputs.name || inputs.config_file_path || inputs.tests in 0s (ID 99130901512)
+- single-node (main, qwen3-30b-acc, linux-aarch64-a3-4-cn12-001, tests/e2e/weekly/single_node/model... / inputs.name || inputs.config_file_path || inputs.tests in 0s (ID 99130901528)
+- single-node (main, qwen3-32b-w8a8-aime2024-acc, linux-aarch64-a3-4-cn12-001, tests/e2e/nightly/te... / inputs.name || inputs.config_file_path || inputs.tests in 0s (ID 99130901567)
+- single-node (main, qwen3-32b-int8-prefix-cache, linux-aarch64-a3-4-cn12-001, Prefix-Cache-Qwen3-3... / inputs.name || inputs.config_file_path || inputs.tests in 0s (ID 99130901608)
+- single-node (main, Qwen3-32B-W8A8C8-A3, linux-aarch64-a3-4-cn12-001, Qwen3-32B-W8A8C8-A3.yaml) / inputs.name || inputs.config_file_path || inputs.tests in 0s (ID 99130901708)
+X single-node (main, qwen3-vl-235b-a22b-instruct-w8a8, linux-aarch64-a3-16-cn12-001, Qwen3-VL-235B-... / qwen3-vl-235b-a22b-instruct-w8a8 in 19m1s (ID 99130901923)
+  ✓ Set up job
+  ✓ Initialize containers
+  ✓ Check npu and CANN info
+  ✓ uninstall vlm vllm-ascend and remove code (if pr test)
+  ✓ Checkout vllm-project/vllm-ascend repo
+  ✓ Move code to /vllm-workspace
+  ✓ Set MAX_JOBS based on runner
+  ✓ Install vllm-project/vllm-ascend
+  ✓ Install aisbench
+  ✓ Show vLLM and vLLM-Ascend version
+  ✓ Install clang
+  ✓ Validate Inputs
+  - Run Pytest (py-driven)
+  X Run Pytest (YAML-driven)
+  - Update good_table.csv on success
+  - Capture test result
+  - Classify failure
+  - Skip - env issue
+  - Check commit age
+  - Skip - old commit
+  - Process - recent real failure
+  - On success
+  ✓ Set benchmark artifact timestamp
+  ✓ Upload benchmark results
+  ✓ Upload benchmark results (GitHub Artifacts)
+  ✓ Post Checkout vllm-project/vllm-ascend repo
+  ✓ Stop containers
+  ✓ Complete job
+- single-node (main, Qwen3.5-397B-A17B-w8a8-mtp, linux-aarch64-a3-16-cn12-001, Qwen3.5-397B-A17B-W8... / inputs.name || inputs.config_file_path || inputs.tests (ID 99130902445)
+- single-node (main, deepseek-r1-0528-w8a8-prefix-cache, linux-aarch64-a3-16-cn12-001, Prefix-Cache... / inputs.name || inputs.config_file_path || inputs.tests (ID 99130902541)
+- single-node (main, MiniMax-M3-W8A8-A3, linux-aarch64-a3-16-cn12-001, MiniMax-M3-W8A8-A3.yaml) / inputs.name || inputs.config_file_path || inputs.tests (ID 99130902597)
+- single-node (main, glm-4.7-w8a8, linux-aarch64-a3-16-cn12-001, GLM-4.7.yaml) / inputs.name || inputs.config_file_path || inputs.tests (ID 99130902769)
+✓ Merge benchmark artifacts into nightly-a3-560t.zip in 13s (ID 99133244576)
+- Remove node taints in 0s (ID 99133245195)
+
+ANNOTATIONS
+! No files were found with the provided path: /vllm-workspace/vllm-ascend/benchmark_results/main-kimi-k2.5.json. No artifacts will be uploaded.
+single-node (main, kimi-k2.5, linux-aarch64-a3-16-cn12-001, Kimi-K2.5.yaml) / kimi-k2.5: .github#30
+
+! No files found for path: /vllm-workspace/vllm-ascend/benchmark_results/kimi-k2.5.json, skipping upload
+single-node (main, kimi-k2.5, linux-aarch64-a3-16-cn12-001, Kimi-K2.5.yaml) / kimi-k2.5: .github#255
+
+X Executing the custom container implementation failed. Please contact your self hosted runner administrator.
+single-node (main, kimi-k2.5, linux-aarch64-a3-16-cn12-001, Kimi-K2.5.yaml) / kimi-k2.5: .github#212
+
+X Process completed with exit code 1.
+single-node (main, kimi-k2.5, linux-aarch64-a3-16-cn12-001, Kimi-K2.5.yaml) / kimi-k2.5: .github#211
+
+X Error: failed to run script step: Error: command terminated with non-zero exit code: command terminated with exit code 1
+single-node (main, kimi-k2.5, linux-aarch64-a3-16-cn12-001, Kimi-K2.5.yaml) / kimi-k2.5: .github#210
+
+! No files were found with the provided path: /vllm-workspace/vllm-ascend/benchmark_results/main-qwen3-vl-235b-a22b-instruct-w8a8.json. No artifacts will be uploaded.
+single-node (main, qwen3-vl-235b-a22b-instruct-w8a8, linux-aarch64-a3-16-cn12-001, Qwen3-VL-235B-... / qwen3-vl-235b-a22b-instruct-w8a8: .github#30
+
+! No files found for path: /vllm-workspace/vllm-ascend/benchmark_results/qwen3-vl-235b-a22b-instruct-w8a8.json, skipping upload
+single-node (main, qwen3-vl-235b-a22b-instruct-w8a8, linux-aarch64-a3-16-cn12-001, Qwen3-VL-235B-... / qwen3-vl-235b-a22b-instruct-w8a8: .github#255
+
+X Executing the custom container implementation failed. Please contact your self hosted runner administrator.
+single-node (main, qwen3-vl-235b-a22b-instruct-w8a8, linux-aarch64-a3-16-cn12-001, Qwen3-VL-235B-... / qwen3-vl-235b-a22b-instruct-w8a8: .github#221
+
+X Process completed with exit code 1.
+single-node (main, qwen3-vl-235b-a22b-instruct-w8a8, linux-aarch64-a3-16-cn12-001, Qwen3-VL-235B-... / qwen3-vl-235b-a22b-instruct-w8a8: .github#220
+
+X Error: failed to run script step: Error: command terminated with non-zero exit code: command terminated with exit code 1
+single-node (main, qwen3-vl-235b-a22b-instruct-w8a8, linux-aarch64-a3-16-cn12-001, Qwen3-VL-235B-... / qwen3-vl-235b-a22b-instruct-w8a8: .github#219
+
+X No artifacts found matching pattern 'nightly-test-benchmark-results-*'
+Merge benchmark artifacts into nightly-a3-560t.zip: .github#13
+
+
+To see what failed, try: gh run view 33263835851 --log-failed
+View this run on GitHub: https://github.com/vllm-project/vllm-ascend/actions/runs/33263835851
+
+════════════════════════════════════════════
+ 失败 / 取消 Job 详情（共 2 个）
+════════════════════════════════════════════
+
+── [FAILURE] single-node (main, kimi-k2.5, linux-aarch64-a3-16-cn12-001, Kimi-K2.5.yaml) / kimi-k2.5
+   Runner : linux-aarch64-a3-16-cn12-001-8gkpq-runner-mwd8h
+   时间   : 2026-08-29T16:51:51Z ~ 2026-08-29T17:10:24Z
+   ── 运行时错误（高优先级）
+single-node (main, kimi-k2.5, linux-aarch64-a3-16-cn12-001, Kimi-K2.5.yaml) / kimi-k2.5	UNKNOWN STEP	2026-08-29T17:09:58.5380108Z >                       raise RuntimeError(f"Server at {node_ip} exited unexpectedly.") from None
+single-node (main, kimi-k2.5, linux-aarch64-a3-16-cn12-001, Kimi-K2.5.yaml) / kimi-k2.5	UNKNOWN STEP	2026-08-29T17:09:58.5380736Z E                       RuntimeError: Server at 0.0.0.0 exited unexpectedly.
+single-node (main, kimi-k2.5, linux-aarch64-a3-16-cn12-001, Kimi-K2.5.yaml) / kimi-k2.5	UNKNOWN STEP	2026-08-29T17:09:58.5381158Z tests/e2e/conftest.py:430: RuntimeError
+single-node (main, kimi-k2.5, linux-aarch64-a3-16-cn12-001, Kimi-K2.5.yaml) / kimi-k2.5	UNKNOWN STEP	2026-08-29T17:09:58.5392918Z FAILED tests/e2e/nightly/single_node/models/scripts/test_single_node.py::test_single_node[Kimi-K2.5-W4A8-Case] - RuntimeError: Server at 0.0.0.0 exited unexpectedly.
+single-node (main, kimi-k2.5, linux-aarch64-a3-16-cn12-001, Kimi-K2.5.yaml) / kimi-k2.5	UNKNOWN STEP	2026-08-29T17:10:01.2548968Z ##[error]Process completed with exit code 1.
+   ── 最后输出（定位失败阶段）
+
+── [FAILURE] single-node (main, qwen3-vl-235b-a22b-instruct-w8a8, linux-aarch64-a3-16-cn12-001, Qwen3-VL-235B-... / qwen3-vl-235b-a22b-instruct-w8a8
+   Runner : linux-aarch64-a3-16-cn12-001-8gkpq-runner-n7lmq
+   时间   : 2026-08-29T16:52:02Z ~ 2026-08-29T17:11:03Z
+   ── 运行时错误（高优先级）
+single-node (main, qwen3-vl-235b-a22b-instruct-w8a8, linux-aarch64-a3-16-cn12-001, Qwen3-VL-235B-... / qwen3-vl-235b-a22b-instruct-w8a8	UNKNOWN STEP	2026-08-29T17:10:37.3680849Z >                       raise RuntimeError(f"Server at {node_ip} exited unexpectedly.") from None
+single-node (main, qwen3-vl-235b-a22b-instruct-w8a8, linux-aarch64-a3-16-cn12-001, Qwen3-VL-235B-... / qwen3-vl-235b-a22b-instruct-w8a8	UNKNOWN STEP	2026-08-29T17:10:37.3681635Z E                       RuntimeError: Server at 0.0.0.0 exited unexpectedly.
+single-node (main, qwen3-vl-235b-a22b-instruct-w8a8, linux-aarch64-a3-16-cn12-001, Qwen3-VL-235B-... / qwen3-vl-235b-a22b-instruct-w8a8	UNKNOWN STEP	2026-08-29T17:10:37.3682100Z tests/e2e/conftest.py:430: RuntimeError
+single-node (main, qwen3-vl-235b-a22b-instruct-w8a8, linux-aarch64-a3-16-cn12-001, Qwen3-VL-235B-... / qwen3-vl-235b-a22b-instruct-w8a8	UNKNOWN STEP	2026-08-29T17:10:37.3692619Z FAILED tests/e2e/nightly/single_node/models/scripts/test_single_node.py::test_single_node[Qwen3-VL-235B-A22B-Instruct-W8A8] - RuntimeError: Server at 0.0.0.0 exited unexpectedly.
+single-node (main, qwen3-vl-235b-a22b-instruct-w8a8, linux-aarch64-a3-16-cn12-001, Qwen3-VL-235B-... / qwen3-vl-235b-a22b-instruct-w8a8	UNKNOWN STEP	2026-08-29T17:10:40.0968081Z ##[error]Process completed with exit code 1.
+   ── 最后输出（定位失败阶段）
+
+════════════════════════════════════════════
+ 补充命令（按需使用）：
+   完整日志 : gh run view --job <id> --log --repo vllm-project/vllm-ascend
+   PR diff  : gh pr diff <pr> --repo vllm-project/vllm-ascend --name-only
+   kubectl  : kubectl get pods --all-namespaces | grep <runner_name>
+════════════════════════════════════════════

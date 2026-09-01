@@ -1,0 +1,116 @@
+════════════════════════════════════════════
+ Run 33261091135 | vllm-project/vllm-ascend
+════════════════════════════════════════════
+
+X main Weekly-A2 · 33261091135
+Triggered via workflow_dispatch about 2 days ago
+
+JOBS
+✓ Parse trigger and determine test scope in 11s (ID 99123056347)
+- Build weekly-a2 image (ID 99123056959)
+✓ Merge benchmark artifacts into weekly-a2.zip in 11s (ID 99123129586)
+✓ Export global env vars as job outputs in 3m19s (ID 99123129592)
+✓ clear-pre-logs in 7s (ID 99123129596)
+X single-node-accuracy-tests (main, accuracy-group-2, linux-aarch64-a2b3-1, ERNIE-4.5-21B-A3B-PT, M... / [
+  "ERNIE-4.5-21B-A3B-PT",
+  "Molmo-7B-D-0924",
+  "Llama-3.2-3B-Instruct"
+] accuracy test in 13m7s (ID 99123569481)
+  ✓ Set up job
+  ✓ Initialize containers
+  ✓ Check npu and CANN info
+  - Uninstall vllm and remove code (if pr test)
+  - Checkout vllm-project/vllm-ascend repo
+  - Move vllm-ascend code to /vllm-workspace
+  ✓ Set MAX_JOBS based on runner
+  - Install vllm-project/vllm-ascend
+  ✓ Install tensorflow (for Molmo-7B-D-0924)
+  ✓ Get vLLM commit hash and URL
+  ✓ Get vLLM-Ascend commit hash and URL
+  ✓ Collect version info
+  ✓ Compute effective model list
+  X Run vllm-project/vllm-ascend accuracy test
+  X Generate step summary
+  - Set artifact timestamp
+  - Upload Report
+  - Upload Report (GitHub Artifacts)
+  ✓ Stop containers
+  ✓ Complete job
+- single-node-accuracy-tests-pr-only (ID 99123569898)
+
+ANNOTATIONS
+X No artifacts found matching pattern 'nightly-test-benchmark-results-*'
+Merge benchmark artifacts into weekly-a2.zip: .github#14
+
+X Executing the custom container implementation failed. Please contact your self hosted runner administrator.
+single-node-accuracy-tests (main, accuracy-group-2, linux-aarch64-a2b3-1, ERNIE-4.5-21B-A3B-PT, M... / [
+  "ERNIE-4.5-21B-A3B-PT",
+  "Molmo-7B-D-0924",
+  "Llama-3.2-3B-Instruct"
+] accuracy test: .github#31
+
+X Process completed with exit code 1.
+single-node-accuracy-tests (main, accuracy-group-2, linux-aarch64-a2b3-1, ERNIE-4.5-21B-A3B-PT, M... / [
+  "ERNIE-4.5-21B-A3B-PT",
+  "Molmo-7B-D-0924",
+  "Llama-3.2-3B-Instruct"
+] accuracy test: .github#30
+
+X Error: failed to run script step: Error: command terminated with non-zero exit code: command terminated with exit code 1
+single-node-accuracy-tests (main, accuracy-group-2, linux-aarch64-a2b3-1, ERNIE-4.5-21B-A3B-PT, M... / [
+  "ERNIE-4.5-21B-A3B-PT",
+  "Molmo-7B-D-0924",
+  "Llama-3.2-3B-Instruct"
+] accuracy test: .github#29
+
+X Executing the custom container implementation failed. Please contact your self hosted runner administrator.
+single-node-accuracy-tests (main, accuracy-group-2, linux-aarch64-a2b3-1, ERNIE-4.5-21B-A3B-PT, M... / [
+  "ERNIE-4.5-21B-A3B-PT",
+  "Molmo-7B-D-0924",
+  "Llama-3.2-3B-Instruct"
+] accuracy test: .github#177
+
+X Process completed with exit code 1.
+single-node-accuracy-tests (main, accuracy-group-2, linux-aarch64-a2b3-1, ERNIE-4.5-21B-A3B-PT, M... / [
+  "ERNIE-4.5-21B-A3B-PT",
+  "Molmo-7B-D-0924",
+  "Llama-3.2-3B-Instruct"
+] accuracy test: .github#176
+
+X Error: failed to run script step: Error: command terminated with non-zero exit code: command terminated with exit code 1
+single-node-accuracy-tests (main, accuracy-group-2, linux-aarch64-a2b3-1, ERNIE-4.5-21B-A3B-PT, M... / [
+  "ERNIE-4.5-21B-A3B-PT",
+  "Molmo-7B-D-0924",
+  "Llama-3.2-3B-Instruct"
+] accuracy test: .github#175
+
+
+To see what failed, try: gh run view 33261091135 --log-failed
+View this run on GitHub: https://github.com/vllm-project/vllm-ascend/actions/runs/33261091135
+
+════════════════════════════════════════════
+ 失败 / 取消 Job 详情（共 1 个）
+════════════════════════════════════════════
+
+── [FAILURE] single-node-accuracy-tests (main, accuracy-group-2, linux-aarch64-a2b3-1, ERNIE-4.5-21B-A3B-PT, M... / [
+  "ERNIE-4.5-21B-A3B-PT",
+  "Molmo-7B-D-0924",
+  "Llama-3.2-3B-Instruct"
+] accuracy test
+   Runner : linux-aarch64-a2b3-1-zkrjh-runner-g77b8
+   时间   : 2026-08-29T15:49:45Z ~ 2026-08-29T16:02:52Z
+   ── 运行时错误（高优先级）
+] accuracy test	UNKNOWN STEP	2026-08-29T16:02:38.6228911Z ##[error]Process completed with exit code 1.
+] accuracy test	UNKNOWN STEP	2026-08-29T16:02:40.3499872Z ##[error]Process completed with exit code 1.
+   ── 编译/安装错误（次优先级）
+] accuracy test	UNKNOWN STEP	2026-08-29T16:01:00.9650989Z ERROR: pip's dependency resolver does not currently take into account all the packages that are installed. This behaviour is the source of the following dependency conflicts.
+] accuracy test	UNKNOWN STEP	2026-08-29T16:02:38.6102553Z ##[error]Error: failed to run script step: Error: command terminated with non-zero exit code: command terminated with exit code 1
+] accuracy test	UNKNOWN STEP	2026-08-29T16:02:40.3260882Z ##[error]Error: failed to run script step: Error: command terminated with non-zero exit code: command terminated with exit code 1
+   ── 最后输出（定位失败阶段）
+
+════════════════════════════════════════════
+ 补充命令（按需使用）：
+   完整日志 : gh run view --job <id> --log --repo vllm-project/vllm-ascend
+   PR diff  : gh pr diff <pr> --repo vllm-project/vllm-ascend --name-only
+   kubectl  : kubectl get pods --all-namespaces | grep <runner_name>
+════════════════════════════════════════════

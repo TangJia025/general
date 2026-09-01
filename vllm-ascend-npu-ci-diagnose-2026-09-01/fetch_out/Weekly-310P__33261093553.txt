@@ -1,0 +1,355 @@
+════════════════════════════════════════════
+ Run 33261093553 | vllm-project/vllm-ascend
+════════════════════════════════════════════
+
+X main Weekly-310P · 33261093553
+Triggered via workflow_dispatch about 2 days ago
+
+JOBS
+✓ Parse trigger and determine test scope in 4s (ID 99123063092)
+- Build weekly-310p image in 0s (ID 99123063784)
+✓ Export global env vars as job outputs in 10s (ID 99123075734)
+X single-node (main, Qwen3.6-35B-A3B-w8a8, linux-aarch64-310p-4, Qwen3.6-35B-W8A8-310P-300I-DUO.yaml) / Qwen3.6-35B-A3B-w8a8 in 7m31s (ID 99123105352)
+  ✓ Set up job
+  ✓ Initialize containers
+  ✓ Check npu and CANN info
+  - uninstall vlm vllm-ascend and remove code (if pr test)
+  - Checkout vllm-project/vllm-ascend repo
+  - Move code to /vllm-workspace
+  ✓ Set MAX_JOBS based on runner
+  - Install vllm-project/vllm-ascend
+  ✓ Uninstall Triton for 310P tests
+  - Install aisbench
+  ✓ Show vLLM and vLLM-Ascend version
+  ✓ Install clang
+  ✓ Validate Inputs
+  - Run Pytest (py-driven)
+  X Run Pytest (YAML-driven)
+  - Update good_table.csv on success
+  - Capture test result
+  - Classify failure
+  - Skip - env issue
+  - Check commit age
+  - Skip - old commit
+  - Process - recent real failure
+  - On success
+  ✓ Set benchmark artifact timestamp
+  ✓ Upload benchmark results
+  ✓ Upload benchmark results (GitHub Artifacts)
+  ✓ Stop containers
+  ✓ Complete job
+X single-node (main, Qwen3-14B-w8a8sc-310p, linux-aarch64-310p-4, Qwen3-14B-w8a8sc-310p.yaml) / Qwen3-14B-w8a8sc-310p in 7m57s (ID 99123105389)
+  ✓ Set up job
+  ✓ Initialize containers
+  ✓ Check npu and CANN info
+  - uninstall vlm vllm-ascend and remove code (if pr test)
+  - Checkout vllm-project/vllm-ascend repo
+  - Move code to /vllm-workspace
+  ✓ Set MAX_JOBS based on runner
+  - Install vllm-project/vllm-ascend
+  ✓ Uninstall Triton for 310P tests
+  - Install aisbench
+  ✓ Show vLLM and vLLM-Ascend version
+  ✓ Install clang
+  ✓ Validate Inputs
+  - Run Pytest (py-driven)
+  X Run Pytest (YAML-driven)
+  - Update good_table.csv on success
+  - Capture test result
+  - Classify failure
+  - Skip - env issue
+  - Check commit age
+  - Skip - old commit
+  - Process - recent real failure
+  - On success
+  ✓ Set benchmark artifact timestamp
+  ✓ Upload benchmark results
+  ✓ Upload benchmark results (GitHub Artifacts)
+  ✓ Stop containers
+  ✓ Complete job
+X single-node (main, Qwen3-8B-w8a8sc-310p, linux-aarch64-310p-4, Qwen3-8B-w8a8sc-310p.yaml) / Qwen3-8B-w8a8sc-310p in 5m16s (ID 99123105404)
+  ✓ Set up job
+  ✓ Initialize containers
+  ✓ Check npu and CANN info
+  - uninstall vlm vllm-ascend and remove code (if pr test)
+  - Checkout vllm-project/vllm-ascend repo
+  - Move code to /vllm-workspace
+  ✓ Set MAX_JOBS based on runner
+  - Install vllm-project/vllm-ascend
+  ✓ Uninstall Triton for 310P tests
+  - Install aisbench
+  ✓ Show vLLM and vLLM-Ascend version
+  ✓ Install clang
+  ✓ Validate Inputs
+  - Run Pytest (py-driven)
+  X Run Pytest (YAML-driven)
+  - Update good_table.csv on success
+  - Capture test result
+  - Classify failure
+  - Skip - env issue
+  - Check commit age
+  - Skip - old commit
+  - Process - recent real failure
+  - On success
+  ✓ Set benchmark artifact timestamp
+  ✓ Upload benchmark results
+  ✓ Upload benchmark results (GitHub Artifacts)
+  ✓ Stop containers
+  ✓ Complete job
+X single-node (main, Qwen3.6-35B-A3B-w8a8-310p-MTP, linux-aarch64-310p-4, Qwen3.6-35B-A3B-w8a8-310p... / Qwen3.6-35B-A3B-w8a8-310p-MTP in 4m42s (ID 99123105405)
+  ✓ Set up job
+  ✓ Initialize containers
+  ✓ Check npu and CANN info
+  - uninstall vlm vllm-ascend and remove code (if pr test)
+  - Checkout vllm-project/vllm-ascend repo
+  - Move code to /vllm-workspace
+  ✓ Set MAX_JOBS based on runner
+  - Install vllm-project/vllm-ascend
+  ✓ Uninstall Triton for 310P tests
+  - Install aisbench
+  ✓ Show vLLM and vLLM-Ascend version
+  ✓ Install clang
+  ✓ Validate Inputs
+  - Run Pytest (py-driven)
+  X Run Pytest (YAML-driven)
+  - Update good_table.csv on success
+  - Capture test result
+  - Classify failure
+  - Skip - env issue
+  - Check commit age
+  - Skip - old commit
+  - Process - recent real failure
+  - On success
+  ✓ Set benchmark artifact timestamp
+  ✓ Upload benchmark results
+  ✓ Upload benchmark results (GitHub Artifacts)
+  ✓ Stop containers
+  ✓ Complete job
+X single-node (main, Qwen3-32B-w8a8sc-310p, linux-aarch64-310p-4, Qwen3-32B-w8a8sc-310p.yaml) / Qwen3-32B-w8a8sc-310p in 7m14s (ID 99123105413)
+  ✓ Set up job
+  ✓ Initialize containers
+  ✓ Check npu and CANN info
+  - uninstall vlm vllm-ascend and remove code (if pr test)
+  - Checkout vllm-project/vllm-ascend repo
+  - Move code to /vllm-workspace
+  ✓ Set MAX_JOBS based on runner
+  - Install vllm-project/vllm-ascend
+  ✓ Uninstall Triton for 310P tests
+  - Install aisbench
+  ✓ Show vLLM and vLLM-Ascend version
+  ✓ Install clang
+  ✓ Validate Inputs
+  - Run Pytest (py-driven)
+  X Run Pytest (YAML-driven)
+  - Update good_table.csv on success
+  - Capture test result
+  - Classify failure
+  - Skip - env issue
+  - Check commit age
+  - Skip - old commit
+  - Process - recent real failure
+  - On success
+  ✓ Set benchmark artifact timestamp
+  ✓ Upload benchmark results
+  ✓ Upload benchmark results (GitHub Artifacts)
+  ✓ Stop containers
+  ✓ Complete job
+X single-node (main, Qwen3.6-27B-W8A8, linux-aarch64-310p-2, Qwen3.6-27B-W8A8-310P-300I-DUO.yaml) / Qwen3.6-27B-W8A8 in 7m44s (ID 99123105437)
+  ✓ Set up job
+  ✓ Initialize containers
+  ✓ Check npu and CANN info
+  - uninstall vlm vllm-ascend and remove code (if pr test)
+  - Checkout vllm-project/vllm-ascend repo
+  - Move code to /vllm-workspace
+  ✓ Set MAX_JOBS based on runner
+  - Install vllm-project/vllm-ascend
+  ✓ Uninstall Triton for 310P tests
+  - Install aisbench
+  ✓ Show vLLM and vLLM-Ascend version
+  ✓ Install clang
+  ✓ Validate Inputs
+  - Run Pytest (py-driven)
+  X Run Pytest (YAML-driven)
+  - Update good_table.csv on success
+  - Capture test result
+  - Classify failure
+  - Skip - env issue
+  - Check commit age
+  - Skip - old commit
+  - Process - recent real failure
+  - On success
+  ✓ Set benchmark artifact timestamp
+  ✓ Upload benchmark results
+  ✓ Upload benchmark results (GitHub Artifacts)
+  ✓ Stop containers
+  ✓ Complete job
+✓ Merge benchmark artifacts into weekly-310p.zip in 4s (ID 99124595024)
+
+ANNOTATIONS
+! No files were found with the provided path: /vllm-workspace/vllm-ascend/benchmark_results/main-Qwen3.6-35B-A3B-w8a8.json. No artifacts will be uploaded.
+single-node (main, Qwen3.6-35B-A3B-w8a8, linux-aarch64-310p-4, Qwen3.6-35B-W8A8-310P-300I-DUO.yaml) / Qwen3.6-35B-A3B-w8a8: .github#30
+
+! No files found for path: /vllm-workspace/vllm-ascend/benchmark_results/Qwen3.6-35B-A3B-w8a8.json, skipping upload
+single-node (main, Qwen3.6-35B-A3B-w8a8, linux-aarch64-310p-4, Qwen3.6-35B-W8A8-310P-300I-DUO.yaml) / Qwen3.6-35B-A3B-w8a8: .github#255
+
+X Executing the custom container implementation failed. Please contact your self hosted runner administrator.
+single-node (main, Qwen3.6-35B-A3B-w8a8, linux-aarch64-310p-4, Qwen3.6-35B-W8A8-310P-300I-DUO.yaml) / Qwen3.6-35B-A3B-w8a8: .github#82
+
+X Process completed with exit code 1.
+single-node (main, Qwen3.6-35B-A3B-w8a8, linux-aarch64-310p-4, Qwen3.6-35B-W8A8-310P-300I-DUO.yaml) / Qwen3.6-35B-A3B-w8a8: .github#81
+
+X Error: failed to run script step: Error: command terminated with non-zero exit code: command terminated with exit code 2
+single-node (main, Qwen3.6-35B-A3B-w8a8, linux-aarch64-310p-4, Qwen3.6-35B-W8A8-310P-300I-DUO.yaml) / Qwen3.6-35B-A3B-w8a8: .github#80
+
+! No files were found with the provided path: /vllm-workspace/vllm-ascend/benchmark_results/main-Qwen3-14B-w8a8sc-310p.json. No artifacts will be uploaded.
+single-node (main, Qwen3-14B-w8a8sc-310p, linux-aarch64-310p-4, Qwen3-14B-w8a8sc-310p.yaml) / Qwen3-14B-w8a8sc-310p: .github#30
+
+! No files found for path: /vllm-workspace/vllm-ascend/benchmark_results/Qwen3-14B-w8a8sc-310p.json, skipping upload
+single-node (main, Qwen3-14B-w8a8sc-310p, linux-aarch64-310p-4, Qwen3-14B-w8a8sc-310p.yaml) / Qwen3-14B-w8a8sc-310p: .github#255
+
+X Executing the custom container implementation failed. Please contact your self hosted runner administrator.
+single-node (main, Qwen3-14B-w8a8sc-310p, linux-aarch64-310p-4, Qwen3-14B-w8a8sc-310p.yaml) / Qwen3-14B-w8a8sc-310p: .github#82
+
+X Process completed with exit code 1.
+single-node (main, Qwen3-14B-w8a8sc-310p, linux-aarch64-310p-4, Qwen3-14B-w8a8sc-310p.yaml) / Qwen3-14B-w8a8sc-310p: .github#81
+
+X Error: failed to run script step: Error: command terminated with non-zero exit code: command terminated with exit code 2
+single-node (main, Qwen3-14B-w8a8sc-310p, linux-aarch64-310p-4, Qwen3-14B-w8a8sc-310p.yaml) / Qwen3-14B-w8a8sc-310p: .github#80
+
+! No files were found with the provided path: /vllm-workspace/vllm-ascend/benchmark_results/main-Qwen3-8B-w8a8sc-310p.json. No artifacts will be uploaded.
+single-node (main, Qwen3-8B-w8a8sc-310p, linux-aarch64-310p-4, Qwen3-8B-w8a8sc-310p.yaml) / Qwen3-8B-w8a8sc-310p: .github#30
+
+! No files found for path: /vllm-workspace/vllm-ascend/benchmark_results/Qwen3-8B-w8a8sc-310p.json, skipping upload
+single-node (main, Qwen3-8B-w8a8sc-310p, linux-aarch64-310p-4, Qwen3-8B-w8a8sc-310p.yaml) / Qwen3-8B-w8a8sc-310p: .github#255
+
+X Executing the custom container implementation failed. Please contact your self hosted runner administrator.
+single-node (main, Qwen3-8B-w8a8sc-310p, linux-aarch64-310p-4, Qwen3-8B-w8a8sc-310p.yaml) / Qwen3-8B-w8a8sc-310p: .github#82
+
+X Process completed with exit code 1.
+single-node (main, Qwen3-8B-w8a8sc-310p, linux-aarch64-310p-4, Qwen3-8B-w8a8sc-310p.yaml) / Qwen3-8B-w8a8sc-310p: .github#81
+
+X Error: failed to run script step: Error: command terminated with non-zero exit code: command terminated with exit code 2
+single-node (main, Qwen3-8B-w8a8sc-310p, linux-aarch64-310p-4, Qwen3-8B-w8a8sc-310p.yaml) / Qwen3-8B-w8a8sc-310p: .github#80
+
+! No files were found with the provided path: /vllm-workspace/vllm-ascend/benchmark_results/main-Qwen3.6-35B-A3B-w8a8-310p-MTP.json. No artifacts will be uploaded.
+single-node (main, Qwen3.6-35B-A3B-w8a8-310p-MTP, linux-aarch64-310p-4, Qwen3.6-35B-A3B-w8a8-310p... / Qwen3.6-35B-A3B-w8a8-310p-MTP: .github#30
+
+! No files found for path: /vllm-workspace/vllm-ascend/benchmark_results/Qwen3.6-35B-A3B-w8a8-310p-MTP.json, skipping upload
+single-node (main, Qwen3.6-35B-A3B-w8a8-310p-MTP, linux-aarch64-310p-4, Qwen3.6-35B-A3B-w8a8-310p... / Qwen3.6-35B-A3B-w8a8-310p-MTP: .github#255
+
+X Executing the custom container implementation failed. Please contact your self hosted runner administrator.
+single-node (main, Qwen3.6-35B-A3B-w8a8-310p-MTP, linux-aarch64-310p-4, Qwen3.6-35B-A3B-w8a8-310p... / Qwen3.6-35B-A3B-w8a8-310p-MTP: .github#82
+
+X Process completed with exit code 1.
+single-node (main, Qwen3.6-35B-A3B-w8a8-310p-MTP, linux-aarch64-310p-4, Qwen3.6-35B-A3B-w8a8-310p... / Qwen3.6-35B-A3B-w8a8-310p-MTP: .github#81
+
+X Error: failed to run script step: Error: command terminated with non-zero exit code: command terminated with exit code 2
+single-node (main, Qwen3.6-35B-A3B-w8a8-310p-MTP, linux-aarch64-310p-4, Qwen3.6-35B-A3B-w8a8-310p... / Qwen3.6-35B-A3B-w8a8-310p-MTP: .github#80
+
+! No files were found with the provided path: /vllm-workspace/vllm-ascend/benchmark_results/main-Qwen3-32B-w8a8sc-310p.json. No artifacts will be uploaded.
+single-node (main, Qwen3-32B-w8a8sc-310p, linux-aarch64-310p-4, Qwen3-32B-w8a8sc-310p.yaml) / Qwen3-32B-w8a8sc-310p: .github#30
+
+! No files found for path: /vllm-workspace/vllm-ascend/benchmark_results/Qwen3-32B-w8a8sc-310p.json, skipping upload
+single-node (main, Qwen3-32B-w8a8sc-310p, linux-aarch64-310p-4, Qwen3-32B-w8a8sc-310p.yaml) / Qwen3-32B-w8a8sc-310p: .github#255
+
+X Executing the custom container implementation failed. Please contact your self hosted runner administrator.
+single-node (main, Qwen3-32B-w8a8sc-310p, linux-aarch64-310p-4, Qwen3-32B-w8a8sc-310p.yaml) / Qwen3-32B-w8a8sc-310p: .github#82
+
+X Process completed with exit code 1.
+single-node (main, Qwen3-32B-w8a8sc-310p, linux-aarch64-310p-4, Qwen3-32B-w8a8sc-310p.yaml) / Qwen3-32B-w8a8sc-310p: .github#81
+
+X Error: failed to run script step: Error: command terminated with non-zero exit code: command terminated with exit code 2
+single-node (main, Qwen3-32B-w8a8sc-310p, linux-aarch64-310p-4, Qwen3-32B-w8a8sc-310p.yaml) / Qwen3-32B-w8a8sc-310p: .github#80
+
+! No files were found with the provided path: /vllm-workspace/vllm-ascend/benchmark_results/main-Qwen3.6-27B-W8A8.json. No artifacts will be uploaded.
+single-node (main, Qwen3.6-27B-W8A8, linux-aarch64-310p-2, Qwen3.6-27B-W8A8-310P-300I-DUO.yaml) / Qwen3.6-27B-W8A8: .github#30
+
+! No files found for path: /vllm-workspace/vllm-ascend/benchmark_results/Qwen3.6-27B-W8A8.json, skipping upload
+single-node (main, Qwen3.6-27B-W8A8, linux-aarch64-310p-2, Qwen3.6-27B-W8A8-310P-300I-DUO.yaml) / Qwen3.6-27B-W8A8: .github#255
+
+X Executing the custom container implementation failed. Please contact your self hosted runner administrator.
+single-node (main, Qwen3.6-27B-W8A8, linux-aarch64-310p-2, Qwen3.6-27B-W8A8-310P-300I-DUO.yaml) / Qwen3.6-27B-W8A8: .github#82
+
+X Process completed with exit code 1.
+single-node (main, Qwen3.6-27B-W8A8, linux-aarch64-310p-2, Qwen3.6-27B-W8A8-310P-300I-DUO.yaml) / Qwen3.6-27B-W8A8: .github#81
+
+X Error: failed to run script step: Error: command terminated with non-zero exit code: command terminated with exit code 2
+single-node (main, Qwen3.6-27B-W8A8, linux-aarch64-310p-2, Qwen3.6-27B-W8A8-310P-300I-DUO.yaml) / Qwen3.6-27B-W8A8: .github#80
+
+X No artifacts found matching pattern 'nightly-test-benchmark-results-*'
+Merge benchmark artifacts into weekly-310p.zip: .github#13
+
+
+To see what failed, try: gh run view 33261093553 --log-failed
+View this run on GitHub: https://github.com/vllm-project/vllm-ascend/actions/runs/33261093553
+
+════════════════════════════════════════════
+ 失败 / 取消 Job 详情（共 6 个）
+════════════════════════════════════════════
+
+── [FAILURE] single-node (main, Qwen3.6-35B-A3B-w8a8, linux-aarch64-310p-4, Qwen3.6-35B-W8A8-310P-300I-DUO.yaml) / Qwen3.6-35B-A3B-w8a8
+   Runner : linux-aarch64-310p-4-txxhn-runner-mwmwm
+   时间   : 2026-08-29T15:45:54Z ~ 2026-08-29T15:53:25Z
+   ── 运行时错误（高优先级）
+single-node (main, Qwen3.6-35B-A3B-w8a8, linux-aarch64-310p-4, Qwen3.6-35B-W8A8-310P-300I-DUO.yaml) / Qwen3.6-35B-A3B-w8a8	UNKNOWN STEP	2026-08-29T15:53:01.1571059Z ##[error]Process completed with exit code 1.
+   ── 编译/安装错误（次优先级）
+single-node (main, Qwen3.6-35B-A3B-w8a8, linux-aarch64-310p-4, Qwen3.6-35B-W8A8-310P-300I-DUO.yaml) / Qwen3.6-35B-A3B-w8a8	UNKNOWN STEP	2026-08-29T15:53:01.1459819Z ##[error]Error: failed to run script step: Error: command terminated with non-zero exit code: command terminated with exit code 2
+single-node (main, Qwen3.6-35B-A3B-w8a8, linux-aarch64-310p-4, Qwen3.6-35B-W8A8-310P-300I-DUO.yaml) / Qwen3.6-35B-A3B-w8a8	UNKNOWN STEP	2026-08-29T15:53:12.3352685Z ^[[36;1m    echo "::error::Upload failed. See log:"^[[0m
+   ── 最后输出（定位失败阶段）
+
+── [FAILURE] single-node (main, Qwen3-14B-w8a8sc-310p, linux-aarch64-310p-4, Qwen3-14B-w8a8sc-310p.yaml) / Qwen3-14B-w8a8sc-310p
+   Runner : linux-aarch64-310p-4-txxhn-runner-spljs
+   时间   : 2026-08-29T15:50:22Z ~ 2026-08-29T15:58:19Z
+   ── 运行时错误（高优先级）
+single-node (main, Qwen3-14B-w8a8sc-310p, linux-aarch64-310p-4, Qwen3-14B-w8a8sc-310p.yaml) / Qwen3-14B-w8a8sc-310p	UNKNOWN STEP	2026-08-29T15:57:56.0108664Z ##[error]Process completed with exit code 1.
+   ── 编译/安装错误（次优先级）
+single-node (main, Qwen3-14B-w8a8sc-310p, linux-aarch64-310p-4, Qwen3-14B-w8a8sc-310p.yaml) / Qwen3-14B-w8a8sc-310p	UNKNOWN STEP	2026-08-29T15:57:56.0016294Z ##[error]Error: failed to run script step: Error: command terminated with non-zero exit code: command terminated with exit code 2
+single-node (main, Qwen3-14B-w8a8sc-310p, linux-aarch64-310p-4, Qwen3-14B-w8a8sc-310p.yaml) / Qwen3-14B-w8a8sc-310p	UNKNOWN STEP	2026-08-29T15:58:07.8247905Z ^[[36;1m    echo "::error::Upload failed. See log:"^[[0m
+   ── 最后输出（定位失败阶段）
+
+── [FAILURE] single-node (main, Qwen3-8B-w8a8sc-310p, linux-aarch64-310p-4, Qwen3-8B-w8a8sc-310p.yaml) / Qwen3-8B-w8a8sc-310p
+   Runner : linux-aarch64-310p-4-txxhn-runner-2zwzk
+   时间   : 2026-08-29T15:49:44Z ~ 2026-08-29T15:55:00Z
+   ── 运行时错误（高优先级）
+single-node (main, Qwen3-8B-w8a8sc-310p, linux-aarch64-310p-4, Qwen3-8B-w8a8sc-310p.yaml) / Qwen3-8B-w8a8sc-310p	UNKNOWN STEP	2026-08-29T15:54:39.7439345Z ##[error]Process completed with exit code 1.
+   ── 编译/安装错误（次优先级）
+single-node (main, Qwen3-8B-w8a8sc-310p, linux-aarch64-310p-4, Qwen3-8B-w8a8sc-310p.yaml) / Qwen3-8B-w8a8sc-310p	UNKNOWN STEP	2026-08-29T15:54:39.7338158Z ##[error]Error: failed to run script step: Error: command terminated with non-zero exit code: command terminated with exit code 2
+single-node (main, Qwen3-8B-w8a8sc-310p, linux-aarch64-310p-4, Qwen3-8B-w8a8sc-310p.yaml) / Qwen3-8B-w8a8sc-310p	UNKNOWN STEP	2026-08-29T15:54:48.5363970Z ^[[36;1m    echo "::error::Upload failed. See log:"^[[0m
+   ── 最后输出（定位失败阶段）
+
+── [FAILURE] single-node (main, Qwen3.6-35B-A3B-w8a8-310p-MTP, linux-aarch64-310p-4, Qwen3.6-35B-A3B-w8a8-310p... / Qwen3.6-35B-A3B-w8a8-310p-MTP
+   Runner : linux-aarch64-310p-4-txxhn-runner-cgssp
+   时间   : 2026-08-29T15:49:34Z ~ 2026-08-29T15:54:16Z
+   ── 运行时错误（高优先级）
+single-node (main, Qwen3.6-35B-A3B-w8a8-310p-MTP, linux-aarch64-310p-4, Qwen3.6-35B-A3B-w8a8-310p... / Qwen3.6-35B-A3B-w8a8-310p-MTP	UNKNOWN STEP	2026-08-29T15:53:55.1270471Z ##[error]Process completed with exit code 1.
+   ── 编译/安装错误（次优先级）
+single-node (main, Qwen3.6-35B-A3B-w8a8-310p-MTP, linux-aarch64-310p-4, Qwen3.6-35B-A3B-w8a8-310p... / Qwen3.6-35B-A3B-w8a8-310p-MTP	UNKNOWN STEP	2026-08-29T15:53:55.1161205Z ##[error]Error: failed to run script step: Error: command terminated with non-zero exit code: command terminated with exit code 2
+single-node (main, Qwen3.6-35B-A3B-w8a8-310p-MTP, linux-aarch64-310p-4, Qwen3.6-35B-A3B-w8a8-310p... / Qwen3.6-35B-A3B-w8a8-310p-MTP	UNKNOWN STEP	2026-08-29T15:54:04.5316788Z ^[[36;1m    echo "::error::Upload failed. See log:"^[[0m
+   ── 最后输出（定位失败阶段）
+
+── [FAILURE] single-node (main, Qwen3-32B-w8a8sc-310p, linux-aarch64-310p-4, Qwen3-32B-w8a8sc-310p.yaml) / Qwen3-32B-w8a8sc-310p
+   Runner : linux-aarch64-310p-4-txxhn-runner-nlwwb
+   时间   : 2026-08-29T15:50:32Z ~ 2026-08-29T15:57:46Z
+   ── 运行时错误（高优先级）
+single-node (main, Qwen3-32B-w8a8sc-310p, linux-aarch64-310p-4, Qwen3-32B-w8a8sc-310p.yaml) / Qwen3-32B-w8a8sc-310p	UNKNOWN STEP	2026-08-29T15:57:22.2240874Z ##[error]Process completed with exit code 1.
+   ── 编译/安装错误（次优先级）
+single-node (main, Qwen3-32B-w8a8sc-310p, linux-aarch64-310p-4, Qwen3-32B-w8a8sc-310p.yaml) / Qwen3-32B-w8a8sc-310p	UNKNOWN STEP	2026-08-29T15:57:22.2109019Z ##[error]Error: failed to run script step: Error: command terminated with non-zero exit code: command terminated with exit code 2
+single-node (main, Qwen3-32B-w8a8sc-310p, linux-aarch64-310p-4, Qwen3-32B-w8a8sc-310p.yaml) / Qwen3-32B-w8a8sc-310p	UNKNOWN STEP	2026-08-29T15:57:33.6936214Z ^[[36;1m    echo "::error::Upload failed. See log:"^[[0m
+   ── 最后输出（定位失败阶段）
+
+── [FAILURE] single-node (main, Qwen3.6-27B-W8A8, linux-aarch64-310p-2, Qwen3.6-27B-W8A8-310P-300I-DUO.yaml) / Qwen3.6-27B-W8A8
+   Runner : linux-aarch64-310p-2-jk67d-runner-hjjv4
+   时间   : 2026-08-29T15:45:57Z ~ 2026-08-29T15:53:41Z
+   ── 运行时错误（高优先级）
+single-node (main, Qwen3.6-27B-W8A8, linux-aarch64-310p-2, Qwen3.6-27B-W8A8-310P-300I-DUO.yaml) / Qwen3.6-27B-W8A8	UNKNOWN STEP	2026-08-29T15:53:21.2697354Z ##[error]Process completed with exit code 1.
+   ── 编译/安装错误（次优先级）
+single-node (main, Qwen3.6-27B-W8A8, linux-aarch64-310p-2, Qwen3.6-27B-W8A8-310P-300I-DUO.yaml) / Qwen3.6-27B-W8A8	UNKNOWN STEP	2026-08-29T15:53:21.2598046Z ##[error]Error: failed to run script step: Error: command terminated with non-zero exit code: command terminated with exit code 2
+single-node (main, Qwen3.6-27B-W8A8, linux-aarch64-310p-2, Qwen3.6-27B-W8A8-310P-300I-DUO.yaml) / Qwen3.6-27B-W8A8	UNKNOWN STEP	2026-08-29T15:53:29.1485203Z ^[[36;1m    echo "::error::Upload failed. See log:"^[[0m
+   ── 最后输出（定位失败阶段）
+
+════════════════════════════════════════════
+ 补充命令（按需使用）：
+   完整日志 : gh run view --job <id> --log --repo vllm-project/vllm-ascend
+   PR diff  : gh pr diff <pr> --repo vllm-project/vllm-ascend --name-only
+   kubectl  : kubectl get pods --all-namespaces | grep <runner_name>
+════════════════════════════════════════════

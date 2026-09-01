@@ -1,0 +1,332 @@
+════════════════════════════════════════════
+ Run 33314303492 | vllm-project/vllm-ascend
+════════════════════════════════════════════
+
+X main E2E-upstream · 33314303492
+Triggered via schedule about 1 day ago
+
+JOBS
+✓ resolve-tag in 1m10s (ID 99264771498)
+✓ ensure-csrc-cache / Prepare csrc cache checks in 1m42s (ID 99264968284)
+✓ e2e-upstream_multicard (0, 9.1.0-910b-ubuntu22.04-py3.12, 4) in 17m52s (ID 99265225847)
+X e2e-upstream_singlecard (0, 9.1.0-910b-ubuntu22.04-py3.12, 1) in 4h34m43s (ID 99265225852)
+  ✓ Set up job
+  ✓ Initialize containers
+  ✓ Checkout vllm-project/vllm-ascend repo
+  ✓ Check npu and CANN info
+  ✓ Config mirrors
+  ✓ Install system dependencies
+  ✓ Checkout vllm-project/vllm repo
+  ✓ Install vllm-project/vllm from source
+  ✓ Get csrc hash
+  ✓ Get architecture
+  ✓ Restore vllm-ascend csrc cache
+  ✓ Install vllm-project/vllm-ascend with device
+  X Run vllm-project/vllm test
+  ✓ Post Checkout vllm-project/vllm repo
+  ✓ Post Checkout vllm-project/vllm-ascend repo
+  ✓ Stop containers
+  ✓ Complete job
+X e2e-upstream_singlecard (3, 9.1.0-910b-ubuntu22.04-py3.12, 1) in 3h51m52s (ID 99265225862)
+  ✓ Set up job
+  ✓ Initialize containers
+  ✓ Checkout vllm-project/vllm-ascend repo
+  ✓ Check npu and CANN info
+  ✓ Config mirrors
+  ✓ Install system dependencies
+  ✓ Checkout vllm-project/vllm repo
+  ✓ Install vllm-project/vllm from source
+  ✓ Get csrc hash
+  ✓ Get architecture
+  ✓ Restore vllm-ascend csrc cache
+  ✓ Install vllm-project/vllm-ascend with device
+  X Run vllm-project/vllm test
+  ✓ Post Checkout vllm-project/vllm repo
+  ✓ Post Checkout vllm-project/vllm-ascend repo
+  ✓ Stop containers
+  ✓ Complete job
+X e2e-upstream_online (0, 9.1.0-910b-ubuntu22.04-py3.12, 1) in 44m41s (ID 99265225873)
+  ✓ Set up job
+  ✓ Initialize containers
+  ✓ Checkout vllm-project/vllm-ascend repo
+  ✓ Check npu and CANN info
+  ✓ Config mirrors
+  ✓ Install system dependencies
+  ✓ Checkout vllm-project/vllm repo
+  ✓ Install vllm-project/vllm from source
+  ✓ Get csrc hash
+  ✓ Get architecture
+  ✓ Restore vllm-ascend csrc cache
+  ✓ Install vllm-project/vllm-ascend with device
+  X Run vllm-project/vllm test
+  ✓ Post Checkout vllm-project/vllm repo
+  ✓ Post Checkout vllm-project/vllm-ascend repo
+  ✓ Stop containers
+  ✓ Complete job
+X e2e-upstream_multicard (0, 9.1.0-910b-ubuntu22.04-py3.12, 2) in 58m30s (ID 99265225877)
+  ✓ Set up job
+  ✓ Initialize containers
+  ✓ Checkout vllm-project/vllm-ascend repo
+  ✓ Check npu and CANN info
+  ✓ Config mirrors
+  ✓ Install system dependencies
+  ✓ Checkout vllm-project/vllm repo
+  ✓ Install vllm-project/vllm from source
+  ✓ Get csrc hash
+  ✓ Get architecture
+  ✓ Restore vllm-ascend csrc cache
+  ✓ Install vllm-project/vllm-ascend with device
+  X Run vllm-project/vllm test
+  ✓ Post Checkout vllm-project/vllm repo
+  ✓ Post Checkout vllm-project/vllm-ascend repo
+  ✓ Stop containers
+  ✓ Complete job
+X e2e-upstream_singlecard (2, 9.1.0-910b-ubuntu22.04-py3.12, 1) in 4h43m53s (ID 99265225903)
+  ✓ Set up job
+  ✓ Initialize containers
+  ✓ Checkout vllm-project/vllm-ascend repo
+  ✓ Check npu and CANN info
+  ✓ Config mirrors
+  ✓ Install system dependencies
+  ✓ Checkout vllm-project/vllm repo
+  ✓ Install vllm-project/vllm from source
+  ✓ Get csrc hash
+  ✓ Get architecture
+  ✓ Restore vllm-ascend csrc cache
+  ✓ Install vllm-project/vllm-ascend with device
+  X Run vllm-project/vllm test
+  ✓ Post Checkout vllm-project/vllm repo
+  ✓ Post Checkout vllm-project/vllm-ascend repo
+  ✓ Stop containers
+  ✓ Complete job
+X e2e-upstream_singlecard (1, 9.1.0-910b-ubuntu22.04-py3.12, 1) in 3h50m30s (ID 99265226064)
+  ✓ Set up job
+  ✓ Initialize containers
+  ✓ Checkout vllm-project/vllm-ascend repo
+  ✓ Check npu and CANN info
+  ✓ Config mirrors
+  ✓ Install system dependencies
+  ✓ Checkout vllm-project/vllm repo
+  ✓ Install vllm-project/vllm from source
+  ✓ Get csrc hash
+  ✓ Get architecture
+  ✓ Restore vllm-ascend csrc cache
+  ✓ Install vllm-project/vllm-ascend with device
+  X Run vllm-project/vllm test
+  ✓ Post Checkout vllm-project/vllm repo
+  ✓ Post Checkout vllm-project/vllm-ascend repo
+  ✓ Stop containers
+  ✓ Complete job
+- ensure-csrc-cache / Build csrc cache (${{ matrix.target.id }}) (ID 99265226335)
+
+ANNOTATIONS
+X Executing the custom container implementation failed. Please contact your self hosted runner administrator.
+e2e-upstream_singlecard (0, 9.1.0-910b-ubuntu22.04-py3.12, 1): .github#27956
+
+X Process completed with exit code 1.
+e2e-upstream_singlecard (0, 9.1.0-910b-ubuntu22.04-py3.12, 1): .github#27955
+
+X Error: failed to run script step: Error: command terminated with non-zero exit code: command terminated with exit code 1
+e2e-upstream_singlecard (0, 9.1.0-910b-ubuntu22.04-py3.12, 1): .github#27954
+
+X [119/151] FAILED tests/v1/spec_decode/test_dynamic_sd.py. Please go to the Summary section to quickly review the error overview, or expand the logs to view the error details.
+e2e-upstream_singlecard (0, 9.1.0-910b-ubuntu22.04-py3.12, 1): .github#23555
+
+X [94/151] FAILED tests/v1/kv_connector/unit/test_mooncake_store_worker.py. Please go to the Summary section to quickly review the error overview, or expand the logs to view the error details.
+e2e-upstream_singlecard (0, 9.1.0-910b-ubuntu22.04-py3.12, 1): .github#19478
+
+X [53/151] FAILED tests/models/multimodal/pooling/test_siglip.py. Please go to the Summary section to quickly review the error overview, or expand the logs to view the error details.
+e2e-upstream_singlecard (0, 9.1.0-910b-ubuntu22.04-py3.12, 1): .github#10612
+
+X Executing the custom container implementation failed. Please contact your self hosted runner administrator.
+e2e-upstream_singlecard (3, 9.1.0-910b-ubuntu22.04-py3.12, 1): .github#25309
+
+X Process completed with exit code 1.
+e2e-upstream_singlecard (3, 9.1.0-910b-ubuntu22.04-py3.12, 1): .github#25308
+
+X Error: failed to run script step: Error: command terminated with non-zero exit code: command terminated with exit code 1
+e2e-upstream_singlecard (3, 9.1.0-910b-ubuntu22.04-py3.12, 1): .github#25307
+
+X [67/150] FAILED tests/models/multimodal/pooling/test_colqwen3_5.py. Please go to the Summary section to quickly review the error overview, or expand the logs to view the error details.
+e2e-upstream_singlecard (3, 9.1.0-910b-ubuntu22.04-py3.12, 1): .github#10987
+
+X [42/150] FAILED tests/model_executor/test_routed_experts_capture.py. Please go to the Summary section to quickly review the error overview, or expand the logs to view the error details.
+e2e-upstream_singlecard (3, 9.1.0-910b-ubuntu22.04-py3.12, 1): .github#5880
+
+X [9/150] FAILED tests/model_executor/test_eagle_quantization.py. Please go to the Summary section to quickly review the error overview, or expand the logs to view the error details.
+e2e-upstream_singlecard (3, 9.1.0-910b-ubuntu22.04-py3.12, 1): .github#1342
+
+X Executing the custom container implementation failed. Please contact your self hosted runner administrator.
+e2e-upstream_online (0, 9.1.0-910b-ubuntu22.04-py3.12, 1): .github#2664
+
+X Process completed with exit code 1.
+e2e-upstream_online (0, 9.1.0-910b-ubuntu22.04-py3.12, 1): .github#2663
+
+X Error: failed to run script step: Error: command terminated with non-zero exit code: command terminated with exit code 1
+e2e-upstream_online (0, 9.1.0-910b-ubuntu22.04-py3.12, 1): .github#2662
+
+X [9/14] FAILED tests/evals/mrcr/test_mrcr_correctness.py. Please go to the Summary section to quickly review the error overview, or expand the logs to view the error details.
+e2e-upstream_online (0, 9.1.0-910b-ubuntu22.04-py3.12, 1): .github#1529
+
+X Executing the custom container implementation failed. Please contact your self hosted runner administrator.
+e2e-upstream_multicard (0, 9.1.0-910b-ubuntu22.04-py3.12, 2): .github#10768
+
+X Process completed with exit code 1.
+e2e-upstream_multicard (0, 9.1.0-910b-ubuntu22.04-py3.12, 2): .github#10767
+
+X Error: failed to run script step: Error: command terminated with non-zero exit code: command terminated with exit code 1
+e2e-upstream_multicard (0, 9.1.0-910b-ubuntu22.04-py3.12, 2): .github#10766
+
+X [1/3] FAILED tests/v1/distributed/test_async_llm_dp.py. Please go to the Summary section to quickly review the error overview, or expand the logs to view the error details.
+e2e-upstream_multicard (0, 9.1.0-910b-ubuntu22.04-py3.12, 2): .github#2852
+
+X Executing the custom container implementation failed. Please contact your self hosted runner administrator.
+e2e-upstream_singlecard (2, 9.1.0-910b-ubuntu22.04-py3.12, 1): .github#37672
+
+X Process completed with exit code 1.
+e2e-upstream_singlecard (2, 9.1.0-910b-ubuntu22.04-py3.12, 1): .github#37671
+
+X Error: failed to run script step: Error: command terminated with non-zero exit code: command terminated with exit code 1
+e2e-upstream_singlecard (2, 9.1.0-910b-ubuntu22.04-py3.12, 1): .github#37670
+
+X [72/150] FAILED tests/entrypoints/anthropic/test_messages.py. Please go to the Summary section to quickly review the error overview, or expand the logs to view the error details.
+e2e-upstream_singlecard (2, 9.1.0-910b-ubuntu22.04-py3.12, 1): .github#23702
+
+X [61/150] FAILED tests/models/language/pooling/test_all_pooling_plus_chunked_prefill.py. Please go to the Summary section to quickly review the error overview, or expand the logs to view the error details.
+e2e-upstream_singlecard (2, 9.1.0-910b-ubuntu22.04-py3.12, 1): .github#20649
+
+X [30/150] FAILED tests/v1/core/test_scheduler.py. Please go to the Summary section to quickly review the error overview, or expand the logs to view the error details.
+e2e-upstream_singlecard (2, 9.1.0-910b-ubuntu22.04-py3.12, 1): .github#14463
+
+X [29/150] FAILED tests/v1/core/test_kv_cache_utils.py. Please go to the Summary section to quickly review the error overview, or expand the logs to view the error details.
+e2e-upstream_singlecard (2, 9.1.0-910b-ubuntu22.04-py3.12, 1): .github#13146
+
+X [12/150] FAILED tests/models/multimodal/processing/test_internvl.py. Please go to the Summary section to quickly review the error overview, or expand the logs to view the error details.
+e2e-upstream_singlecard (2, 9.1.0-910b-ubuntu22.04-py3.12, 1): .github#11047
+
+X Executing the custom container implementation failed. Please contact your self hosted runner administrator.
+e2e-upstream_singlecard (1, 9.1.0-910b-ubuntu22.04-py3.12, 1): .github#29191
+
+X Process completed with exit code 1.
+e2e-upstream_singlecard (1, 9.1.0-910b-ubuntu22.04-py3.12, 1): .github#29190
+
+X Error: failed to run script step: Error: command terminated with non-zero exit code: command terminated with exit code 1
+e2e-upstream_singlecard (1, 9.1.0-910b-ubuntu22.04-py3.12, 1): .github#29189
+
+X [43/151] FAILED tests/models/multimodal/pooling/test_llama_nemotron_vl.py. Please go to the Summary section to quickly review the error overview, or expand the logs to view the error details.
+e2e-upstream_singlecard (1, 9.1.0-910b-ubuntu22.04-py3.12, 1): .github#6495
+
+
+To see what failed, try: gh run view 33314303492 --log-failed
+View this run on GitHub: https://github.com/vllm-project/vllm-ascend/actions/runs/33314303492
+
+════════════════════════════════════════════
+ 失败 / 取消 Job 详情（共 6 个）
+════════════════════════════════════════════
+
+── [FAILURE] e2e-upstream_singlecard (0, 9.1.0-910b-ubuntu22.04-py3.12, 1)
+   Runner : linux-aarch64-a2b3-1-zkrjh-runner-wtn55
+   时间   : 2026-08-30T13:33:20Z ~ 2026-08-30T18:08:03Z
+   ── 运行时错误（高优先级）
+e2e-upstream_singlecard (0, 9.1.0-910b-ubuntu22.04-py3.12, 1)	UNKNOWN STEP	2026-08-30T14:47:30.5052360Z [2026-08-30 14:47:30.501061][UC][E] EngineCore encountered a fatal error.
+e2e-upstream_singlecard (0, 9.1.0-910b-ubuntu22.04-py3.12, 1)	UNKNOWN STEP	2026-08-30T14:47:30.5183886Z RuntimeError: npu_fused_infer_attention_score_symint:../third_party/op-plugin/op_plugin/ops/opapi/FusedInferAttentionScoreKernelNpuOpApi.cpp:425 NPU function error: call aclnnFusedInferAttentionScoreV3 failed, error code is 161002
+e2e-upstream_singlecard (0, 9.1.0-910b-ubuntu22.04-py3.12, 1)	UNKNOWN STEP	2026-08-30T14:50:22.8754961Z [2026-08-30 14:50:22.871401][UC][E] EngineCore encountered a fatal error.
+e2e-upstream_singlecard (0, 9.1.0-910b-ubuntu22.04-py3.12, 1)	UNKNOWN STEP	2026-08-30T14:50:22.8867027Z RuntimeError: npu_fused_infer_attention_score_symint:../third_party/op-plugin/op_plugin/ops/opapi/FusedInferAttentionScoreKernelNpuOpApi.cpp:425 NPU function error: call aclnnFusedInferAttentionScoreV3 failed, error code is 161002
+e2e-upstream_singlecard (0, 9.1.0-910b-ubuntu22.04-py3.12, 1)	UNKNOWN STEP	2026-08-30T14:53:17.6251135Z [2026-08-30 14:53:17.621597][UC][E] EngineCore encountered a fatal error.
+e2e-upstream_singlecard (0, 9.1.0-910b-ubuntu22.04-py3.12, 1)	UNKNOWN STEP	2026-08-30T14:53:17.6365050Z RuntimeError: npu_fused_infer_attention_score_symint:../third_party/op-plugin/op_plugin/ops/opapi/FusedInferAttentionScoreKernelNpuOpApi.cpp:425 NPU function error: call aclnnFusedInferAttentionScoreV3 failed, error code is 161002
+e2e-upstream_singlecard (0, 9.1.0-910b-ubuntu22.04-py3.12, 1)	UNKNOWN STEP	2026-08-30T14:53:57.3232972Z [2026-08-30 14:53:57.320543][UC][E] EngineCore encountered a fatal error.
+e2e-upstream_singlecard (0, 9.1.0-910b-ubuntu22.04-py3.12, 1)	UNKNOWN STEP	2026-08-30T14:53:57.3346639Z RuntimeError: npu_fused_infer_attention_score_symint:../third_party/op-plugin/op_plugin/ops/opapi/FusedInferAttentionScoreKernelNpuOpApi.cpp:425 NPU function error: call aclnnFusedInferAttentionScoreV3 failed, error code is 161002
+e2e-upstream_singlecard (0, 9.1.0-910b-ubuntu22.04-py3.12, 1)	UNKNOWN STEP	2026-08-30T14:53:57.9699125Z (EngineCore pid=46089) RuntimeError: npu_fused_infer_attention_score_symint:../third_party/op-plugin/op_plugin/ops/opapi/FusedInferAttentionScoreKernelNpuOpApi.cpp:425 NPU function error: call aclnnFusedInferAttentionScoreV3 failed, error code is 161002
+e2e-upstream_singlecard (0, 9.1.0-910b-ubuntu22.04-py3.12, 1)	UNKNOWN STEP	2026-08-30T14:56:55.8758456Z [2026-08-30 14:56:55.843822][UC][E] EngineCore encountered a fatal error.
+e2e-upstream_singlecard (0, 9.1.0-910b-ubuntu22.04-py3.12, 1)	UNKNOWN STEP	2026-08-30T14:56:55.8891401Z RuntimeError: npu_fused_infer_attention_score_symint:../third_party/op-plugin/op_plugin/ops/opapi/FusedInferAttentionScoreKernelNpuOpApi.cpp:425 NPU function error: call aclnnFusedInferAttentionScoreV3 failed, error code is 161002
+e2e-upstream_singlecard (0, 9.1.0-910b-ubuntu22.04-py3.12, 1)	UNKNOWN STEP	2026-08-30T15:00:03.0279317Z [2026-08-30 15:00:03.025184][UC][E] EngineCore encountered a fatal error.
+e2e-upstream_singlecard (0, 9.1.0-910b-ubuntu22.04-py3.12, 1)	UNKNOWN STEP	2026-08-30T15:00:03.0393402Z RuntimeError: npu_fused_infer_attention_score_symint:../third_party/op-plugin/op_plugin/ops/opapi/FusedInferAttentionScoreKernelNpuOpApi.cpp:425 NPU function error: call aclnnFusedInferAttentionScoreV3 failed, error code is 161002
+e2e-upstream_singlecard (0, 9.1.0-910b-ubuntu22.04-py3.12, 1)	UNKNOWN STEP	2026-08-30T15:00:08.0136651Z ^[[1m^[[31mE           vllm.v1.engine.exceptions.EngineDeadError: EngineCore encountered an issue. See stack trace (above) for the root cause.^[[0m
+e2e-upstream_singlecard (0, 9.1.0-910b-ubuntu22.04-py3.12, 1)	UNKNOWN STEP	2026-08-30T15:00:08.0138125Z ^[[1m^[[31mvllm/v1/engine/core_client.py^[[0m:879: EngineDeadError
+   ── 最后输出（定位失败阶段）
+
+── [FAILURE] e2e-upstream_singlecard (3, 9.1.0-910b-ubuntu22.04-py3.12, 1)
+   Runner : linux-aarch64-a2b3-1-zkrjh-runner-dzxtn
+   时间   : 2026-08-30T13:33:17Z ~ 2026-08-30T17:25:09Z
+   ── 运行时错误（高优先级）
+e2e-upstream_singlecard (3, 9.1.0-910b-ubuntu22.04-py3.12, 1)	UNKNOWN STEP	2026-08-30T14:34:48.3234774Z ^[[1m^[[31mE       AssertionError: Forward context is not set. Please use `set_forward_context` to set the forward context.^[[0m
+e2e-upstream_singlecard (3, 9.1.0-910b-ubuntu22.04-py3.12, 1)	UNKNOWN STEP	2026-08-30T14:34:48.3236044Z ^[[1m^[[31mvllm/forward_context.py^[[0m:201: AssertionError
+e2e-upstream_singlecard (3, 9.1.0-910b-ubuntu22.04-py3.12, 1)	UNKNOWN STEP	2026-08-30T14:34:48.3269617Z ^[[1m^[[31mE       AssertionError: Forward context is not set. Please use `set_forward_context` to set the forward context.^[[0m
+e2e-upstream_singlecard (3, 9.1.0-910b-ubuntu22.04-py3.12, 1)	UNKNOWN STEP	2026-08-30T14:34:48.3270877Z ^[[1m^[[31mvllm/forward_context.py^[[0m:201: AssertionError
+e2e-upstream_singlecard (3, 9.1.0-910b-ubuntu22.04-py3.12, 1)	UNKNOWN STEP	2026-08-30T14:34:48.3300482Z ^[[1m^[[31mE       AssertionError: Forward context is not set. Please use `set_forward_context` to set the forward context.^[[0m
+e2e-upstream_singlecard (3, 9.1.0-910b-ubuntu22.04-py3.12, 1)	UNKNOWN STEP	2026-08-30T14:34:48.3302008Z ^[[1m^[[31mvllm/forward_context.py^[[0m:201: AssertionError
+e2e-upstream_singlecard (3, 9.1.0-910b-ubuntu22.04-py3.12, 1)	UNKNOWN STEP	2026-08-30T14:34:48.3319255Z             pytest.raises(^[[96mAssertionError^[[39;49;00m, match=^[[33m"^[[39;49;00m^[[33munexpected topk_ids batch dim^[[39;49;00m^[[33m"^[[39;49;00m),^[[90m^[[39;49;00m
+e2e-upstream_singlecard (3, 9.1.0-910b-ubuntu22.04-py3.12, 1)	UNKNOWN STEP	2026-08-30T14:34:48.3335926Z ^[[1m^[[31mE       AssertionError: Forward context is not set. Please use `set_forward_context` to set the forward context.^[[0m
+e2e-upstream_singlecard (3, 9.1.0-910b-ubuntu22.04-py3.12, 1)	UNKNOWN STEP	2026-08-30T14:34:48.3337199Z ^[[1m^[[31mvllm/forward_context.py^[[0m:201: AssertionError
+e2e-upstream_singlecard (3, 9.1.0-910b-ubuntu22.04-py3.12, 1)	UNKNOWN STEP	2026-08-30T14:34:48.3370599Z >           pytest.raises(^[[96mAssertionError^[[39;49;00m, match=^[[33m"^[[39;49;00m^[[33munexpected topk_ids batch dim^[[39;49;00m^[[33m"^[[39;49;00m),^[[90m^[[39;49;00m
+e2e-upstream_singlecard (3, 9.1.0-910b-ubuntu22.04-py3.12, 1)	UNKNOWN STEP	2026-08-30T14:34:48.3372621Z ^[[1m^[[31mE       AssertionError: Regex pattern did not match.^[[0m
+e2e-upstream_singlecard (3, 9.1.0-910b-ubuntu22.04-py3.12, 1)	UNKNOWN STEP	2026-08-30T14:34:48.3376207Z ^[[1m^[[31mtests/model_executor/test_routed_experts_capture.py^[[0m:332: AssertionError
+e2e-upstream_singlecard (3, 9.1.0-910b-ubuntu22.04-py3.12, 1)	UNKNOWN STEP	2026-08-30T14:34:48.3417183Z ^[[31mFAILED^[[0m tests/model_executor/test_routed_experts_capture.py::^[[1mtest_routed_experts_capturer_single_dp_no_metadata^[[0m - AssertionError: Forward context is not set. Please use `set_forward_context` to set the forward context.
+e2e-upstream_singlecard (3, 9.1.0-910b-ubuntu22.04-py3.12, 1)	UNKNOWN STEP	2026-08-30T14:34:48.3421050Z ^[[31mFAILED^[[0m tests/model_executor/test_routed_experts_capture.py::^[[1mtest_routed_experts_capturer_dp_naive_concatenated_all_ranks^[[0m - AssertionError: Forward context is not set. Please use `set_forward_context` to set the forward context.
+e2e-upstream_singlecard (3, 9.1.0-910b-ubuntu22.04-py3.12, 1)	UNKNOWN STEP	2026-08-30T14:34:48.3424627Z ^[[31mFAILED^[[0m tests/model_executor/test_routed_experts_capture.py::^[[1mtest_routed_experts_capturer_dp_modular_local_tokens^[[0m - AssertionError: Forward context is not set. Please use `set_forward_context` to set the forward context.
+   ── 最后输出（定位失败阶段）
+
+── [FAILURE] e2e-upstream_online (0, 9.1.0-910b-ubuntu22.04-py3.12, 1)
+   Runner : linux-aarch64-a2b3-1-zkrjh-runner-bt4fr
+   时间   : 2026-08-30T13:33:41Z ~ 2026-08-30T14:18:22Z
+   ── 运行时错误（高优先级）
+e2e-upstream_online (0, 9.1.0-910b-ubuntu22.04-py3.12, 1)	UNKNOWN STEP	2026-08-30T14:03:20.4464886Z [2026-08-30 14:03:20.442375][UC][E] EngineCore encountered a fatal error.
+e2e-upstream_online (0, 9.1.0-910b-ubuntu22.04-py3.12, 1)	UNKNOWN STEP	2026-08-30T14:03:20.4509728Z torch.OutOfMemoryError: replay:../torch_npu/csrc/core/npu/NPUGraph.cpp:281 NPU function error: c10_npu::acl::AclmdlRIExecuteAsync(model_ri_, stream), error code is 507899
+e2e-upstream_online (0, 9.1.0-910b-ubuntu22.04-py3.12, 1)	UNKNOWN STEP	2026-08-30T14:03:20.4535160Z vllm.v1.engine.exceptions.EngineDeadError: EngineCore encountered an issue. See stack trace (above) for the root cause. [12939,12939][async_llm.py:724,output_handler]
+e2e-upstream_online (0, 9.1.0-910b-ubuntu22.04-py3.12, 1)	UNKNOWN STEP	2026-08-30T14:03:24.8959771Z ^[[1m^[[31mE       AssertionError: MRCR thresholds failed: match_ratio_n2: 0.0000 < 0.9900 - 0.0500; match_ratio_n4: 0.0000 < 0.8400 - 0.0500; match_ratio_n8: 0.0751 < 0.7600 - 0.0500^[[0m
+e2e-upstream_online (0, 9.1.0-910b-ubuntu22.04-py3.12, 1)	UNKNOWN STEP	2026-08-30T14:03:24.8963530Z ^[[1m^[[31mtests/evals/mrcr/test_mrcr_correctness.py^[[0m:83: AssertionError
+e2e-upstream_online (0, 9.1.0-910b-ubuntu22.04-py3.12, 1)	UNKNOWN STEP	2026-08-30T14:03:24.8985380Z ^[[31mFAILED^[[0m tests/evals/mrcr/test_mrcr_correctness.py::^[[1mtest_mrcr_correctness[Qwen3.5-4B]^[[0m - AssertionError: MRCR thresholds failed: match_ratio_n2: 0.0000 < 0.9900 - 0.0500; match_ratio_n4: 0.0000 < 0.8400 - 0.0500; match_ratio_n8: 0.0751 < 0.7600 - 0.0500
+e2e-upstream_online (0, 9.1.0-910b-ubuntu22.04-py3.12, 1)	UNKNOWN STEP	2026-08-30T14:17:26.4516969Z ##[error]Process completed with exit code 1.
+   ── 最后输出（定位失败阶段）
+
+── [FAILURE] e2e-upstream_multicard (0, 9.1.0-910b-ubuntu22.04-py3.12, 2)
+   Runner : linux-aarch64-a2b3-2-6l84j-runner-rqh92
+   时间   : 2026-08-30T13:33:31Z ~ 2026-08-30T14:32:01Z
+   ── 运行时错误（高优先级）
+e2e-upstream_multicard (0, 9.1.0-910b-ubuntu22.04-py3.12, 2)	UNKNOWN STEP	2026-08-30T14:16:56.7865842Z ^[[1m^[[31mE       AssertionError: No NPU found in Ray cluster.^[[0m
+e2e-upstream_multicard (0, 9.1.0-910b-ubuntu22.04-py3.12, 2)	UNKNOWN STEP	2026-08-30T14:16:56.7866936Z ^[[1m^[[31mvllm/v1/engine/utils.py^[[0m:578: AssertionError
+e2e-upstream_multicard (0, 9.1.0-910b-ubuntu22.04-py3.12, 2)	UNKNOWN STEP	2026-08-30T14:16:56.8077173Z ^[[1m^[[31mE       AssertionError: No NPU found in Ray cluster.^[[0m
+e2e-upstream_multicard (0, 9.1.0-910b-ubuntu22.04-py3.12, 2)	UNKNOWN STEP	2026-08-30T14:16:56.8078242Z ^[[1m^[[31mvllm/v1/engine/utils.py^[[0m:578: AssertionError
+e2e-upstream_multicard (0, 9.1.0-910b-ubuntu22.04-py3.12, 2)	UNKNOWN STEP	2026-08-30T14:16:56.8329492Z ^[[1m^[[31mE       AssertionError: No NPU found in Ray cluster.^[[0m
+e2e-upstream_multicard (0, 9.1.0-910b-ubuntu22.04-py3.12, 2)	UNKNOWN STEP	2026-08-30T14:16:56.8330559Z ^[[1m^[[31mvllm/v1/engine/utils.py^[[0m:578: AssertionError
+e2e-upstream_multicard (0, 9.1.0-910b-ubuntu22.04-py3.12, 2)	UNKNOWN STEP	2026-08-30T14:16:56.8579326Z ^[[31mFAILED^[[0m tests/v1/distributed/test_async_llm_dp.py::^[[1mtest_load[False-ray-RequestOutputKind.DELTA-hmellor/tiny-random-LlamaForCausalLM]^[[0m - AssertionError: No NPU found in Ray cluster.
+e2e-upstream_multicard (0, 9.1.0-910b-ubuntu22.04-py3.12, 2)	UNKNOWN STEP	2026-08-30T14:16:56.8582561Z ^[[31mFAILED^[[0m tests/v1/distributed/test_async_llm_dp.py::^[[1mtest_load[False-ray-RequestOutputKind.FINAL_ONLY-ibm-research/PowerMoE-3b]^[[0m - AssertionError: No NPU found in Ray cluster.
+e2e-upstream_multicard (0, 9.1.0-910b-ubuntu22.04-py3.12, 2)	UNKNOWN STEP	2026-08-30T14:16:56.8586314Z ^[[31mFAILED^[[0m tests/v1/distributed/test_async_llm_dp.py::^[[1mtest_load[False-ray-RequestOutputKind.FINAL_ONLY-hmellor/tiny-random-LlamaForCausalLM]^[[0m - AssertionError: No NPU found in Ray cluster.
+e2e-upstream_multicard (0, 9.1.0-910b-ubuntu22.04-py3.12, 2)	UNKNOWN STEP	2026-08-30T14:31:04.9307852Z ##[error]Process completed with exit code 1.
+   ── 最后输出（定位失败阶段）
+
+── [FAILURE] e2e-upstream_singlecard (2, 9.1.0-910b-ubuntu22.04-py3.12, 1)
+   Runner : linux-aarch64-a2b3-1-zkrjh-runner-q92zn
+   时间   : 2026-08-30T13:33:40Z ~ 2026-08-30T18:17:33Z
+   ── 运行时错误（高优先级）
+e2e-upstream_singlecard (2, 9.1.0-910b-ubuntu22.04-py3.12, 1)	UNKNOWN STEP	2026-08-30T14:02:21.2399899Z ^[[1m^[[31mE       RuntimeError: INTERNAL: piece must not include null character.^[[0m
+e2e-upstream_singlecard (2, 9.1.0-910b-ubuntu22.04-py3.12, 1)	UNKNOWN STEP	2026-08-30T14:02:21.2401819Z ^[[1m^[[31m/usr/local/python3.12.13/lib/python3.12/site-packages/sentencepiece/__init__.py^[[0m:213: RuntimeError
+e2e-upstream_singlecard (2, 9.1.0-910b-ubuntu22.04-py3.12, 1)	UNKNOWN STEP	2026-08-30T14:02:21.2508224Z ^[[1m^[[31mE       RuntimeError: INTERNAL: piece must not include null character.^[[0m
+e2e-upstream_singlecard (2, 9.1.0-910b-ubuntu22.04-py3.12, 1)	UNKNOWN STEP	2026-08-30T14:02:21.2509727Z ^[[1m^[[31m/usr/local/python3.12.13/lib/python3.12/site-packages/sentencepiece/__init__.py^[[0m:213: RuntimeError
+e2e-upstream_singlecard (2, 9.1.0-910b-ubuntu22.04-py3.12, 1)	UNKNOWN STEP	2026-08-30T14:02:21.2616518Z ^[[1m^[[31mE       RuntimeError: INTERNAL: piece must not include null character.^[[0m
+e2e-upstream_singlecard (2, 9.1.0-910b-ubuntu22.04-py3.12, 1)	UNKNOWN STEP	2026-08-30T14:02:21.2617992Z ^[[1m^[[31m/usr/local/python3.12.13/lib/python3.12/site-packages/sentencepiece/__init__.py^[[0m:213: RuntimeError
+e2e-upstream_singlecard (2, 9.1.0-910b-ubuntu22.04-py3.12, 1)	UNKNOWN STEP	2026-08-30T14:02:21.2724467Z ^[[1m^[[31mE       RuntimeError: INTERNAL: piece must not include null character.^[[0m
+e2e-upstream_singlecard (2, 9.1.0-910b-ubuntu22.04-py3.12, 1)	UNKNOWN STEP	2026-08-30T14:02:21.2725931Z ^[[1m^[[31m/usr/local/python3.12.13/lib/python3.12/site-packages/sentencepiece/__init__.py^[[0m:213: RuntimeError
+e2e-upstream_singlecard (2, 9.1.0-910b-ubuntu22.04-py3.12, 1)	UNKNOWN STEP	2026-08-30T14:02:21.2851382Z ^[[1m^[[31mE       RuntimeError: INTERNAL: piece must not include null character.^[[0m
+e2e-upstream_singlecard (2, 9.1.0-910b-ubuntu22.04-py3.12, 1)	UNKNOWN STEP	2026-08-30T14:02:21.2852888Z ^[[1m^[[31m/usr/local/python3.12.13/lib/python3.12/site-packages/sentencepiece/__init__.py^[[0m:213: RuntimeError
+e2e-upstream_singlecard (2, 9.1.0-910b-ubuntu22.04-py3.12, 1)	UNKNOWN STEP	2026-08-30T14:02:21.2960629Z ^[[1m^[[31mE       RuntimeError: INTERNAL: piece must not include null character.^[[0m
+e2e-upstream_singlecard (2, 9.1.0-910b-ubuntu22.04-py3.12, 1)	UNKNOWN STEP	2026-08-30T14:02:21.2962122Z ^[[1m^[[31m/usr/local/python3.12.13/lib/python3.12/site-packages/sentencepiece/__init__.py^[[0m:213: RuntimeError
+e2e-upstream_singlecard (2, 9.1.0-910b-ubuntu22.04-py3.12, 1)	UNKNOWN STEP	2026-08-30T14:02:21.3065519Z ^[[1m^[[31mE       RuntimeError: INTERNAL: piece must not include null character.^[[0m
+e2e-upstream_singlecard (2, 9.1.0-910b-ubuntu22.04-py3.12, 1)	UNKNOWN STEP	2026-08-30T14:02:21.3066964Z ^[[1m^[[31m/usr/local/python3.12.13/lib/python3.12/site-packages/sentencepiece/__init__.py^[[0m:213: RuntimeError
+e2e-upstream_singlecard (2, 9.1.0-910b-ubuntu22.04-py3.12, 1)	UNKNOWN STEP	2026-08-30T14:02:21.3169359Z ^[[1m^[[31mE       RuntimeError: INTERNAL: piece must not include null character.^[[0m
+   ── 最后输出（定位失败阶段）
+
+── [FAILURE] e2e-upstream_singlecard (1, 9.1.0-910b-ubuntu22.04-py3.12, 1)
+   Runner : linux-aarch64-a2b3-1-zkrjh-runner-dxxnl
+   时间   : 2026-08-30T13:33:42Z ~ 2026-08-30T17:24:12Z
+   ── 运行时错误（高优先级）
+   ── 编译/安装错误（次优先级）
+e2e-upstream_singlecard (1, 9.1.0-910b-ubuntu22.04-py3.12, 1)	UNKNOWN STEP	2026-08-30T14:49:58.7302810Z vllm.exceptions.LoRAAdapterNotFoundError: Loading lora nonexistent-adapter failed: No adapter found for /path/does/not/exist [38161,38161][core.py:1584,_invoke_utility_method]
+   ── 最后输出（定位失败阶段）
+
+════════════════════════════════════════════
+ 补充命令（按需使用）：
+   完整日志 : gh run view --job <id> --log --repo vllm-project/vllm-ascend
+   PR diff  : gh pr diff <pr> --repo vllm-project/vllm-ascend --name-only
+   kubectl  : kubectl get pods --all-namespaces | grep <runner_name>
+════════════════════════════════════════════

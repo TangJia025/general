@@ -1,0 +1,131 @@
+════════════════════════════════════════════
+ Run 33484333333 | vllm-project/vllm-ascend
+════════════════════════════════════════════
+
+X feature/dsa-pcp-aclgraph E2E vllm-project/vllm-ascend#15482 · 33484333333
+Triggered via pull_request about 42 minutes ago
+
+JOBS
+X pre-commit in 2m23s (ID 99780818111)
+  ✓ Set up job
+  ✓ Initialize containers
+  ✓ Validate PR title prefix
+  ✓ Checkout vllm-project/vllm-ascend repo
+  ✓ Read verified vLLM refs
+  ✓ cp problem matchers
+  ✓ Run echo "::add-matcher::$RUNNER_TEMP/actionlint.json"
+  ✓ Run echo "::add-matcher::$RUNNER_TEMP/markdownlint.json"
+  ✓ Run echo "::add-matcher::$RUNNER_TEMP/mypy.json"
+  ✓ Checkout vllm-project/vllm repo
+  ✓ Run dorny/paths-filter@v4
+  - Install vllm-ascend dev (conditional)
+  ✓ Install and run Gitleaks Secret Scan
+  ✓ Get pre-commit config hash
+  ✓ Restore pre-commit cache
+  ✓ Run pre-commit
+  X Run mypy
+  ✓ Post Checkout vllm-project/vllm repo
+  ✓ Post Checkout vllm-project/vllm-ascend repo
+  ✓ Stop containers
+  ✓ Complete job
+X select-tests in 58s (ID 99781581574)
+  ✓ Set up job
+  ✓ Initialize containers
+  ✓ Checkout vllm-project/vllm-ascend repo
+  ✓ Resolve source snapshot
+  ✓ Run dorny/paths-filter@v4
+  ✓ Validate test coverage config
+  X Decide test selection mode
+  - Select tests from coverage recommendations
+  - Select all tests
+  - Set no-tests output when no tests selected
+  - Select A5 tests
+  - Set no-tests output for A5 when source paths unchanged
+  - Add upstream test cache target
+  ✓ Post Checkout vllm-project/vllm-ascend repo
+  ✓ Stop containers
+  ✓ Complete job
+- Recommend tests from coverage (ID 99781582781)
+X ci-gate in 9s (ID 99781956492)
+  ✓ Set up job
+  X Check all required jobs
+  ✓ Complete job
+- run-selected-tests-a5 (ID 99781956637)
+- ensure-csrc-cache (ID 99781956741)
+- run-selected-tests-upstream (ID 99781957083)
+- run-selected-tests (ID 99781957265)
+
+ANNOTATIONS
+X Executing the custom container implementation failed. Please contact your self hosted runner administrator.
+pre-commit: .github#27
+
+X Process completed with exit code 1.
+pre-commit: .github#26
+
+X Error: failed to run script step: Error: command terminated with non-zero exit code: command terminated with exit code 1
+pre-commit: .github#25
+
+X Signature of "build" incompatible with supertype "AscendDSAMetadataBuilder"  [override]
+pre-commit: .github#2188
+
+X Executing the custom container implementation failed. Please contact your self hosted runner administrator.
+select-tests: .github#31
+
+X Process completed with exit code 1.
+select-tests: .github#30
+
+X Error: failed to run script step: Error: command terminated with non-zero exit code: command terminated with exit code 1
+select-tests: .github#29
+
+X Coverage test recommendation did not succeed (result: skipped); not falling back to all tests
+select-tests: .github#28
+
+X Process completed with exit code 1.
+ci-gate: .github#74
+
+X pre-commit did not succeed (result: failure)
+ci-gate: .github#73
+
+
+To see what failed, try: gh run view 33484333333 --log-failed
+View this run on GitHub: https://github.com/vllm-project/vllm-ascend/actions/runs/33484333333
+
+════════════════════════════════════════════
+ 失败 / 取消 Job 详情（共 3 个）
+════════════════════════════════════════════
+
+── [FAILURE] pre-commit
+   Runner : linux-amd64-cpu-8-hk-ds7vs-runner-fhfnc
+   时间   : 2026-09-01T07:54:33Z ~ 2026-09-01T07:56:56Z
+   ── 运行时错误（高优先级）
+pre-commit	Run mypy	2026-09-01T07:56:11.6855449Z ##[error]Process completed with exit code 1.
+   ── 编译/安装错误（次优先级）
+pre-commit	Validate PR title prefix	2026-09-01T07:54:56.1485239Z ^[[36;1m    echo "::error::Failed to fetch PR title from GitHub API"^[[0m
+pre-commit	Run mypy	2026-09-01T07:56:09.6578168Z ##[error]vllm_ascend/attention/context_parallel/dsa_cp.py:2188: error: Signature of "build" incompatible with supertype "AscendDSAMetadataBuilder"  [override]
+pre-commit	Run mypy	2026-09-01T07:56:11.6799159Z ##[error]Error: failed to run script step: Error: command terminated with non-zero exit code: command terminated with exit code 1
+   ── 最后输出（定位失败阶段）
+
+── [FAILURE] select-tests
+   Runner : linux-amd64-cpu-8-hk-ds7vs-runner-26crn
+   时间   : 2026-09-01T07:57:30Z ~ 2026-09-01T07:58:28Z
+   ── 运行时错误（高优先级）
+select-tests	Decide test selection mode	2026-09-01T07:58:05.0381825Z ##[error]Process completed with exit code 1.
+   ── 编译/安装错误（次优先级）
+select-tests	Resolve source snapshot	2026-09-01T07:57:56.3069463Z ^[[36;1m  echo "::error::CSRC build workflows changed on $BASE_REF, please rebase the code."^[[0m
+select-tests	Decide test selection mode	2026-09-01T07:58:05.0306285Z ##[error]Error: failed to run script step: Error: command terminated with non-zero exit code: command terminated with exit code 1
+   ── 最后输出（定位失败阶段）
+
+── [FAILURE] ci-gate
+   Runner : linux-amd64-cpu-2-hk-lwxb6-runner-nqrj4
+   时间   : 2026-09-01T07:58:49Z ~ 2026-09-01T07:58:58Z
+   ── 运行时错误（高优先级）
+ci-gate	Check all required jobs	2026-09-01T07:58:51.2488721Z ##[error]Process completed with exit code 1.
+   ── 编译/安装错误（次优先级）
+   ── 最后输出（定位失败阶段）
+
+════════════════════════════════════════════
+ 补充命令（按需使用）：
+   完整日志 : gh run view --job <id> --log --repo vllm-project/vllm-ascend
+   PR diff  : gh pr diff <pr> --repo vllm-project/vllm-ascend --name-only
+   kubectl  : kubectl get pods --all-namespaces | grep <runner_name>
+════════════════════════════════════════════

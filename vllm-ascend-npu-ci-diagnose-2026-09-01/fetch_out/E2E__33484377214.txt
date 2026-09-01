@@ -1,0 +1,49 @@
+════════════════════════════════════════════
+ Run 33484377214 | vllm-project/vllm-ascend
+════════════════════════════════════════════
+
+X fix/record-stream-cross-stream-lifetime E2E vllm-project/vllm-ascend#15417 · 33484377214
+Triggered via pull_request about 41 minutes ago
+
+JOBS
+✓ pre-commit in 3m48s (ID 99780954305)
+✓ Recommend tests from coverage in 1m6s (ID 99782021608)
+✓ select-tests in 1m28s (ID 99782407217)
+X ci-gate in 8s (ID 99782910771)
+  ✓ Set up job
+  X Check all required jobs
+  ✓ Complete job
+- run-selected-tests-a5 (ID 99782911276)
+- ensure-csrc-cache (ID 99782911377)
+- run-selected-tests-upstream (ID 99782911423)
+- run-selected-tests (ID 99782911791)
+
+ANNOTATIONS
+X Process completed with exit code 1.
+ci-gate: .github#75
+
+X Selected tests are required; add the ready-precise or ready-all label
+ci-gate: .github#74
+
+
+To see what failed, try: gh run view 33484377214 --log-failed
+View this run on GitHub: https://github.com/vllm-project/vllm-ascend/actions/runs/33484377214
+
+════════════════════════════════════════════
+ 失败 / 取消 Job 详情（共 1 个）
+════════════════════════════════════════════
+
+── [FAILURE] ci-gate
+   Runner : linux-amd64-cpu-2-hk-lwxb6-runner-t55wk
+   时间   : 2026-09-01T08:02:25Z ~ 2026-09-01T08:02:33Z
+   ── 运行时错误（高优先级）
+ci-gate	Check all required jobs	2026-09-01T08:02:27.2445338Z ##[error]Process completed with exit code 1.
+   ── 编译/安装错误（次优先级）
+   ── 最后输出（定位失败阶段）
+
+════════════════════════════════════════════
+ 补充命令（按需使用）：
+   完整日志 : gh run view --job <id> --log --repo vllm-project/vllm-ascend
+   PR diff  : gh pr diff <pr> --repo vllm-project/vllm-ascend --name-only
+   kubectl  : kubectl get pods --all-namespaces | grep <runner_name>
+════════════════════════════════════════════

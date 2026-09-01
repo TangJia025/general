@@ -1,0 +1,151 @@
+════════════════════════════════════════════
+ Run 33380426365 | vllm-project/vllm-ascend
+════════════════════════════════════════════
+
+X main Nightly-A3 · 33380426365
+Triggered via workflow_dispatch about 22 hours ago
+
+JOBS
+✓ Parse trigger and determine test scope in 14s (ID 99451328477)
+- Build nightly-a3 image in 0s (ID 99451329929)
+✓ Export global env vars as job outputs in 4m52s (ID 99451480256)
+- multi-node (main, DeepSeek-V4-Pro-w4a8-1M-PD, DeepSeek-V4-Pro-w4a8-1M-PD.yaml, tests/e2e/nightly/... / inputs.config_file_path in 0s (ID 99452776622)
+- multi-node (main, multi-node-deepseek-v3.2-W8A8-EP, DeepSeek-V3_2-W8A8-EP.yaml, tests/e2e/nightly... / inputs.config_file_path in 0s (ID 99452777169)
+- multi-node (main, GLM-5.1-w8a8c8-128k-1k-90-50-PD, GLM-5.1-W8A8C8-128k-1k-90-50-PD.yaml, tests/e2... / inputs.config_file_path (ID 99452777911)
+- multi-node (main, DeepSeek-V4-Pro-w4a8-prefix-cache-PD, DeepSeek-V4-Pro-w4a8-prefix-cache-PD.yaml... / inputs.config_file_path (ID 99452777984)
+X double-node (main, multi-node-qwen-disagg-pd, Qwen3-235B-disagg-pd.yaml, tests/e2e/nightly/multi_... / Qwen3-235B-disagg-pd.yaml in 1h5m37s (ID 99452778914)
+  ✓ Set up job
+  ✓ Initialize containers
+  ✓ Decode kubeconfig
+  ✓ Checkout code
+  ✓ Set job variables
+  ✓ Prepare scripts
+  ✓ Clear resources
+  ✓ Launch cluster
+  ✓ Wait for pods ready
+  X Stream logs
+  - Update good_table.csv on success
+  ✓ Fetch benchmark results from PVC
+  ✓ Post process
+  ✓ Collect Ascend logs
+  ✓ Upload Ascend logs
+  ✓ Upload Ascend logs (GitHub Artifacts)
+  ✓ Set benchmark artifact timestamp
+  ✓ Upload benchmark results
+  ✓ Upload benchmark results (GitHub Artifacts)
+  ✓ Post Checkout code
+  ✓ Stop containers
+  ✓ Complete job
+- multi-node (main, QWEN3_235B_PD_3_5K_1_5k, QWEN3_235B_PD_3_5K_1_5k.yaml, tests/e2e/nightly/multi_... / inputs.config_file_path in 0s (ID 99452779259)
+- double-node (main, multi-node-qwen3-dp, Qwen3-235B-A22B.yaml, tests/e2e/nightly/multi_node/intern... / inputs.config_file_path in 0s (ID 99452779921)
+- double-node (main, multi-node-dpsk3.2-2node, DeepSeek-V3_2-W8A8-A3-dual-nodes.yaml, tests/e2e/nig... / inputs.config_file_path in 0s (ID 99452779977)
+- double-node (main, multi-node-GLM-5.1-w8a8-A3, GLM5_1-W8A8-A3-dual-nodes.yaml, tests/e2e/nightly/... / inputs.config_file_path in 0s (ID 99452780187)
+- double-node (main, multi-node-qwenw8a8-2node-eplb, Qwen3-235B-W8A8-EPLB.yaml, tests/e2e/nightly/m... / inputs.config_file_path (ID 99452781039)
+- double-node (main, multi-node-qwen-vl-disagg-pd, Qwen3-VL-235B-disagg-pd.yaml, tests/e2e/nightly/... / inputs.config_file_path (ID 99452781155)
+- double-node (main, multi-node-GLM-5.1-W8A8C8-A3_128k_90_50, GLM-5.1-W8A8C8-A3_128k_90_50.yaml, te... / inputs.config_file_path (ID 99452781339)
+- double-node (main, multi-node-GLM-5.1-W8A8C8-MTP-A3_198k_function, GLM-5.1-W8A8C8-A3_198k_functio... / inputs.config_file_path (ID 99452781919)
+- double-node (main, multi-node-deepseek-v3.1, DeepSeek-V3.1-BF16.yaml, tests/e2e/nightly/multi_nod... / inputs.config_file_path (ID 99452782033)
+- double-node (main, multi-node-GLM-5.2-w8a8-A3, GLM5_2-W8A8-A3-dual-nodes.yaml, tests/e2e/nightly/... / inputs.config_file_path in 0s (ID 99452782841)
+- double-node (main, DeepSeek-V4-flash-w8a8-PD-prefix, DeepSeek-V4-flash-w8a8-PD-prefix.yaml, tests... / inputs.config_file_path in 0s (ID 99452783281)
+- double-node (main, Minimax_m2.7_in128k_1k_prefix90_tpot50, Minimax_m2.7_in128k_1k_prefix90_tpot50... / inputs.config_file_path in 0s (ID 99452783561)
+- double-node (main, Kimi-K2.6-W4A8-64k-1k-TPOT50-PD, Kimi-K2.6-W4A8-64k-1k-TPOT50-PD.yaml, tests/e... / inputs.config_file_path in 0s (ID 99452783567)
+- clear-pre-logs (ID 99468353971)
+- single-node (main, qwen3-32b-bf16-gpqa-acc, linux-aarch64-nightly-a3-4, tests/e2e/nightly/test_qw... / inputs.name || inputs.config_file_path || inputs.tests in 0s (ID 99468354907)
+- single-node (main, Qwen3.5-122B-A10B-W8A8-A3, linux-aarch64-nightly-a3-16, Qwen3.5-122B-A10B-W8A8... / inputs.name || inputs.config_file_path || inputs.tests in 0s (ID 99468354915)
+- single-node (main, DeepSeek-V4-Flash-W8A8-A3, linux-aarch64-nightly-a3-16, DeepSeek-V4-Flash-W8A8... / inputs.name || inputs.config_file_path || inputs.tests in 0s (ID 99468355011)
+- single-node (main, MiniMax-M3-W8A8-A3, linux-aarch64-nightly-a3-16, MiniMax-M3-W8A8-A3.yaml) / inputs.name || inputs.config_file_path || inputs.tests in 0s (ID 99468355064)
+- single-node (main, deepseek-r1-0528-w8a8, linux-aarch64-nightly-a3-16, DeepSeek-R1-0528-W8A8.yaml) / inputs.name || inputs.config_file_path || inputs.tests in 0s (ID 99468355198)
+- single-node (main, qwen3-32b-int8, linux-aarch64-nightly-a3-4, Qwen3-32B-Int8.yaml) / inputs.name || inputs.config_file_path || inputs.tests in 0s (ID 99468355200)
+- single-node (main, MiniMax-M3-BF16-A3, linux-aarch64-nightly-a3-16, MiniMax-M3-BF16-A3.yaml) / inputs.name || inputs.config_file_path || inputs.tests in 0s (ID 99468355278)
+- single-node (main, kimi-k2-thinking, linux-aarch64-nightly-a3-16, Kimi-K2-Thinking.yaml) / inputs.name || inputs.config_file_path || inputs.tests in 0s (ID 99468355362)
+- single-node (main, deepseek-v3-2-w8a8, linux-aarch64-nightly-a3-16, DeepSeek-V3.2-W8A8.yaml) / inputs.name || inputs.config_file_path || inputs.tests in 0s (ID 99468355387)
+- single-node (main, Qwen3-32B-W8A8C8-A3, linux-aarch64-nightly-a3-4, Qwen3-32B-W8A8C8-A3.yaml) / inputs.name || inputs.config_file_path || inputs.tests in 0s (ID 99468355472)
+- single-node (main, qwen3-30b-acc, linux-aarch64-nightly-a3-4, tests/e2e/weekly/single_node/models... / inputs.name || inputs.config_file_path || inputs.tests in 0s (ID 99468355477)
+- single-node (main, qwen3-32b-w8a8-aime2024-acc, linux-aarch64-nightly-a3-4, tests/e2e/nightly/tes... / inputs.name || inputs.config_file_path || inputs.tests in 0s (ID 99468355495)
+- single-node (main, kimi-k2.5, linux-aarch64-nightly-a3-16, Kimi-K2.5.yaml) / inputs.name || inputs.config_file_path || inputs.tests in 0s (ID 99468355496)
+- single-node (main, Qwen3-32B-QuaRot, linux-aarch64-nightly-a3-2, Qwen3-32B-QuaRot-eagle3.yaml) / inputs.name || inputs.config_file_path || inputs.tests in 0s (ID 99468355582)
+- single-node (main, mtpx-deepseek-r1-0528-w8a8, linux-aarch64-nightly-a3-16, MTPX-DeepSeek-R1-0528... / inputs.name || inputs.config_file_path || inputs.tests in 0s (ID 99468355589)
+- single-node (main, qwen3-32b-int8-prefix-cache, linux-aarch64-nightly-a3-4, Prefix-Cache-Qwen3-32... / inputs.name || inputs.config_file_path || inputs.tests in 0s (ID 99468355619)
+- single-node (main, qwen3-30b-a3b-w8a8, linux-aarch64-nightly-a3-4, Qwen3-30B-A3B-W8A8.yaml) / inputs.name || inputs.config_file_path || inputs.tests in 0s (ID 99468355861)
+- single-node (main, Qwen3-30B-A3B-W4A8-llm-compressor, linux-aarch64-nightly-a3-2, Qwen3-30B-A3B-W... / inputs.name || inputs.config_file_path || inputs.tests in 0s (ID 99468355876)
+- single-node (main, Qwen3-30B-QuaRot, linux-aarch64-nightly-a3-2, Qwen3-30B-QuaRot-eagle3.yaml) / inputs.name || inputs.config_file_path || inputs.tests in 0s (ID 99468356004)
+- single-node (main, Qwen3.5-27B-w8a8-A3, linux-aarch64-nightly-a3-2, Qwen3.5-27B-w8a8-A3.yaml) / inputs.name || inputs.config_file_path || inputs.tests in 0s (ID 99468356136)
+- single-node (main, glm-5.1-w8a8-prefill-mc2, linux-aarch64-nightly-a3-16, GLM-5.1-W8A8-PrefillMC2... / inputs.name || inputs.config_file_path || inputs.tests in 0s (ID 99468357540)
+- single-node (main, qwen3-235b-a22b-w8a8, linux-aarch64-nightly-a3-16, Qwen3-235B-A22B-W8A8.yaml) / inputs.name || inputs.config_file_path || inputs.tests in 0s (ID 99468357736)
+- single-node (main, qwen3-vl-235b-a22b-instruct-w8a8, linux-aarch64-nightly-a3-16, Qwen3-VL-235B-A... / inputs.name || inputs.config_file_path || inputs.tests in 0s (ID 99468357790)
+- single-node (main, deepseek-r1-0528-w8a8-prefix-cache, linux-aarch64-nightly-a3-16, Prefix-Cache-... / inputs.name || inputs.config_file_path || inputs.tests in 0s (ID 99468357953)
+- single-node (main, Qwen3_32b_w8a8_ml_A3, linux-aarch64-a3-16, Qwen3_32b_w8a8_ml_A3.yaml) / inputs.name || inputs.config_file_path || inputs.tests in 0s (ID 99468357956)
+- single-node (main, Minimax_m2.7_w8a8_A3, linux-aarch64-nightly-a3-16, Minimax_m2.7_w8a8_A3.yaml) / inputs.name || inputs.config_file_path || inputs.tests in 0s (ID 99468357974)
+- single-node (main, glm-4.7-w8a8, linux-aarch64-nightly-a3-16, GLM-4.7.yaml) / inputs.name || inputs.config_file_path || inputs.tests in 0s (ID 99468358107)
+- single-node (main, Qwen3.5-397B-A17B-w8a8-mtp, linux-aarch64-nightly-a3-16, Qwen3.5-397B-A17B-W8A... / inputs.name || inputs.config_file_path || inputs.tests in 0s (ID 99468358317)
+- single-node (main, Kimi-K2.6-w4a8-A3, linux-aarch64-nightly-a3-16, Kimi-K2.6-w4a8-A3.yaml) / inputs.name || inputs.config_file_path || inputs.tests in 0s (ID 99468358327)
+- single-node (main, Deepseek_R1_W8A8_A3, linux-aarch64-a3-16, Deepseek_R1_W8A8_A3.yaml) / inputs.name || inputs.config_file_path || inputs.tests in 0s (ID 99468359282)
+✓ Merge benchmark artifacts into nightly-a3.zip in 10s (ID 99468359544)
+- single-node (main, Qwen3.8-27B-w8a8-A3, linux-aarch64-a3-2, Qwen3.8-27B-w8a8-A3.yaml) / inputs.name || inputs.config_file_path || inputs.tests in 0s (ID 99468359610)
+- single-node (main, qwen_3_6_27b_w8a8_A3, linux-aarch64-a3-16, qwen_3_6_27b_w8a8_A3.yaml) / inputs.name || inputs.config_file_path || inputs.tests in 0s (ID 99468359624)
+- single-node (main, Deepseek_R1_W8A8_Reasoning_output_A3, linux-aarch64-a3-16, Deepseek_R1_W8A8_Re... / inputs.name || inputs.config_file_path || inputs.tests in 0s (ID 99468359849)
+- single-node (main, Qwq_32b_A3, linux-aarch64-a3-16, Qwq_32b_A3.yaml) / inputs.name || inputs.config_file_path || inputs.tests in 0s (ID 99468359871)
+- single-node (main, Qwen3_32b_W8A8_wl_A3, linux-aarch64-a3-16, Qwen3_32b_W8A8_wl_A3.yaml) / inputs.name || inputs.config_file_path || inputs.tests (ID 99468360269)
+- Remove node taints (ID 99468360802)
+
+ANNOTATIONS
+! No files were found with the provided path: /tmp/benchmark_results/. No artifacts will be uploaded.
+double-node (main, multi-node-qwen-disagg-pd, Qwen3-235B-disagg-pd.yaml, tests/e2e/nightly/multi_... / Qwen3-235B-disagg-pd.yaml: .github#22
+
+! No files found for path: /tmp/benchmark_results/, skipping upload
+double-node (main, multi-node-qwen-disagg-pd, Qwen3-235B-disagg-pd.yaml, tests/e2e/nightly/multi_... / Qwen3-235B-disagg-pd.yaml: .github#225
+
+X Executing the custom container implementation failed. Please contact your self hosted runner administrator.
+double-node (main, multi-node-qwen-disagg-pd, Qwen3-235B-disagg-pd.yaml, tests/e2e/nightly/multi_... / Qwen3-235B-disagg-pd.yaml: .github#246
+
+X Process completed with exit code 1.
+double-node (main, multi-node-qwen-disagg-pd, Qwen3-235B-disagg-pd.yaml, tests/e2e/nightly/multi_... / Qwen3-235B-disagg-pd.yaml: .github#245
+
+X Error: failed to run script step: Error: command terminated with non-zero exit code: command terminated with exit code 1
+double-node (main, multi-node-qwen-disagg-pd, Qwen3-235B-disagg-pd.yaml, tests/e2e/nightly/multi_... / Qwen3-235B-disagg-pd.yaml: .github#244
+
+X Upload failed. See log:
+double-node (main, multi-node-qwen-disagg-pd, Qwen3-235B-disagg-pd.yaml, tests/e2e/nightly/multi_... / Qwen3-235B-disagg-pd.yaml: .github#226
+
+X Executing the custom container implementation failed. Please contact your self hosted runner administrator.
+double-node (main, multi-node-qwen-disagg-pd, Qwen3-235B-disagg-pd.yaml, tests/e2e/nightly/multi_... / Qwen3-235B-disagg-pd.yaml: .github#15312
+
+X Process completed with exit code 1.
+double-node (main, multi-node-qwen-disagg-pd, Qwen3-235B-disagg-pd.yaml, tests/e2e/nightly/multi_... / Qwen3-235B-disagg-pd.yaml: .github#15311
+
+X Error: failed to run script step: Error: command terminated with non-zero exit code: command terminated with exit code 1
+double-node (main, multi-node-qwen-disagg-pd, Qwen3-235B-disagg-pd.yaml, tests/e2e/nightly/multi_... / Qwen3-235B-disagg-pd.yaml: .github#15310
+
+X No artifacts found matching pattern 'nightly-test-benchmark-results-*'
+Merge benchmark artifacts into nightly-a3.zip: .github#13
+
+
+ARTIFACTS
+main-Qwen3-235B-disagg-pd-ascend-logs
+
+To see what failed, try: gh run view 33380426365 --log-failed
+View this run on GitHub: https://github.com/vllm-project/vllm-ascend/actions/runs/33380426365
+
+════════════════════════════════════════════
+ 失败 / 取消 Job 详情（共 1 个）
+════════════════════════════════════════════
+
+── [FAILURE] double-node (main, multi-node-qwen-disagg-pd, Qwen3-235B-disagg-pd.yaml, tests/e2e/nightly/multi_... / Qwen3-235B-disagg-pd.yaml
+   Runner : linux-aarch64-a3-0-dnlzn-runner-8jqzz
+   时间   : 2026-08-31T10:07:07Z ~ 2026-08-31T11:12:44Z
+   ── 运行时错误（高优先级）
+double-node (main, multi-node-qwen-disagg-pd, Qwen3-235B-disagg-pd.yaml, tests/e2e/nightly/multi_... / Qwen3-235B-disagg-pd.yaml	UNKNOWN STEP	2026-08-31T10:32:00.0252203Z [2026-08-31 10:32:00.022073][UC][I] No available shared memory broadcast block found in 60 seconds. This typically happens when some processes are hanging or doing some time-consuming work (e.g. compilation, weight/kv cache quantization). [22876,22876][shm_broadcast.py:802,acquire_read]
+double-node (main, multi-node-qwen-disagg-pd, Qwen3-235B-disagg-pd.yaml, tests/e2e/nightly/multi_... / Qwen3-235B-disagg-pd.yaml	UNKNOWN STEP	2026-08-31T10:32:01.0330152Z [2026-08-31 10:32:01.030189][UC][I] No available shared memory broadcast block found in 60 seconds. This typically happens when some processes are hanging or doing some time-consuming work (e.g. compilation, weight/kv cache quantization). [22875,22875][shm_broadcast.py:802,acquire_read]
+double-node (main, multi-node-qwen-disagg-pd, Qwen3-235B-disagg-pd.yaml, tests/e2e/nightly/multi_... / Qwen3-235B-disagg-pd.yaml	UNKNOWN STEP	2026-08-31T10:33:35.0685083Z [2026-08-31 10:33:35.065554][UC][I] No available shared memory broadcast block found in 60 seconds. This typically happens when some processes are hanging or doing some time-consuming work (e.g. compilation, weight/kv cache quantization). [22876,22876][shm_broadcast.py:802,acquire_read]
+double-node (main, multi-node-qwen-disagg-pd, Qwen3-235B-disagg-pd.yaml, tests/e2e/nightly/multi_... / Qwen3-235B-disagg-pd.yaml	UNKNOWN STEP	2026-08-31T11:10:15.7868422Z E       AssertionError: some aisbench cases failed, info were shown above.
+double-node (main, multi-node-qwen-disagg-pd, Qwen3-235B-disagg-pd.yaml, tests/e2e/nightly/multi_... / Qwen3-235B-disagg-pd.yaml	UNKNOWN STEP	2026-08-31T11:10:15.7888887Z tools/aisbench.py:303: AssertionError
+double-node (main, multi-node-qwen-disagg-pd, Qwen3-235B-disagg-pd.yaml, tests/e2e/nightly/multi_... / Qwen3-235B-disagg-pd.yaml	UNKNOWN STEP	2026-08-31T11:10:29.6943640Z ##[error]Process completed with exit code 1.
+double-node (main, multi-node-qwen-disagg-pd, Qwen3-235B-disagg-pd.yaml, tests/e2e/nightly/multi_... / Qwen3-235B-disagg-pd.yaml	UNKNOWN STEP	2026-08-31T11:11:52.0657987Z ##[error]Process completed with exit code 1.
+   ── 最后输出（定位失败阶段）
+
+════════════════════════════════════════════
+ 补充命令（按需使用）：
+   完整日志 : gh run view --job <id> --log --repo vllm-project/vllm-ascend
+   PR diff  : gh pr diff <pr> --repo vllm-project/vllm-ascend --name-only
+   kubectl  : kubectl get pods --all-namespaces | grep <runner_name>
+════════════════════════════════════════════

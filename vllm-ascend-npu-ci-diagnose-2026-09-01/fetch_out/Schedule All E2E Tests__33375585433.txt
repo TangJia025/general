@@ -1,0 +1,121 @@
+════════════════════════════════════════════
+ Run 33375585433 | vllm-project/vllm-ascend
+════════════════════════════════════════════
+
+X hjp_818 Schedule All E2E Tests vllm-project/vllm-ascend#14458 · 33375585433
+Triggered via pull_request about 23 hours ago
+
+JOBS
+✓ select-all-tests in 1m2s (ID 99436621516)
+✓ Resolve daily test matrix in 3m52s (ID 99436621714)
+X ensure-csrc-cache / Prepare csrc cache checks in 1m12s (ID 99437085215)
+  ✓ Set up job
+  ✓ Initialize containers
+  ✓ Install csrc cache dependencies
+  X Download csrc‑targets artifact when file‑mode is enabled
+  - Checkout source
+  - Checkout cache workflow helpers
+  - Rebase on main snapshot
+  - Calculate csrc hash
+  - Resolve requested cache targets
+  - Look up csrc cache (a2-arm64-ubuntu)
+  - Look up csrc cache (a3-arm64-ubuntu)
+  - Look up csrc cache (310p-arm64-ubuntu)
+  - Summarize csrc cache results
+  ✓ Stop containers
+  ✓ Complete job
+- ensure-csrc-cache / Build csrc cache (${{ matrix.target.id }}) (ID 99437511800)
+✓ Verify nightly-ci image (build gate) in 52s (ID 99437818451)
+X A3 nightly high-freq (a3-nightly-hf, linux-aarch64-a3-2, tests/e2e/nightly/single_node/ops/multic... / a3-nightly-hf in 1m35s (ID 99438153674)
+  ✓ Set up job
+  ✓ Initialize containers
+  ✓ Check npu and CANN info
+  - uninstall vlm vllm-ascend and remove code (if pr test)
+  - Checkout vllm-project/vllm-ascend repo
+  - Move code to /vllm-workspace
+  ✓ Set MAX_JOBS based on runner
+  - Install vllm-project/vllm-ascend
+  - Uninstall Triton for 310P tests
+  - Install aisbench
+  ✓ Show vLLM and vLLM-Ascend version
+  ✓ Install clang
+  ✓ Validate Inputs
+  X Run Pytest (py-driven)
+  - Run Pytest (YAML-driven)
+  - Update good_table.csv on success
+  - Capture test result
+  - Classify failure
+  - Skip - env issue
+  - Check commit age
+  - Skip - old commit
+  - Process - recent real failure
+  - On success
+  - Set benchmark artifact timestamp
+  - Upload benchmark results
+  - Upload benchmark results (GitHub Artifacts)
+  ✓ Stop containers
+  ✓ Complete job
+✓ A2 nightly high-freq (a2-nightly-hf, linux-aarch64-a2b3-1, tests/e2e/nightly/single_node/ops/sing... / a2-nightly-hf in 2m4s (ID 99438153769)
+
+ANNOTATIONS
+! Node.js 20 is deprecated. The following actions target Node.js 20 but are being forced to run on Node.js 24: actions/checkout@v4, actions/setup-python@v5. For more information see: https://github.blog/changelog/2025-09-19-deprecation-of-node-20-on-github-actions-runners/
+Resolve daily test matrix: .github#8
+
+! Node.js 20 is deprecated. The following actions target Node.js 20 but are being forced to run on Node.js 24: actions/download-artifact@v4. For more information see: https://github.blog/changelog/2025-09-19-deprecation-of-node-20-on-github-actions-runners/
+ensure-csrc-cache / Prepare csrc cache checks: .github#3
+
+X Executing the custom container implementation failed. Please contact your self hosted runner administrator.
+ensure-csrc-cache / Prepare csrc cache checks: .github#22
+
+X Process completed with exit code 1.
+ensure-csrc-cache / Prepare csrc cache checks: .github#21
+
+X Error: failed to run script step: Error: command terminated with non-zero exit code: command terminated with exit code 1
+ensure-csrc-cache / Prepare csrc cache checks: .github#20
+
+X Unable to download artifact(s): Artifact not found for name: csrc-targets-artifact
+        Please ensure that your artifact is not expired and the artifact was uploaded using a compatible version of toolkit/upload-artifact.
+        For more information, visit the GitHub Artifacts FAQ: https://github.com/actions/toolkit/blob/main/packages/artifact/docs/faq.md
+ensure-csrc-cache / Prepare csrc cache checks: .github#17
+
+X Executing the custom container implementation failed. Please contact your self hosted runner administrator.
+A3 nightly high-freq (a3-nightly-hf, linux-aarch64-a3-2, tests/e2e/nightly/single_node/ops/multic... / a3-nightly-hf: .github#50
+
+X Process completed with exit code 1.
+A3 nightly high-freq (a3-nightly-hf, linux-aarch64-a3-2, tests/e2e/nightly/single_node/ops/multic... / a3-nightly-hf: .github#49
+
+X Error: failed to run script step: Error: command terminated with non-zero exit code: command terminated with exit code 4
+A3 nightly high-freq (a3-nightly-hf, linux-aarch64-a3-2, tests/e2e/nightly/single_node/ops/multic... / a3-nightly-hf: .github#48
+
+
+To see what failed, try: gh run view 33375585433 --log-failed
+View this run on GitHub: https://github.com/vllm-project/vllm-ascend/actions/runs/33375585433
+
+════════════════════════════════════════════
+ 失败 / 取消 Job 详情（共 2 个）
+════════════════════════════════════════════
+
+── [FAILURE] ensure-csrc-cache / Prepare csrc cache checks
+   Runner : linux-amd64-cpu-2-hk-lwxb6-runner-2t2fz
+   时间   : 2026-08-31T09:04:53Z ~ 2026-08-31T09:06:05Z
+   ── 运行时错误（高优先级）
+ensure-csrc-cache / Prepare csrc cache checks	UNKNOWN STEP	2026-08-31T09:06:00.9496198Z ##[error]Process completed with exit code 1.
+   ── 编译/安装错误（次优先级）
+ensure-csrc-cache / Prepare csrc cache checks	UNKNOWN STEP	2026-08-31T09:06:00.9432331Z ##[error]Error: failed to run script step: Error: command terminated with non-zero exit code: command terminated with exit code 1
+   ── 最后输出（定位失败阶段）
+
+── [FAILURE] A3 nightly high-freq (a3-nightly-hf, linux-aarch64-a3-2, tests/e2e/nightly/single_node/ops/multic... / a3-nightly-hf
+   Runner : linux-aarch64-a3-2-djtkl-runner-l28gt
+   时间   : 2026-08-31T09:09:03Z ~ 2026-08-31T09:10:38Z
+   ── 运行时错误（高优先级）
+A3 nightly high-freq (a3-nightly-hf, linux-aarch64-a3-2, tests/e2e/nightly/single_node/ops/multic... / a3-nightly-hf	UNKNOWN STEP	2026-08-31T09:10:32.4293174Z ##[error]Process completed with exit code 1.
+   ── 编译/安装错误（次优先级）
+A3 nightly high-freq (a3-nightly-hf, linux-aarch64-a3-2, tests/e2e/nightly/single_node/ops/multic... / a3-nightly-hf	UNKNOWN STEP	2026-08-31T09:10:32.4111424Z ##[error]Error: failed to run script step: Error: command terminated with non-zero exit code: command terminated with exit code 4
+   ── 最后输出（定位失败阶段）
+
+════════════════════════════════════════════
+ 补充命令（按需使用）：
+   完整日志 : gh run view --job <id> --log --repo vllm-project/vllm-ascend
+   PR diff  : gh pr diff <pr> --repo vllm-project/vllm-ascend --name-only
+   kubectl  : kubectl get pods --all-namespaces | grep <runner_name>
+════════════════════════════════════════════

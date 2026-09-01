@@ -1,0 +1,233 @@
+════════════════════════════════════════════
+ Run 33472492154 | vllm-project/vllm-ascend
+════════════════════════════════════════════
+
+X main Nightly-A3 · 33472492154
+Triggered via workflow_dispatch about 3 hours ago
+
+JOBS
+✓ Parse trigger and determine test scope in 14s (ID 99744919439)
+- Build nightly-a3 image (ID 99744920688)
+✓ Export global env vars as job outputs in 3m25s (ID 99745028264)
+- multi-node (main, multi-node-deepseek-v3.2-W8A8-EP, DeepSeek-V3_2-W8A8-EP.yaml, tests/e2e/nightly... / inputs.config_file_path in 0s (ID 99745737018)
+- multi-node (main, DeepSeek-V4-Pro-w4a8-1M-PD, DeepSeek-V4-Pro-w4a8-1M-PD.yaml, tests/e2e/nightly/... / inputs.config_file_path in 0s (ID 99745737625)
+- multi-node (main, GLM-5.1-w8a8c8-128k-1k-90-50-PD, GLM-5.1-W8A8C8-128k-1k-90-50-PD.yaml, tests/e2... / inputs.config_file_path in 0s (ID 99745738505)
+- multi-node (main, DeepSeek-V4-Pro-w4a8-prefix-cache-PD, DeepSeek-V4-Pro-w4a8-prefix-cache-PD.yaml... / inputs.config_file_path in 0s (ID 99745738703)
+- multi-node (main, QWEN3_235B_PD_3_5K_1_5k, QWEN3_235B_PD_3_5K_1_5k.yaml, tests/e2e/nightly/multi_... / inputs.config_file_path (ID 99745739494)
+- double-node (main, multi-node-dpsk3.2-2node, DeepSeek-V3_2-W8A8-A3-dual-nodes.yaml, tests/e2e/nig... / inputs.config_file_path in 0s (ID 99745740679)
+X double-node (main, multi-node-GLM-5.1-W8A8C8-A3_128k_90_50, GLM-5.1-W8A8C8-A3_128k_90_50.yaml, te... / GLM-5.1-W8A8C8-A3_128k_90_50.yaml in 22m19s (ID 99745740829)
+  ✓ Set up job
+  ✓ Initialize containers
+  ✓ Decode kubeconfig
+  ✓ Checkout code
+  ✓ Set job variables
+  ✓ Prepare scripts
+  ✓ Clear resources
+  ✓ Launch cluster
+  X Wait for pods ready
+  - Stream logs
+  - Update good_table.csv on success
+  ✓ Fetch benchmark results from PVC
+  ✓ Post process
+  ✓ Collect Ascend logs
+  ✓ Upload Ascend logs
+  ✓ Upload Ascend logs (GitHub Artifacts)
+  ✓ Set benchmark artifact timestamp
+  ✓ Upload benchmark results
+  ✓ Upload benchmark results (GitHub Artifacts)
+  ✓ Post Checkout code
+  ✓ Stop containers
+  ✓ Complete job
+- double-node (main, multi-node-qwen3-dp, Qwen3-235B-A22B.yaml, tests/e2e/nightly/multi_node/intern... / inputs.config_file_path in 0s (ID 99745740887)
+- double-node (main, multi-node-GLM-5.1-w8a8-A3, GLM5_1-W8A8-A3-dual-nodes.yaml, tests/e2e/nightly/... / inputs.config_file_path in 0s (ID 99745740949)
+- double-node (main, multi-node-qwen-disagg-pd, Qwen3-235B-disagg-pd.yaml, tests/e2e/nightly/multi_... / inputs.config_file_path in 0s (ID 99745741157)
+- double-node (main, multi-node-qwenw8a8-2node-eplb, Qwen3-235B-W8A8-EPLB.yaml, tests/e2e/nightly/m... / inputs.config_file_path in 0s (ID 99745742162)
+- double-node (main, multi-node-qwen-vl-disagg-pd, Qwen3-VL-235B-disagg-pd.yaml, tests/e2e/nightly/... / inputs.config_file_path in 0s (ID 99745742236)
+✓ double-node (main, Minimax_m2.7_in128k_1k_prefix90_tpot50, Minimax_m2.7_in128k_1k_prefix90_tpot50... / Minimax_m2.7_in128k_1k_prefix90_tpot50.yaml in 53m24s (ID 99745742286)
+- double-node (main, multi-node-GLM-5.1-W8A8C8-MTP-A3_198k_function, GLM-5.1-W8A8C8-A3_198k_functio... / inputs.config_file_path (ID 99745742451)
+- double-node (main, multi-node-deepseek-v3.1, DeepSeek-V3.1-BF16.yaml, tests/e2e/nightly/multi_nod... / inputs.config_file_path (ID 99745743048)
+- double-node (main, multi-node-GLM-5.2-w8a8-A3, GLM5_2-W8A8-A3-dual-nodes.yaml, tests/e2e/nightly/... / inputs.config_file_path (ID 99745743082)
+X double-node (main, Kimi-K2.6-W4A8-64k-1k-TPOT50-PD, Kimi-K2.6-W4A8-64k-1k-TPOT50-PD.yaml, tests/e... / Kimi-K2.6-W4A8-64k-1k-TPOT50-PD.yaml in 1h36m36s (ID 99745743330)
+  ✓ Set up job
+  ✓ Initialize containers
+  ✓ Decode kubeconfig
+  ✓ Checkout code
+  ✓ Set job variables
+  ✓ Prepare scripts
+  ✓ Clear resources
+  ✓ Launch cluster
+  ✓ Wait for pods ready
+  X Stream logs
+  - Update good_table.csv on success
+  ✓ Fetch benchmark results from PVC
+  ✓ Post process
+  ✓ Collect Ascend logs
+  ✓ Upload Ascend logs
+  ✓ Upload Ascend logs (GitHub Artifacts)
+  ✓ Set benchmark artifact timestamp
+  ✓ Upload benchmark results
+  ✓ Upload benchmark results (GitHub Artifacts)
+  ✓ Post Checkout code
+  ✓ Stop containers
+  ✓ Complete job
+- double-node (main, DeepSeek-V4-flash-w8a8-PD-prefix, DeepSeek-V4-flash-w8a8-PD-prefix.yaml, tests... / inputs.config_file_path in 0s (ID 99745744457)
+- clear-pre-logs in 0s (ID 99765329360)
+- single-node (main, kimi-k2-thinking, linux-aarch64-nightly-a3-16, Kimi-K2-Thinking.yaml) / inputs.name || inputs.config_file_path || inputs.tests in 0s (ID 99765331171)
+- single-node (main, qwen3-32b-int8, linux-aarch64-nightly-a3-4, Qwen3-32B-Int8.yaml) / inputs.name || inputs.config_file_path || inputs.tests in 0s (ID 99765331188)
+- single-node (main, DeepSeek-V4-Flash-W8A8-A3, linux-aarch64-nightly-a3-16, DeepSeek-V4-Flash-W8A8... / inputs.name || inputs.config_file_path || inputs.tests (ID 99765331213)
+- single-node (main, Qwen3-30B-QuaRot, linux-aarch64-nightly-a3-2, Qwen3-30B-QuaRot-eagle3.yaml) / inputs.name || inputs.config_file_path || inputs.tests (ID 99765331227)
+- single-node (main, MiniMax-M3-BF16-A3, linux-aarch64-nightly-a3-16, MiniMax-M3-BF16-A3.yaml) / inputs.name || inputs.config_file_path || inputs.tests (ID 99765331283)
+- single-node (main, deepseek-r1-0528-w8a8, linux-aarch64-nightly-a3-16, DeepSeek-R1-0528-W8A8.yaml) / inputs.name || inputs.config_file_path || inputs.tests (ID 99765331301)
+- single-node (main, qwen3-30b-a3b-w8a8, linux-aarch64-nightly-a3-4, Qwen3-30B-A3B-W8A8.yaml) / inputs.name || inputs.config_file_path || inputs.tests (ID 99765331392)
+- single-node (main, Qwen3-32B-W8A8C8-A3, linux-aarch64-nightly-a3-4, Qwen3-32B-W8A8C8-A3.yaml) / inputs.name || inputs.config_file_path || inputs.tests (ID 99765331433)
+- single-node (main, Qwen3.5-122B-A10B-W8A8-A3, linux-aarch64-nightly-a3-16, Qwen3.5-122B-A10B-W8A8... / inputs.name || inputs.config_file_path || inputs.tests (ID 99765331537)
+- single-node (main, kimi-k2.5, linux-aarch64-nightly-a3-16, Kimi-K2.5.yaml) / inputs.name || inputs.config_file_path || inputs.tests (ID 99765331571)
+- single-node (main, qwen3-32b-int8-prefix-cache, linux-aarch64-nightly-a3-4, Prefix-Cache-Qwen3-32... / inputs.name || inputs.config_file_path || inputs.tests (ID 99765331628)
+- single-node (main, Qwen3-30B-A3B-W4A8-llm-compressor, linux-aarch64-nightly-a3-2, Qwen3-30B-A3B-W... / inputs.name || inputs.config_file_path || inputs.tests (ID 99765331630)
+- single-node (main, deepseek-v3-2-w8a8, linux-aarch64-nightly-a3-16, DeepSeek-V3.2-W8A8.yaml) / inputs.name || inputs.config_file_path || inputs.tests (ID 99765331719)
+- single-node (main, mtpx-deepseek-r1-0528-w8a8, linux-aarch64-nightly-a3-16, MTPX-DeepSeek-R1-0528... / inputs.name || inputs.config_file_path || inputs.tests (ID 99765331728)
+- single-node (main, Qwen3-32B-QuaRot, linux-aarch64-nightly-a3-2, Qwen3-32B-QuaRot-eagle3.yaml) / inputs.name || inputs.config_file_path || inputs.tests (ID 99765331729)
+- single-node (main, MiniMax-M3-W8A8-A3, linux-aarch64-nightly-a3-16, MiniMax-M3-W8A8-A3.yaml) / inputs.name || inputs.config_file_path || inputs.tests (ID 99765331762)
+- single-node (main, qwen3-32b-bf16-gpqa-acc, linux-aarch64-nightly-a3-4, tests/e2e/nightly/test_qw... / inputs.name || inputs.config_file_path || inputs.tests (ID 99765331795)
+- single-node (main, qwen3-30b-acc, linux-aarch64-nightly-a3-4, tests/e2e/weekly/single_node/models... / inputs.name || inputs.config_file_path || inputs.tests (ID 99765331800)
+- single-node (main, qwen3-32b-w8a8-aime2024-acc, linux-aarch64-nightly-a3-4, tests/e2e/nightly/tes... / inputs.name || inputs.config_file_path || inputs.tests (ID 99765331867)
+- single-node (main, Qwen3.5-27B-w8a8-A3, linux-aarch64-nightly-a3-2, Qwen3.5-27B-w8a8-A3.yaml) / inputs.name || inputs.config_file_path || inputs.tests (ID 99765331929)
+- single-node (main, qwen3-vl-235b-a22b-instruct-w8a8, linux-aarch64-nightly-a3-16, Qwen3-VL-235B-A... / inputs.name || inputs.config_file_path || inputs.tests (ID 99765335372)
+- single-node (main, qwen3-235b-a22b-w8a8, linux-aarch64-nightly-a3-16, Qwen3-235B-A22B-W8A8.yaml) / inputs.name || inputs.config_file_path || inputs.tests (ID 99765335407)
+- single-node (main, glm-4.7-w8a8, linux-aarch64-nightly-a3-16, GLM-4.7.yaml) / inputs.name || inputs.config_file_path || inputs.tests (ID 99765335430)
+- single-node (main, glm-5.1-w8a8-prefill-mc2, linux-aarch64-nightly-a3-16, GLM-5.1-W8A8-PrefillMC2... / inputs.name || inputs.config_file_path || inputs.tests (ID 99765335456)
+- single-node (main, deepseek-r1-0528-w8a8-prefix-cache, linux-aarch64-nightly-a3-16, Prefix-Cache-... / inputs.name || inputs.config_file_path || inputs.tests (ID 99765335655)
+- single-node (main, Qwen3.5-397B-A17B-w8a8-mtp, linux-aarch64-nightly-a3-16, Qwen3.5-397B-A17B-W8A... / inputs.name || inputs.config_file_path || inputs.tests (ID 99765335697)
+- single-node (main, Minimax_m2.7_w8a8_A3, linux-aarch64-nightly-a3-16, Minimax_m2.7_w8a8_A3.yaml) / inputs.name || inputs.config_file_path || inputs.tests (ID 99765335821)
+- single-node (main, Kimi-K2.6-w4a8-A3, linux-aarch64-nightly-a3-16, Kimi-K2.6-w4a8-A3.yaml) / inputs.name || inputs.config_file_path || inputs.tests (ID 99765335842)
+- single-node (main, Qwen3_32b_w8a8_ml_A3, linux-aarch64-a3-16, Qwen3_32b_w8a8_ml_A3.yaml) / inputs.name || inputs.config_file_path || inputs.tests (ID 99765336111)
+- single-node (main, Deepseek_R1_W8A8_A3, linux-aarch64-a3-16, Deepseek_R1_W8A8_A3.yaml) / inputs.name || inputs.config_file_path || inputs.tests in 0s (ID 99765337626)
+✓ Merge benchmark artifacts into nightly-a3.zip in 17s (ID 99765337653)
+- single-node (main, Deepseek_R1_W8A8_Reasoning_output_A3, linux-aarch64-a3-16, Deepseek_R1_W8A8_Re... / inputs.name || inputs.config_file_path || inputs.tests in 0s (ID 99765337754)
+- single-node (main, Qwen3.8-27B-w8a8-A3, linux-aarch64-a3-2, Qwen3.8-27B-w8a8-A3.yaml) / inputs.name || inputs.config_file_path || inputs.tests in 0s (ID 99765337823)
+- single-node (main, qwen_3_6_27b_w8a8_A3, linux-aarch64-a3-16, qwen_3_6_27b_w8a8_A3.yaml) / inputs.name || inputs.config_file_path || inputs.tests in 0s (ID 99765337857)
+- single-node (main, Qwq_32b_A3, linux-aarch64-a3-16, Qwq_32b_A3.yaml) / inputs.name || inputs.config_file_path || inputs.tests in 0s (ID 99765337962)
+- single-node (main, Qwen3_32b_W8A8_wl_A3, linux-aarch64-a3-16, Qwen3_32b_W8A8_wl_A3.yaml) / inputs.name || inputs.config_file_path || inputs.tests in 0s (ID 99765338155)
+- Remove node taints (ID 99765339290)
+
+ANNOTATIONS
+! No files were found with the provided path: /tmp/benchmark_results/. No artifacts will be uploaded.
+double-node (main, multi-node-GLM-5.1-W8A8C8-A3_128k_90_50, GLM-5.1-W8A8C8-A3_128k_90_50.yaml, te... / GLM-5.1-W8A8C8-A3_128k_90_50.yaml: .github#22
+
+! No files found for path: /tmp/benchmark_results/, skipping upload
+double-node (main, multi-node-GLM-5.1-W8A8C8-A3_128k_90_50, GLM-5.1-W8A8C8-A3_128k_90_50.yaml, te... / GLM-5.1-W8A8C8-A3_128k_90_50.yaml: .github#225
+
+X Executing the custom container implementation failed. Please contact your self hosted runner administrator.
+double-node (main, multi-node-GLM-5.1-W8A8C8-A3_128k_90_50, GLM-5.1-W8A8C8-A3_128k_90_50.yaml, te... / GLM-5.1-W8A8C8-A3_128k_90_50.yaml: .github#247
+
+X Process completed with exit code 1.
+double-node (main, multi-node-GLM-5.1-W8A8C8-A3_128k_90_50, GLM-5.1-W8A8C8-A3_128k_90_50.yaml, te... / GLM-5.1-W8A8C8-A3_128k_90_50.yaml: .github#246
+
+X Error: failed to run script step: Error: command terminated with non-zero exit code: command terminated with exit code 1
+double-node (main, multi-node-GLM-5.1-W8A8C8-A3_128k_90_50, GLM-5.1-W8A8C8-A3_128k_90_50.yaml, te... / GLM-5.1-W8A8C8-A3_128k_90_50.yaml: .github#245
+
+X Upload failed. See log:
+double-node (main, multi-node-GLM-5.1-W8A8C8-A3_128k_90_50, GLM-5.1-W8A8C8-A3_128k_90_50.yaml, te... / GLM-5.1-W8A8C8-A3_128k_90_50.yaml: .github#226
+
+X Executing the custom container implementation failed. Please contact your self hosted runner administrator.
+double-node (main, multi-node-GLM-5.1-W8A8C8-A3_128k_90_50, GLM-5.1-W8A8C8-A3_128k_90_50.yaml, te... / GLM-5.1-W8A8C8-A3_128k_90_50.yaml: .github#1237
+
+X Process completed with exit code 1.
+double-node (main, multi-node-GLM-5.1-W8A8C8-A3_128k_90_50, GLM-5.1-W8A8C8-A3_128k_90_50.yaml, te... / GLM-5.1-W8A8C8-A3_128k_90_50.yaml: .github#1236
+
+X Error: failed to run script step: Error: command terminated with non-zero exit code: command terminated with exit code 1
+double-node (main, multi-node-GLM-5.1-W8A8C8-A3_128k_90_50, GLM-5.1-W8A8C8-A3_128k_90_50.yaml, te... / GLM-5.1-W8A8C8-A3_128k_90_50.yaml: .github#1235
+
+X Executing the custom container implementation failed. Please contact your self hosted runner administrator.
+double-node (main, Minimax_m2.7_in128k_1k_prefix90_tpot50, Minimax_m2.7_in128k_1k_prefix90_tpot50... / Minimax_m2.7_in128k_1k_prefix90_tpot50.yaml: .github#246
+
+X Process completed with exit code 1.
+double-node (main, Minimax_m2.7_in128k_1k_prefix90_tpot50, Minimax_m2.7_in128k_1k_prefix90_tpot50... / Minimax_m2.7_in128k_1k_prefix90_tpot50.yaml: .github#245
+
+X Error: failed to run script step: Error: command terminated with non-zero exit code: command terminated with exit code 1
+double-node (main, Minimax_m2.7_in128k_1k_prefix90_tpot50, Minimax_m2.7_in128k_1k_prefix90_tpot50... / Minimax_m2.7_in128k_1k_prefix90_tpot50.yaml: .github#244
+
+X Upload failed. See log:
+double-node (main, Minimax_m2.7_in128k_1k_prefix90_tpot50, Minimax_m2.7_in128k_1k_prefix90_tpot50... / Minimax_m2.7_in128k_1k_prefix90_tpot50.yaml: .github#226
+
+X Executing the custom container implementation failed. Please contact your self hosted runner administrator.
+double-node (main, Minimax_m2.7_in128k_1k_prefix90_tpot50, Minimax_m2.7_in128k_1k_prefix90_tpot50... / Minimax_m2.7_in128k_1k_prefix90_tpot50.yaml: .github#246
+
+X Process completed with exit code 1.
+double-node (main, Minimax_m2.7_in128k_1k_prefix90_tpot50, Minimax_m2.7_in128k_1k_prefix90_tpot50... / Minimax_m2.7_in128k_1k_prefix90_tpot50.yaml: .github#245
+
+X Error: failed to run script step: Error: command terminated with non-zero exit code: command terminated with exit code 1
+double-node (main, Minimax_m2.7_in128k_1k_prefix90_tpot50, Minimax_m2.7_in128k_1k_prefix90_tpot50... / Minimax_m2.7_in128k_1k_prefix90_tpot50.yaml: .github#244
+
+X Upload failed. See log:
+double-node (main, Minimax_m2.7_in128k_1k_prefix90_tpot50, Minimax_m2.7_in128k_1k_prefix90_tpot50... / Minimax_m2.7_in128k_1k_prefix90_tpot50.yaml: .github#226
+
+! No files were found with the provided path: /tmp/benchmark_results/. No artifacts will be uploaded.
+double-node (main, Kimi-K2.6-W4A8-64k-1k-TPOT50-PD, Kimi-K2.6-W4A8-64k-1k-TPOT50-PD.yaml, tests/e... / Kimi-K2.6-W4A8-64k-1k-TPOT50-PD.yaml: .github#22
+
+! No files found for path: /tmp/benchmark_results/, skipping upload
+double-node (main, Kimi-K2.6-W4A8-64k-1k-TPOT50-PD, Kimi-K2.6-W4A8-64k-1k-TPOT50-PD.yaml, tests/e... / Kimi-K2.6-W4A8-64k-1k-TPOT50-PD.yaml: .github#225
+
+X Executing the custom container implementation failed. Please contact your self hosted runner administrator.
+double-node (main, Kimi-K2.6-W4A8-64k-1k-TPOT50-PD, Kimi-K2.6-W4A8-64k-1k-TPOT50-PD.yaml, tests/e... / Kimi-K2.6-W4A8-64k-1k-TPOT50-PD.yaml: .github#246
+
+X Process completed with exit code 1.
+double-node (main, Kimi-K2.6-W4A8-64k-1k-TPOT50-PD, Kimi-K2.6-W4A8-64k-1k-TPOT50-PD.yaml, tests/e... / Kimi-K2.6-W4A8-64k-1k-TPOT50-PD.yaml: .github#245
+
+X Error: failed to run script step: Error: command terminated with non-zero exit code: command terminated with exit code 1
+double-node (main, Kimi-K2.6-W4A8-64k-1k-TPOT50-PD, Kimi-K2.6-W4A8-64k-1k-TPOT50-PD.yaml, tests/e... / Kimi-K2.6-W4A8-64k-1k-TPOT50-PD.yaml: .github#244
+
+X Upload failed. See log:
+double-node (main, Kimi-K2.6-W4A8-64k-1k-TPOT50-PD, Kimi-K2.6-W4A8-64k-1k-TPOT50-PD.yaml, tests/e... / Kimi-K2.6-W4A8-64k-1k-TPOT50-PD.yaml: .github#226
+
+X Executing the custom container implementation failed. Please contact your self hosted runner administrator.
+double-node (main, Kimi-K2.6-W4A8-64k-1k-TPOT50-PD, Kimi-K2.6-W4A8-64k-1k-TPOT50-PD.yaml, tests/e... / Kimi-K2.6-W4A8-64k-1k-TPOT50-PD.yaml: .github#1806
+
+X Process completed with exit code 1.
+double-node (main, Kimi-K2.6-W4A8-64k-1k-TPOT50-PD, Kimi-K2.6-W4A8-64k-1k-TPOT50-PD.yaml, tests/e... / Kimi-K2.6-W4A8-64k-1k-TPOT50-PD.yaml: .github#1805
+
+X Error: failed to run script step: Error: command terminated with non-zero exit code: command terminated with exit code 1
+double-node (main, Kimi-K2.6-W4A8-64k-1k-TPOT50-PD, Kimi-K2.6-W4A8-64k-1k-TPOT50-PD.yaml, tests/e... / Kimi-K2.6-W4A8-64k-1k-TPOT50-PD.yaml: .github#1804
+
+
+ARTIFACTS
+nightly-a3
+main-Kimi-K2.6-W4A8-64k-1k-TPOT50-PD-ascend-logs
+main-Minimax_m2.7_in128k_1k_prefix90_tpot50-ascend-logs
+main-GLM-5.1-W8A8C8-A3_128k_90_50-ascend-logs
+
+To see what failed, try: gh run view 33472492154 --log-failed
+View this run on GitHub: https://github.com/vllm-project/vllm-ascend/actions/runs/33472492154
+
+════════════════════════════════════════════
+ 失败 / 取消 Job 详情（共 2 个）
+════════════════════════════════════════════
+
+── [FAILURE] double-node (main, multi-node-GLM-5.1-W8A8C8-A3_128k_90_50, GLM-5.1-W8A8C8-A3_128k_90_50.yaml, te... / GLM-5.1-W8A8C8-A3_128k_90_50.yaml
+   Runner : linux-aarch64-a3-0-dnlzn-runner-fmb94
+   时间   : 2026-09-01T05:14:02Z ~ 2026-09-01T05:36:21Z
+   ── 运行时错误（高优先级）
+double-node (main, multi-node-GLM-5.1-W8A8C8-A3_128k_90_50, GLM-5.1-W8A8C8-A3_128k_90_50.yaml, te... / GLM-5.1-W8A8C8-A3_128k_90_50.yaml	UNKNOWN STEP	2026-09-01T05:35:09.0738774Z ##[error]Process completed with exit code 1.
+double-node (main, multi-node-GLM-5.1-W8A8C8-A3_128k_90_50, GLM-5.1-W8A8C8-A3_128k_90_50.yaml, te... / GLM-5.1-W8A8C8-A3_128k_90_50.yaml	UNKNOWN STEP	2026-09-01T05:35:27.2689109Z ##[error]Process completed with exit code 1.
+   ── 编译/安装错误（次优先级）
+double-node (main, multi-node-GLM-5.1-W8A8C8-A3_128k_90_50, GLM-5.1-W8A8C8-A3_128k_90_50.yaml, te... / GLM-5.1-W8A8C8-A3_128k_90_50.yaml	UNKNOWN STEP	2026-09-01T05:35:09.0703190Z ##[error]Error: failed to run script step: Error: command terminated with non-zero exit code: command terminated with exit code 1
+double-node (main, multi-node-GLM-5.1-W8A8C8-A3_128k_90_50, GLM-5.1-W8A8C8-A3_128k_90_50.yaml, te... / GLM-5.1-W8A8C8-A3_128k_90_50.yaml	UNKNOWN STEP	2026-09-01T05:35:24.3391034Z ^[[36;1m    echo "::error::Upload failed. See log:"^[[0m
+double-node (main, multi-node-GLM-5.1-W8A8C8-A3_128k_90_50, GLM-5.1-W8A8C8-A3_128k_90_50.yaml, te... / GLM-5.1-W8A8C8-A3_128k_90_50.yaml	UNKNOWN STEP	2026-09-01T05:35:27.2629768Z ##[error]Error: failed to run script step: Error: command terminated with non-zero exit code: command terminated with exit code 1
+double-node (main, multi-node-GLM-5.1-W8A8C8-A3_128k_90_50, GLM-5.1-W8A8C8-A3_128k_90_50.yaml, te... / GLM-5.1-W8A8C8-A3_128k_90_50.yaml	UNKNOWN STEP	2026-09-01T05:35:43.8017253Z ^[[36;1m    echo "::error::Upload failed. See log:"^[[0m
+   ── 最后输出（定位失败阶段）
+
+── [FAILURE] double-node (main, Kimi-K2.6-W4A8-64k-1k-TPOT50-PD, Kimi-K2.6-W4A8-64k-1k-TPOT50-PD.yaml, tests/e... / Kimi-K2.6-W4A8-64k-1k-TPOT50-PD.yaml
+   Runner : linux-aarch64-a3-0-dnlzn-runner-4j8bc
+   时间   : 2026-09-01T05:14:05Z ~ 2026-09-01T06:50:41Z
+   ── 运行时错误（高优先级）
+double-node (main, Kimi-K2.6-W4A8-64k-1k-TPOT50-PD, Kimi-K2.6-W4A8-64k-1k-TPOT50-PD.yaml, tests/e... / Kimi-K2.6-W4A8-64k-1k-TPOT50-PD.yaml	UNKNOWN STEP	2026-09-01T06:48:40.9102245Z                 raise RuntimeError(f"External DP rank became unhealthy after ready: {failed}")
+double-node (main, Kimi-K2.6-W4A8-64k-1k-TPOT50-PD, Kimi-K2.6-W4A8-64k-1k-TPOT50-PD.yaml, tests/e... / Kimi-K2.6-W4A8-64k-1k-TPOT50-PD.yaml	UNKNOWN STEP	2026-09-01T06:48:54.9782698Z ##[error]Process completed with exit code 1.
+double-node (main, Kimi-K2.6-W4A8-64k-1k-TPOT50-PD, Kimi-K2.6-W4A8-64k-1k-TPOT50-PD.yaml, tests/e... / Kimi-K2.6-W4A8-64k-1k-TPOT50-PD.yaml	UNKNOWN STEP	2026-09-01T06:49:45.3522114Z ##[error]Process completed with exit code 1.
+   ── 最后输出（定位失败阶段）
+
+════════════════════════════════════════════
+ 补充命令（按需使用）：
+   完整日志 : gh run view --job <id> --log --repo vllm-project/vllm-ascend
+   PR diff  : gh pr diff <pr> --repo vllm-project/vllm-ascend --name-only
+   kubectl  : kubectl get pods --all-namespaces | grep <runner_name>
+════════════════════════════════════════════

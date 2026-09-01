@@ -1,0 +1,132 @@
+════════════════════════════════════════════
+ Run 33390592236 | vllm-project/vllm-ascend
+════════════════════════════════════════════
+
+X main Nightly-A2 · 33390592236
+Triggered via workflow_dispatch about 20 hours ago
+
+JOBS
+✓ Parse trigger and determine test scope in 11s (ID 99483071002)
+- Build nightly-a2 image (ID 99483072740)
+✓ Export global env vars as job outputs in 3m52s (ID 99483206588)
+- Generate accuracy test matrix in 0s (ID 99483208609)
+✓ multi-node (main, multi-node-GLM-5.1-w8a8-A2, GLM5_1-W8A8-A2-dual-nodes.yaml, tests/e2e/nightly/m... / GLM5_1-W8A8-A2-dual-nodes.yaml in 1h20m6s (ID 99484349144)
+X multi-node (main, multi-node-qwen3-235b-dp, Qwen3-235B-A22B-A2.yaml, tests/e2e/nightly/multi_node... / Qwen3-235B-A22B-A2.yaml in 21m32s (ID 99484349215)
+  ✓ Set up job
+  ✓ Initialize containers
+  ✓ Decode kubeconfig
+  ✓ Checkout code
+  ✓ Set job variables
+  ✓ Prepare scripts
+  ✓ Clear resources
+  ✓ Launch cluster
+  X Wait for pods ready
+  - Stream logs
+  - Update good_table.csv on success
+  ✓ Fetch benchmark results from PVC
+  ✓ Post process
+  ✓ Collect Ascend logs
+  ✓ Upload Ascend logs
+  ✓ Upload Ascend logs (GitHub Artifacts)
+  ✓ Set benchmark artifact timestamp
+  ✓ Upload benchmark results
+  ✓ Upload benchmark results (GitHub Artifacts)
+  ✓ Post Checkout code
+  ✓ Stop containers
+  ✓ Complete job
+- multi-node (main, multi-node-Kimi-K2.5-W4A8-A2, Kimi-K2_5-W4A8-A2-dual-nodes.yaml, tests/e2e/nigh... / inputs.config_file_path (ID 99484350385)
+- Remove node taints in 0s (ID 99507225537)
+- single-node-accuracy-tests-pr-only in 0s (ID 99507226053)
+- clear-pre-logs in 0s (ID 99507226100)
+- single-node-accuracy-tests (ID 99507226904)
+- single-node (main, Qwen3.5-397B-A17B-w4a8-mtp, linux-aarch64-a2b3-8, Qwen3.5-397B-A17B-w4a8-mtp-A... / inputs.name || inputs.config_file_path || inputs.tests (ID 99507227331)
+- single-node (main, qwen3-32b-int8, linux-aarch64-a2b3-4, Qwen3-32B-Int8-A2.yaml) / inputs.name || inputs.config_file_path || inputs.tests (ID 99507227349)
+- single-node (main, rejection-sample, linux-aarch64-a2b3-1, tests/e2e/nightly/single_node/ops/sing... / inputs.name || inputs.config_file_path || inputs.tests (ID 99507227724)
+✓ Merge benchmark artifacts into nightly-a2.zip in 11s (ID 99507227750)
+- single-node (main, qwen3-vl-32b-instruct-w8a8, linux-aarch64-a2b3-4, Qwen3-VL-32B-Instruct-W8A8.y... / inputs.name || inputs.config_file_path || inputs.tests (ID 99507227792)
+- single-node (main, gemma4-31b-dense, linux-aarch64-a2b3-4, Gemma4-31B-Dense.yaml) / inputs.name || inputs.config_file_path || inputs.tests (ID 99507228045)
+- single-node (main, gemma4, linux-aarch64-a2b3-4, Gemma4.yaml) / inputs.name || inputs.config_file_path || inputs.tests (ID 99507228056)
+- single-node (main, Qwen3.5-27B-w8a8-A2, linux-aarch64-a2b3-2, Qwen3.5-27B-w8a8-A2.yaml) / inputs.name || inputs.config_file_path || inputs.tests (ID 99507228105)
+- single-node (main, MiniMax-M2.5-w8a8-QuaRot-A2, linux-aarch64-a2b3-8, MiniMax-M2.5-w8a8-QuaRot-A2... / inputs.name || inputs.config_file_path || inputs.tests (ID 99507228133)
+- single-node (main, Qwen3.8-27B-w8a8-A2, linux-aarch64-a2b3-2, Qwen3.8-27B-w8a8-A2.yaml) / inputs.name || inputs.config_file_path || inputs.tests (ID 99507228350)
+
+ANNOTATIONS
+! No files were found with the provided path: /tmp/benchmark_results/. No artifacts will be uploaded.
+multi-node (main, multi-node-GLM-5.1-w8a8-A2, GLM5_1-W8A8-A2-dual-nodes.yaml, tests/e2e/nightly/m... / GLM5_1-W8A8-A2-dual-nodes.yaml: .github#22
+
+! No files found for path: /tmp/benchmark_results/, skipping upload
+multi-node (main, multi-node-GLM-5.1-w8a8-A2, GLM5_1-W8A8-A2-dual-nodes.yaml, tests/e2e/nightly/m... / GLM5_1-W8A8-A2-dual-nodes.yaml: .github#225
+
+X Executing the custom container implementation failed. Please contact your self hosted runner administrator.
+multi-node (main, multi-node-GLM-5.1-w8a8-A2, GLM5_1-W8A8-A2-dual-nodes.yaml, tests/e2e/nightly/m... / GLM5_1-W8A8-A2-dual-nodes.yaml: .github#246
+
+X Process completed with exit code 1.
+multi-node (main, multi-node-GLM-5.1-w8a8-A2, GLM5_1-W8A8-A2-dual-nodes.yaml, tests/e2e/nightly/m... / GLM5_1-W8A8-A2-dual-nodes.yaml: .github#245
+
+X Error: failed to run script step: Error: command terminated with non-zero exit code: command terminated with exit code 1
+multi-node (main, multi-node-GLM-5.1-w8a8-A2, GLM5_1-W8A8-A2-dual-nodes.yaml, tests/e2e/nightly/m... / GLM5_1-W8A8-A2-dual-nodes.yaml: .github#244
+
+X Upload failed. See log:
+multi-node (main, multi-node-GLM-5.1-w8a8-A2, GLM5_1-W8A8-A2-dual-nodes.yaml, tests/e2e/nightly/m... / GLM5_1-W8A8-A2-dual-nodes.yaml: .github#226
+
+! No files were found with the provided path: /tmp/benchmark_results/. No artifacts will be uploaded.
+multi-node (main, multi-node-qwen3-235b-dp, Qwen3-235B-A22B-A2.yaml, tests/e2e/nightly/multi_node... / Qwen3-235B-A22B-A2.yaml: .github#22
+
+! No files found for path: /tmp/benchmark_results/, skipping upload
+multi-node (main, multi-node-qwen3-235b-dp, Qwen3-235B-A22B-A2.yaml, tests/e2e/nightly/multi_node... / Qwen3-235B-A22B-A2.yaml: .github#225
+
+X Executing the custom container implementation failed. Please contact your self hosted runner administrator.
+multi-node (main, multi-node-qwen3-235b-dp, Qwen3-235B-A22B-A2.yaml, tests/e2e/nightly/multi_node... / Qwen3-235B-A22B-A2.yaml: .github#246
+
+X Process completed with exit code 1.
+multi-node (main, multi-node-qwen3-235b-dp, Qwen3-235B-A22B-A2.yaml, tests/e2e/nightly/multi_node... / Qwen3-235B-A22B-A2.yaml: .github#245
+
+X Error: failed to run script step: Error: command terminated with non-zero exit code: command terminated with exit code 1
+multi-node (main, multi-node-qwen3-235b-dp, Qwen3-235B-A22B-A2.yaml, tests/e2e/nightly/multi_node... / Qwen3-235B-A22B-A2.yaml: .github#244
+
+X Upload failed. See log:
+multi-node (main, multi-node-qwen3-235b-dp, Qwen3-235B-A22B-A2.yaml, tests/e2e/nightly/multi_node... / Qwen3-235B-A22B-A2.yaml: .github#226
+
+X Executing the custom container implementation failed. Please contact your self hosted runner administrator.
+multi-node (main, multi-node-qwen3-235b-dp, Qwen3-235B-A22B-A2.yaml, tests/e2e/nightly/multi_node... / Qwen3-235B-A22B-A2.yaml: .github#1342
+
+X Process completed with exit code 1.
+multi-node (main, multi-node-qwen3-235b-dp, Qwen3-235B-A22B-A2.yaml, tests/e2e/nightly/multi_node... / Qwen3-235B-A22B-A2.yaml: .github#1341
+
+X Error: failed to run script step: Error: command terminated with non-zero exit code: command terminated with exit code 1
+multi-node (main, multi-node-qwen3-235b-dp, Qwen3-235B-A22B-A2.yaml, tests/e2e/nightly/multi_node... / Qwen3-235B-A22B-A2.yaml: .github#1340
+
+X No artifacts found matching pattern 'nightly-test-benchmark-results-*'
+Merge benchmark artifacts into nightly-a2.zip: .github#14
+
+
+ARTIFACTS
+main-GLM5_1-W8A8-A2-dual-nodes-ascend-logs
+main-Qwen3-235B-A22B-A2-ascend-logs
+
+To see what failed, try: gh run view 33390592236 --log-failed
+View this run on GitHub: https://github.com/vllm-project/vllm-ascend/actions/runs/33390592236
+
+════════════════════════════════════════════
+ 失败 / 取消 Job 详情（共 1 个）
+════════════════════════════════════════════
+
+── [FAILURE] multi-node (main, multi-node-qwen3-235b-dp, Qwen3-235B-A22B-A2.yaml, tests/e2e/nightly/multi_node... / Qwen3-235B-A22B-A2.yaml
+   Runner : linux-amd64-cpu-8-hk-ds7vs-runner-2n4hr
+   时间   : 2026-08-31T12:17:59Z ~ 2026-08-31T12:39:31Z
+   ── 运行时错误（高优先级）
+multi-node (main, multi-node-qwen3-235b-dp, Qwen3-235B-A22B-A2.yaml, tests/e2e/nightly/multi_node... / Qwen3-235B-A22B-A2.yaml	UNKNOWN STEP	2026-08-31T12:38:34.4772795Z ##[error]Process completed with exit code 1.
+multi-node (main, multi-node-qwen3-235b-dp, Qwen3-235B-A22B-A2.yaml, tests/e2e/nightly/multi_node... / Qwen3-235B-A22B-A2.yaml	UNKNOWN STEP	2026-08-31T12:38:49.8271323Z ##[error]Process completed with exit code 1.
+   ── 编译/安装错误（次优先级）
+multi-node (main, multi-node-qwen3-235b-dp, Qwen3-235B-A22B-A2.yaml, tests/e2e/nightly/multi_node... / Qwen3-235B-A22B-A2.yaml	UNKNOWN STEP	2026-08-31T12:38:34.4718336Z ##[error]Error: failed to run script step: Error: command terminated with non-zero exit code: command terminated with exit code 1
+multi-node (main, multi-node-qwen3-235b-dp, Qwen3-235B-A22B-A2.yaml, tests/e2e/nightly/multi_node... / Qwen3-235B-A22B-A2.yaml	UNKNOWN STEP	2026-08-31T12:38:48.6388895Z ^[[36;1m    echo "::error::Upload failed. See log:"^[[0m
+multi-node (main, multi-node-qwen3-235b-dp, Qwen3-235B-A22B-A2.yaml, tests/e2e/nightly/multi_node... / Qwen3-235B-A22B-A2.yaml	UNKNOWN STEP	2026-08-31T12:38:49.8198449Z ##[error]Error: failed to run script step: Error: command terminated with non-zero exit code: command terminated with exit code 1
+multi-node (main, multi-node-qwen3-235b-dp, Qwen3-235B-A22B-A2.yaml, tests/e2e/nightly/multi_node... / Qwen3-235B-A22B-A2.yaml	UNKNOWN STEP	2026-08-31T12:39:01.4692745Z ^[[36;1m    echo "::error::Upload failed. See log:"^[[0m
+   ── 最后输出（定位失败阶段）
+
+════════════════════════════════════════════
+ 补充命令（按需使用）：
+   完整日志 : gh run view --job <id> --log --repo vllm-project/vllm-ascend
+   PR diff  : gh pr diff <pr> --repo vllm-project/vllm-ascend --name-only
+   kubectl  : kubectl get pods --all-namespaces | grep <runner_name>
+════════════════════════════════════════════

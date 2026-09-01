@@ -1,0 +1,201 @@
+════════════════════════════════════════════
+ Run 33452975377 | vllm-project/vllm-ascend
+════════════════════════════════════════════
+
+X main Schedule All E2E Tests · 33452975377
+Triggered via workflow_dispatch about 8 hours ago
+
+JOBS
+✓ select-all-tests in 2m13s (ID 99686766026)
+✓ ensure-csrc-cache / Prepare csrc cache checks in 1m45s (ID 99687367188)
+- ensure-csrc-cache / Build csrc cache (${{ matrix.target.id }}) in 0s (ID 99687811000)
+✓ run-all-tests (v0.27.1) / a2-1 card-(part 3-5) in 1h14m29s (ID 99687811256)
+✓ run-all-tests (v0.27.1) / 310p-1 card-(part 1-1) in 50m13s (ID 99687811264)
+✓ run-all-tests (v0.27.1) / a3-2 card-(part 2-2) in 59m18s (ID 99687811273)
+✓ run-all-tests (v0.27.1) / a2-1 card-(part 5-5) in 1h27m37s (ID 99687811279)
+✓ run-all-tests (v0.27.1) / a3-800i-2 card-(part 2-2) in 34m18s (ID 99687811297)
+✓ run-all-tests (v0.27.1) / cpu-0 card-(part 1-1) in 4m37s (ID 99687811299)
+✓ run-all-tests (v0.27.1) / a3-800i-4 card-(part 1-2) in 44m30s (ID 99687811304)
+✓ run-all-tests (v0.27.1) / a3-4 card-(part 1-2) in 23m38s (ID 99687811305)
+✓ run-all-tests (v0.27.1) / a3-4 card-(part 2-2) in 46m55s (ID 99687811306)
+✓ run-all-tests (v0.27.1) / a3-16 card-(part 1-1) in 19m5s (ID 99687811320)
+✓ run-all-tests (v0.27.1) / a3-2 card-(part 1-2) in 1h4m34s (ID 99687811354)
+✓ run-all-tests (ba07e4a48fc951300d97eb506217dd530583dea3) / a2-1 card-(part 5-5) in 1h25m59s (ID 99687811355)
+✓ run-all-tests (v0.27.1) / a2-1 card-(part 4-5) in 1h9m42s (ID 99687811358)
+✓ run-all-tests (ba07e4a48fc951300d97eb506217dd530583dea3) / 310p-1 card-(part 1-1) in 50m43s (ID 99687811359)
+✓ run-all-tests (ba07e4a48fc951300d97eb506217dd530583dea3) / cpu-0 card-(part 1-1) in 4m11s (ID 99687811362)
+✓ run-all-tests (v0.27.1) / a3-800i-2 card-(part 1-2) in 37m2s (ID 99687811365)
+X run-all-tests (v0.27.1) / a3-8 card-(part 1-1) in 39m16s (ID 99687811371)
+  ✓ Set up job
+  ✓ Initialize containers
+  ✓ Check NPU availability
+  ✓ Install packages
+  ✓ Checkout vllm-project/vllm repo
+  ✓ Install vllm-project/vllm from source
+  ✓ Checkout vllm-project/vllm-ascend repo
+  ✓ Rebase on main snapshot
+  ✓ Get csrc hash
+  ✓ Get architecture
+  ✓ Restore vllm-ascend csrc cache
+  ✓ Install Mooncake wheel
+  ✓ Install vllm-project/vllm-ascend with device
+  - Verify required AscendC custom ops are registered (310p)
+  - Install vllm-project/vllm-ascend no device
+  - Uninstall Triton for 310P tests
+  X Run selected tests with device
+  - Run selected tests without device
+  - Upload timing data
+  - Upload coverage data
+  ✓ Upload selected test logs
+  ✓ Post Checkout vllm-project/vllm-ascend repo
+  ✓ Post Checkout vllm-project/vllm repo
+  ✓ Stop containers
+  ✓ Complete job
+X run-all-tests (v0.27.1) / a2-1 card-(part 1-5) in 54m34s (ID 99687811372)
+  ✓ Set up job
+  ✓ Initialize containers
+  ✓ Check NPU availability
+  ✓ Install packages
+  ✓ Checkout vllm-project/vllm repo
+  ✓ Install vllm-project/vllm from source
+  ✓ Checkout vllm-project/vllm-ascend repo
+  ✓ Rebase on main snapshot
+  ✓ Get csrc hash
+  ✓ Get architecture
+  ✓ Restore vllm-ascend csrc cache
+  ✓ Install Mooncake wheel
+  ✓ Install vllm-project/vllm-ascend with device
+  - Verify required AscendC custom ops are registered (310p)
+  - Install vllm-project/vllm-ascend no device
+  - Uninstall Triton for 310P tests
+  X Run selected tests with device
+  - Run selected tests without device
+  - Upload timing data
+  - Upload coverage data
+  ✓ Upload selected test logs
+  ✓ Post Checkout vllm-project/vllm-ascend repo
+  ✓ Post Checkout vllm-project/vllm repo
+  ✓ Stop containers
+  ✓ Complete job
+✓ run-all-tests (v0.27.1) / a3-800i-4 card-(part 2-2) in 38m23s (ID 99687811376)
+✓ run-all-tests (v0.27.1) / 310p-4 card-(part 1-1) in 43m58s (ID 99687811393)
+✓ run-all-tests (ba07e4a48fc951300d97eb506217dd530583dea3) / a2-1 card-(part 1-5) in 1h11m25s (ID 99687811420)
+✓ run-all-tests (ba07e4a48fc951300d97eb506217dd530583dea3) / a2-1 card-(part 3-5) in 1h11m48s (ID 99687811421)
+✓ run-all-tests (ba07e4a48fc951300d97eb506217dd530583dea3) / a2-1 card-(part 2-5) in 1h10m34s (ID 99687811449)
+✓ run-all-tests (ba07e4a48fc951300d97eb506217dd530583dea3) / a2-1 card-(part 4-5) in 1h10m15s (ID 99687811462)
+✓ run-all-tests (ba07e4a48fc951300d97eb506217dd530583dea3) / a3-4 card-(part 2-2) in 50m58s (ID 99687811485)
+✓ run-all-tests (ba07e4a48fc951300d97eb506217dd530583dea3) / a3-16 card-(part 1-1) in 21m4s (ID 99687811487)
+✓ run-all-tests (ba07e4a48fc951300d97eb506217dd530583dea3) / 310p-4 card-(part 1-1) in 43m50s (ID 99687811496)
+✓ run-all-tests (ba07e4a48fc951300d97eb506217dd530583dea3) / a3-800i-4 card-(part 1-2) in 42m17s (ID 99687811521)
+✓ run-all-tests (ba07e4a48fc951300d97eb506217dd530583dea3) / a3-800i-2 card-(part 1-2) in 36m57s (ID 99687811527)
+✓ run-all-tests (ba07e4a48fc951300d97eb506217dd530583dea3) / a3-8 card-(part 1-1) in 47m44s (ID 99687811544)
+✓ run-all-tests (ba07e4a48fc951300d97eb506217dd530583dea3) / a3-800i-2 card-(part 2-2) in 35m59s (ID 99687811546)
+✓ run-all-tests (ba07e4a48fc951300d97eb506217dd530583dea3) / a3-2 card-(part 1-2) in 57m25s (ID 99687811558)
+✓ run-all-tests (v0.27.1) / a2-1 card-(part 2-5) in 1h9m11s (ID 99687811582)
+✓ run-all-tests (ba07e4a48fc951300d97eb506217dd530583dea3) / a3-4 card-(part 1-2) in 26m13s (ID 99687811643)
+✓ run-all-tests (ba07e4a48fc951300d97eb506217dd530583dea3) / a3-800i-4 card-(part 2-2) in 38m24s (ID 99687811654)
+✓ run-all-tests (ba07e4a48fc951300d97eb506217dd530583dea3) / a3-2 card-(part 2-2) in 57m30s (ID 99687811773)
+- run-all-tests (ba07e4a48fc951300d97eb506217dd530583dea3) / upload-coverage-to-obs in 0s (ID 99705231489)
+- run-all-tests (v0.27.1) / upload-coverage-to-obs (ID 99705540524)
+- update-estimated-times (ID 99705541245)
+
+ANNOTATIONS
+X Executing the custom container implementation failed. Please contact your self hosted runner administrator.
+run-all-tests (v0.27.1) / a3-8 card-(part 1-1): .github#4941
+
+X Process completed with exit code 1.
+run-all-tests (v0.27.1) / a3-8 card-(part 1-1): .github#4940
+
+X Error: failed to run script step: Error: command terminated with non-zero exit code: command terminated with exit code 1
+run-all-tests (v0.27.1) / a3-8 card-(part 1-1): .github#4939
+
+X Executing the custom container implementation failed. Please contact your self hosted runner administrator.
+run-all-tests (v0.27.1) / a2-1 card-(part 1-5): .github#4807
+
+X Process completed with exit code 1.
+run-all-tests (v0.27.1) / a2-1 card-(part 1-5): .github#4806
+
+X Error: failed to run script step: Error: command terminated with non-zero exit code: command terminated with exit code 1
+run-all-tests (v0.27.1) / a2-1 card-(part 1-5): .github#4805
+
+
+ARTIFACTS
+selected-test-logs-vllm-v0.27.1-a2-1card-5-5
+selected-test-logs-vllm-ba07e4a48fc951300d97eb506217dd530583dea3-a2-1card-5-5
+selected-test-logs-vllm-v0.27.1-a2-1card-3-5
+selected-test-logs-vllm-ba07e4a48fc951300d97eb506217dd530583dea3-a3-2card-2-2
+selected-test-logs-vllm-ba07e4a48fc951300d97eb506217dd530583dea3-a2-1card-3-5
+selected-test-logs-vllm-ba07e4a48fc951300d97eb506217dd530583dea3-a2-1card-1-5
+selected-test-logs-vllm-ba07e4a48fc951300d97eb506217dd530583dea3-a2-1card-4-5
+selected-test-logs-vllm-ba07e4a48fc951300d97eb506217dd530583dea3-a2-1card-2-5
+selected-test-logs-vllm-v0.27.1-a2-1card-2-5
+selected-test-logs-vllm-v0.27.1-a2-1card-4-5
+selected-test-logs-vllm-v0.27.1-a3-2card-1-2
+selected-test-logs-vllm-v0.27.1-a3-2card-2-2
+selected-test-logs-vllm-ba07e4a48fc951300d97eb506217dd530583dea3-a3-2card-1-2
+selected-test-logs-vllm-v0.27.1-a2-1card-1-5
+selected-test-logs-vllm-ba07e4a48fc951300d97eb506217dd530583dea3-310p-1card-1-1
+selected-test-logs-vllm-ba07e4a48fc951300d97eb506217dd530583dea3-a3-4card-2-2
+selected-test-logs-vllm-v0.27.1-310p-1card-1-1
+selected-test-logs-vllm-ba07e4a48fc951300d97eb506217dd530583dea3-a3-8card-1-1
+selected-test-logs-vllm-v0.27.1-a3-4card-2-2
+selected-test-logs-vllm-v0.27.1-a3-4card-1-2
+selected-test-logs-vllm-v0.27.1-310p-4card-1-1
+selected-test-logs-vllm-ba07e4a48fc951300d97eb506217dd530583dea3-310p-4card-1-1
+selected-test-logs-vllm-ba07e4a48fc951300d97eb506217dd530583dea3-a3-4card-1-2
+selected-test-logs-vllm-ba07e4a48fc951300d97eb506217dd530583dea3-a3-4card-2-2
+selected-test-logs-vllm-v0.27.1-a3-4card-2-2
+selected-test-logs-vllm-v0.27.1-a3-8card-1-1
+selected-test-logs-vllm-ba07e4a48fc951300d97eb506217dd530583dea3-a3-16card-1-1
+selected-test-logs-vllm-ba07e4a48fc951300d97eb506217dd530583dea3-a3-2card-1-2
+selected-test-logs-vllm-v0.27.1-a3-2card-1-2
+selected-test-logs-vllm-ba07e4a48fc951300d97eb506217dd530583dea3-a3-2card-2-2
+selected-test-logs-vllm-v0.27.1-a3-16card-1-1
+selected-test-logs-vllm-v0.27.1-a3-2card-2-2
+selected-test-logs-vllm-ba07e4a48fc951300d97eb506217dd530583dea3-a3-4card-1-2
+selected-test-logs-vllm-v0.27.1-a3-4card-1-2
+selected-test-logs-vllm-v0.27.1-cpu-0card-1-1
+selected-test-logs-vllm-ba07e4a48fc951300d97eb506217dd530583dea3-cpu-0card-1-1
+
+To see what failed, try: gh run view 33452975377 --log-failed
+View this run on GitHub: https://github.com/vllm-project/vllm-ascend/actions/runs/33452975377
+
+════════════════════════════════════════════
+ 失败 / 取消 Job 详情（共 2 个）
+════════════════════════════════════════════
+
+── [FAILURE] run-all-tests (v0.27.1) / a3-8 card-(part 1-1)
+   Runner : linux-aarch64-a3-8-cn12-001-kg4cc-runner-488cj
+   时间   : 2026-09-01T00:05:56Z ~ 2026-09-01T00:45:12Z
+   ── 运行时错误（高优先级）
+run-all-tests (v0.27.1) / a3-8 card-(part 1-1)	UNKNOWN STEP	2026-09-01T00:21:22.4564188Z Capturing CUDA graphs (FULL):  78%|███████▊  | 7/9 [00:37<00:08,  4.27s/it][2026-09-01 00:21:22.455484][UC][I] No available shared memory broadcast block found in 60 seconds. This typically happens when some processes are hanging or doing some time-consuming work (e.g. compilation, weight/kv cache quantization). [9993,9993][shm_broadcast.py:802,acquire_read]
+run-all-tests (v0.27.1) / a3-8 card-(part 1-1)	UNKNOWN STEP	2026-09-01T00:35:03.5484909Z Capturing CUDA graphs (decode, FULL):  64%|██████▍   | 23/36 [00:58<00:30,  2.33s/it][2026-09-01 00:35:03.547343][UC][I] No available shared memory broadcast block found in 60 seconds. This typically happens when some processes are hanging or doing some time-consuming work (e.g. compilation, weight/kv cache quantization). [154586,154586][shm_broadcast.py:802,acquire_read]
+run-all-tests (v0.27.1) / a3-8 card-(part 1-1)	UNKNOWN STEP	2026-09-01T00:43:27.3682353Z ^[[1m^[[31mE       AssertionError: Acceptance length regression detected for Eco-Tech/GLM-5.2-w4a8!^[[0m
+run-all-tests (v0.27.1) / a3-8 card-(part 1-1)	UNKNOWN STEP	2026-09-01T00:43:27.3684887Z ^[[1m^[[31mtests/e2e/pull_request/utils.py^[[0m:289: AssertionError
+run-all-tests (v0.27.1) / a3-8 card-(part 1-1)	UNKNOWN STEP	2026-09-01T00:43:27.3693007Z ^[[31mFAILED^[[0m tests/e2e/pull_request/eight_card/test_glm5_2.py::^[[1mtest_glm_5_2_mtp_acceptance_tp8^[[0m - AssertionError: Acceptance length regression detected for Eco-Tech/GLM-5.2-w4a8!
+run-all-tests (v0.27.1) / a3-8 card-(part 1-1)	UNKNOWN STEP	2026-09-01T00:43:35.3536696Z Capturing CUDA graphs (decode, FULL):  64%|██████▍   | 23/36 [00:58<00:30,  2.33s/it][2026-09-01 00:35:03.547343][UC][I] No available shared memory broadcast block found in 60 seconds. This typically happens when some processes are hanging or doing some time-consuming work (e.g. compilation, weight/kv cache quantization). [154586,154586][shm_broadcast.py:802,acquire_read]
+run-all-tests (v0.27.1) / a3-8 card-(part 1-1)	UNKNOWN STEP	2026-09-01T00:43:35.4398073Z ^[[1m^[[31mE       AssertionError: Acceptance length regression detected for Eco-Tech/GLM-5.2-w4a8!^[[0m
+run-all-tests (v0.27.1) / a3-8 card-(part 1-1)	UNKNOWN STEP	2026-09-01T00:43:35.4399046Z ^[[1m^[[31mtests/e2e/pull_request/utils.py^[[0m:289: AssertionError
+run-all-tests (v0.27.1) / a3-8 card-(part 1-1)	UNKNOWN STEP	2026-09-01T00:43:35.4402081Z ^[[31mFAILED^[[0m tests/e2e/pull_request/eight_card/test_glm5_2.py::^[[1mtest_glm_5_2_mtp_acceptance_tp8^[[0m - AssertionError: Acceptance length regression detected for Eco-Tech/GLM-5.2-w4a8!
+run-all-tests (v0.27.1) / a3-8 card-(part 1-1)	UNKNOWN STEP	2026-09-01T00:43:35.4439458Z ##[error]Process completed with exit code 1.
+   ── 最后输出（定位失败阶段）
+
+── [FAILURE] run-all-tests (v0.27.1) / a2-1 card-(part 1-5)
+   Runner : linux-aarch64-a2b3-1-zkrjh-runner-kzjd5
+   时间   : 2026-09-01T00:06:45Z ~ 2026-09-01T01:01:19Z
+   ── 运行时错误（高优先级）
+run-all-tests (v0.27.1) / a2-1 card-(part 1-5)	UNKNOWN STEP	2026-09-01T00:59:42.2705196Z ^[[1m^[[31mE       AssertionError: acceptance_per_pos [0.32941176470588235, 0.09411764705882353, 0.03529411764705882] does not match golden [0.43, 0.13, 0.05]^[[0m
+run-all-tests (v0.27.1) / a2-1 card-(part 1-5)	UNKNOWN STEP	2026-09-01T00:59:42.2708008Z ^[[1m^[[31mtests/e2e/pull_request/one_card/model_runner_v2/test_basic.py^[[0m:130: AssertionError
+run-all-tests (v0.27.1) / a2-1 card-(part 1-5)	UNKNOWN STEP	2026-09-01T00:59:42.2724499Z ^[[31mFAILED^[[0m tests/e2e/pull_request/one_card/model_runner_v2/test_basic.py::^[[1mtest_egale_spec_decoding[default_full_and_piecewise-False-32-vllm-ascend/EAGLE-LLaMA3.1-Instruct-8B-LLM-Research/Meta-Llama-3.1-8B-Instruct]^[[0m - AssertionError: acceptance_per_pos [0.32941176470588235, 0.09411764705882353, 0.03529411764705882] does not match golden [0.43, 0.13, 0.05]
+run-all-tests (v0.27.1) / a2-1 card-(part 1-5)	UNKNOWN STEP	2026-09-01T00:59:54.7630737Z ^[[1m^[[31mE       AssertionError: acceptance_per_pos [0.32941176470588235, 0.09411764705882353, 0.03529411764705882] does not match golden [0.43, 0.13, 0.05]^[[0m
+run-all-tests (v0.27.1) / a2-1 card-(part 1-5)	UNKNOWN STEP	2026-09-01T00:59:54.7631808Z ^[[1m^[[31mtests/e2e/pull_request/one_card/model_runner_v2/test_basic.py^[[0m:130: AssertionError
+run-all-tests (v0.27.1) / a2-1 card-(part 1-5)	UNKNOWN STEP	2026-09-01T00:59:54.7639255Z ^[[31mFAILED^[[0m tests/e2e/pull_request/one_card/model_runner_v2/test_basic.py::^[[1mtest_egale_spec_decoding[default_full_and_piecewise-False-32-vllm-ascend/EAGLE-LLaMA3.1-Instruct-8B-LLM-Research/Meta-Llama-3.1-8B-Instruct]^[[0m - AssertionError: acceptance_per_pos [0.32941176470588235, 0.09411764705882353, 0.03529411764705882] does not match golden [0.43, 0.13, 0.05]
+run-all-tests (v0.27.1) / a2-1 card-(part 1-5)	UNKNOWN STEP	2026-09-01T00:59:54.7713222Z ##[error]Process completed with exit code 1.
+   ── 最后输出（定位失败阶段）
+
+════════════════════════════════════════════
+ 补充命令（按需使用）：
+   完整日志 : gh run view --job <id> --log --repo vllm-project/vllm-ascend
+   PR diff  : gh pr diff <pr> --repo vllm-project/vllm-ascend --name-only
+   kubectl  : kubectl get pods --all-namespaces | grep <runner_name>
+════════════════════════════════════════════

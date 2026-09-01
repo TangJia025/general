@@ -1,0 +1,157 @@
+════════════════════════════════════════════
+ Run 33320517313 | vllm-project/vllm-ascend
+════════════════════════════════════════════
+
+X main Nightly-310P · 33320517313
+Triggered via workflow_dispatch about 1 day ago
+
+JOBS
+✓ Parse trigger and determine test scope in 3s (ID 99281552245)
+- Build nightly-310p image in 0s (ID 99281552941)
+✓ Export global env vars as job outputs in 9s (ID 99281560680)
+✓ single-node (main, Qwen3.6-27B-W8A8, linux-aarch64-310p-2, Qwen3.6-27B-W8A8-310P-300I-DUO.yaml) / Qwen3.6-27B-W8A8 in 56m5s (ID 99281585556)
+✓ single-node (main, Qwen3-32B-w8a8sc-310p, linux-aarch64-310p-4, Qwen3-32B-w8a8sc-310p.yaml) / Qwen3-32B-w8a8sc-310p in 31m52s (ID 99281585598)
+X single-node (main, Qwen3.6-35B-A3B-w8a8, linux-aarch64-310p-4, Qwen3.6-35B-W8A8-310P-300I-DUO.yaml) / Qwen3.6-35B-A3B-w8a8 in 22m15s (ID 99281585611)
+  ✓ Set up job
+  ✓ Initialize containers
+  ✓ Check npu and CANN info
+  - uninstall vlm vllm-ascend and remove code (if pr test)
+  - Checkout vllm-project/vllm-ascend repo
+  - Move code to /vllm-workspace
+  ✓ Set MAX_JOBS based on runner
+  - Install vllm-project/vllm-ascend
+  ✓ Uninstall Triton for 310P tests
+  - Install aisbench
+  ✓ Show vLLM and vLLM-Ascend version
+  ✓ Install clang
+  ✓ Validate Inputs
+  - Run Pytest (py-driven)
+  X Run Pytest (YAML-driven)
+  - Update good_table.csv on success
+  - Capture test result
+  - Classify failure
+  - Skip - env issue
+  - Check commit age
+  - Skip - old commit
+  - Process - recent real failure
+  - On success
+  ✓ Set benchmark artifact timestamp
+  ✓ Upload benchmark results
+  ✓ Upload benchmark results (GitHub Artifacts)
+  ✓ Stop containers
+  ✓ Complete job
+✓ single-node (main, Qwen3-14B-w8a8sc-310p, linux-aarch64-310p-4, Qwen3-14B-w8a8sc-310p.yaml) / Qwen3-14B-w8a8sc-310p in 43m41s (ID 99281585630)
+✓ single-node (main, Qwen3-8B-w8a8sc-310p, linux-aarch64-310p-4, Qwen3-8B-w8a8sc-310p.yaml) / Qwen3-8B-w8a8sc-310p in 39m26s (ID 99281585646)
+X single-node (main, Qwen3.6-35B-A3B-w8a8-310p-MTP, linux-aarch64-310p-4, Qwen3.6-35B-A3B-w8a8-310p... / Qwen3.6-35B-A3B-w8a8-310p-MTP in 41m57s (ID 99281585655)
+  ✓ Set up job
+  ✓ Initialize containers
+  ✓ Check npu and CANN info
+  - uninstall vlm vllm-ascend and remove code (if pr test)
+  - Checkout vllm-project/vllm-ascend repo
+  - Move code to /vllm-workspace
+  ✓ Set MAX_JOBS based on runner
+  - Install vllm-project/vllm-ascend
+  ✓ Uninstall Triton for 310P tests
+  - Install aisbench
+  ✓ Show vLLM and vLLM-Ascend version
+  ✓ Install clang
+  ✓ Validate Inputs
+  - Run Pytest (py-driven)
+  X Run Pytest (YAML-driven)
+  - Update good_table.csv on success
+  - Capture test result
+  - Classify failure
+  - Skip - env issue
+  - Check commit age
+  - Skip - old commit
+  - Process - recent real failure
+  - On success
+  ✓ Set benchmark artifact timestamp
+  ✓ Upload benchmark results
+  ✓ Upload benchmark results (GitHub Artifacts)
+  ✓ Stop containers
+  ✓ Complete job
+✓ Merge benchmark artifacts into nightly-310p.zip in 8s (ID 99289185209)
+
+ANNOTATIONS
+! No files found for path: /vllm-workspace/vllm-ascend/benchmark_results/Qwen3.6-27B-W8A8.json, skipping upload
+single-node (main, Qwen3.6-27B-W8A8, linux-aarch64-310p-2, Qwen3.6-27B-W8A8-310P-300I-DUO.yaml) / Qwen3.6-27B-W8A8: .github#255
+
+! No files found for path: /vllm-workspace/vllm-ascend/benchmark_results/Qwen3-32B-w8a8sc-310p.json, skipping upload
+single-node (main, Qwen3-32B-w8a8sc-310p, linux-aarch64-310p-4, Qwen3-32B-w8a8sc-310p.yaml) / Qwen3-32B-w8a8sc-310p: .github#255
+
+! No files were found with the provided path: /vllm-workspace/vllm-ascend/benchmark_results/main-Qwen3.6-35B-A3B-w8a8.json. No artifacts will be uploaded.
+single-node (main, Qwen3.6-35B-A3B-w8a8, linux-aarch64-310p-4, Qwen3.6-35B-W8A8-310P-300I-DUO.yaml) / Qwen3.6-35B-A3B-w8a8: .github#30
+
+! No files found for path: /vllm-workspace/vllm-ascend/benchmark_results/Qwen3.6-35B-A3B-w8a8.json, skipping upload
+single-node (main, Qwen3.6-35B-A3B-w8a8, linux-aarch64-310p-4, Qwen3.6-35B-W8A8-310P-300I-DUO.yaml) / Qwen3.6-35B-A3B-w8a8: .github#255
+
+X Executing the custom container implementation failed. Please contact your self hosted runner administrator.
+single-node (main, Qwen3.6-35B-A3B-w8a8, linux-aarch64-310p-4, Qwen3.6-35B-W8A8-310P-300I-DUO.yaml) / Qwen3.6-35B-A3B-w8a8: .github#886
+
+X Process completed with exit code 1.
+single-node (main, Qwen3.6-35B-A3B-w8a8, linux-aarch64-310p-4, Qwen3.6-35B-W8A8-310P-300I-DUO.yaml) / Qwen3.6-35B-A3B-w8a8: .github#885
+
+X Error: failed to run script step: Error: command terminated with non-zero exit code: command terminated with exit code 1
+single-node (main, Qwen3.6-35B-A3B-w8a8, linux-aarch64-310p-4, Qwen3.6-35B-W8A8-310P-300I-DUO.yaml) / Qwen3.6-35B-A3B-w8a8: .github#884
+
+! No files found for path: /vllm-workspace/vllm-ascend/benchmark_results/Qwen3-14B-w8a8sc-310p.json, skipping upload
+single-node (main, Qwen3-14B-w8a8sc-310p, linux-aarch64-310p-4, Qwen3-14B-w8a8sc-310p.yaml) / Qwen3-14B-w8a8sc-310p: .github#255
+
+! No files found for path: /vllm-workspace/vllm-ascend/benchmark_results/Qwen3-8B-w8a8sc-310p.json, skipping upload
+single-node (main, Qwen3-8B-w8a8sc-310p, linux-aarch64-310p-4, Qwen3-8B-w8a8sc-310p.yaml) / Qwen3-8B-w8a8sc-310p: .github#255
+
+! No files were found with the provided path: /vllm-workspace/vllm-ascend/benchmark_results/main-Qwen3.6-35B-A3B-w8a8-310p-MTP.json. No artifacts will be uploaded.
+single-node (main, Qwen3.6-35B-A3B-w8a8-310p-MTP, linux-aarch64-310p-4, Qwen3.6-35B-A3B-w8a8-310p... / Qwen3.6-35B-A3B-w8a8-310p-MTP: .github#30
+
+! No files found for path: /vllm-workspace/vllm-ascend/benchmark_results/Qwen3.6-35B-A3B-w8a8-310p-MTP.json, skipping upload
+single-node (main, Qwen3.6-35B-A3B-w8a8-310p-MTP, linux-aarch64-310p-4, Qwen3.6-35B-A3B-w8a8-310p... / Qwen3.6-35B-A3B-w8a8-310p-MTP: .github#255
+
+X Executing the custom container implementation failed. Please contact your self hosted runner administrator.
+single-node (main, Qwen3.6-35B-A3B-w8a8-310p-MTP, linux-aarch64-310p-4, Qwen3.6-35B-A3B-w8a8-310p... / Qwen3.6-35B-A3B-w8a8-310p-MTP: .github#2426
+
+X Process completed with exit code 1.
+single-node (main, Qwen3.6-35B-A3B-w8a8-310p-MTP, linux-aarch64-310p-4, Qwen3.6-35B-A3B-w8a8-310p... / Qwen3.6-35B-A3B-w8a8-310p-MTP: .github#2425
+
+X Error: failed to run script step: Error: command terminated with non-zero exit code: command terminated with exit code 1
+single-node (main, Qwen3.6-35B-A3B-w8a8-310p-MTP, linux-aarch64-310p-4, Qwen3.6-35B-A3B-w8a8-310p... / Qwen3.6-35B-A3B-w8a8-310p-MTP: .github#2424
+
+
+ARTIFACTS
+nightly-310p
+
+To see what failed, try: gh run view 33320517313 --log-failed
+View this run on GitHub: https://github.com/vllm-project/vllm-ascend/actions/runs/33320517313
+
+════════════════════════════════════════════
+ 失败 / 取消 Job 详情（共 2 个）
+════════════════════════════════════════════
+
+── [FAILURE] single-node (main, Qwen3.6-35B-A3B-w8a8, linux-aarch64-310p-4, Qwen3.6-35B-W8A8-310P-300I-DUO.yaml) / Qwen3.6-35B-A3B-w8a8
+   Runner : linux-aarch64-310p-4-txxhn-runner-wrpmr
+   时间   : 2026-08-30T16:00:22Z ~ 2026-08-30T16:22:37Z
+   ── 运行时错误（高优先级）
+single-node (main, Qwen3.6-35B-A3B-w8a8, linux-aarch64-310p-4, Qwen3.6-35B-W8A8-310P-300I-DUO.yaml) / Qwen3.6-35B-A3B-w8a8	UNKNOWN STEP	2026-08-30T16:11:48.9600762Z [2026-08-30 16:11:48.957670][UC][I] No available shared memory broadcast block found in 60 seconds. This typically happens when some processes are hanging or doing some time-consuming work (e.g. compilation, weight/kv cache quantization). [2543,2543][shm_broadcast.py:802,acquire_read]
+single-node (main, Qwen3.6-35B-A3B-w8a8, linux-aarch64-310p-4, Qwen3.6-35B-W8A8-310P-300I-DUO.yaml) / Qwen3.6-35B-A3B-w8a8	UNKNOWN STEP	2026-08-30T16:22:11.2171160Z E       AssertionError: some aisbench cases failed, info were shown above.
+single-node (main, Qwen3.6-35B-A3B-w8a8, linux-aarch64-310p-4, Qwen3.6-35B-W8A8-310P-300I-DUO.yaml) / Qwen3.6-35B-A3B-w8a8	UNKNOWN STEP	2026-08-30T16:22:11.2172056Z tools/aisbench.py:303: AssertionError
+single-node (main, Qwen3.6-35B-A3B-w8a8, linux-aarch64-310p-4, Qwen3.6-35B-W8A8-310P-300I-DUO.yaml) / Qwen3.6-35B-A3B-w8a8	UNKNOWN STEP	2026-08-30T16:22:11.2206322Z FAILED tests/e2e/nightly/single_node/models/scripts/test_single_node.py::test_single_node[Qwen3.6-35B-A3B-w8a8] - AssertionError: some aisbench cases failed, info were shown above.
+single-node (main, Qwen3.6-35B-A3B-w8a8, linux-aarch64-310p-4, Qwen3.6-35B-W8A8-310P-300I-DUO.yaml) / Qwen3.6-35B-A3B-w8a8	UNKNOWN STEP	2026-08-30T16:22:14.5983537Z ##[error]Process completed with exit code 1.
+   ── 最后输出（定位失败阶段）
+
+── [FAILURE] single-node (main, Qwen3.6-35B-A3B-w8a8-310p-MTP, linux-aarch64-310p-4, Qwen3.6-35B-A3B-w8a8-310p... / Qwen3.6-35B-A3B-w8a8-310p-MTP
+   Runner : linux-aarch64-310p-4-txxhn-runner-v95mr
+   时间   : 2026-08-30T15:50:33Z ~ 2026-08-30T16:32:30Z
+   ── 运行时错误（高优先级）
+single-node (main, Qwen3.6-35B-A3B-w8a8-310p-MTP, linux-aarch64-310p-4, Qwen3.6-35B-A3B-w8a8-310p... / Qwen3.6-35B-A3B-w8a8-310p-MTP	UNKNOWN STEP	2026-08-30T16:02:20.3127458Z [2026-08-30 16:02:20.310448][UC][I] No available shared memory broadcast block found in 60 seconds. This typically happens when some processes are hanging or doing some time-consuming work (e.g. compilation, weight/kv cache quantization). [2504,2504][shm_broadcast.py:802,acquire_read]
+single-node (main, Qwen3.6-35B-A3B-w8a8-310p-MTP, linux-aarch64-310p-4, Qwen3.6-35B-A3B-w8a8-310p... / Qwen3.6-35B-A3B-w8a8-310p-MTP	UNKNOWN STEP	2026-08-30T16:32:05.1755568Z E       AssertionError: some aisbench cases failed, info were shown above.
+single-node (main, Qwen3.6-35B-A3B-w8a8-310p-MTP, linux-aarch64-310p-4, Qwen3.6-35B-A3B-w8a8-310p... / Qwen3.6-35B-A3B-w8a8-310p-MTP	UNKNOWN STEP	2026-08-30T16:32:05.1756403Z tools/aisbench.py:303: AssertionError
+single-node (main, Qwen3.6-35B-A3B-w8a8-310p-MTP, linux-aarch64-310p-4, Qwen3.6-35B-A3B-w8a8-310p... / Qwen3.6-35B-A3B-w8a8-310p-MTP	UNKNOWN STEP	2026-08-30T16:32:05.1806369Z FAILED tests/e2e/nightly/single_node/models/scripts/test_single_node.py::test_single_node[Qwen3.6-35B-A3B-w8a8-310p-MTP] - AssertionError: some aisbench cases failed, info were shown above.
+single-node (main, Qwen3.6-35B-A3B-w8a8-310p-MTP, linux-aarch64-310p-4, Qwen3.6-35B-A3B-w8a8-310p... / Qwen3.6-35B-A3B-w8a8-310p-MTP	UNKNOWN STEP	2026-08-30T16:32:08.7631382Z ##[error]Process completed with exit code 1.
+   ── 最后输出（定位失败阶段）
+
+════════════════════════════════════════════
+ 补充命令（按需使用）：
+   完整日志 : gh run view --job <id> --log --repo vllm-project/vllm-ascend
+   PR diff  : gh pr diff <pr> --repo vllm-project/vllm-ascend --name-only
+   kubectl  : kubectl get pods --all-namespaces | grep <runner_name>
+════════════════════════════════════════════

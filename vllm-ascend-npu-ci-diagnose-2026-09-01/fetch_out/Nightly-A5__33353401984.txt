@@ -1,0 +1,354 @@
+════════════════════════════════════════════
+ Run 33353401984 | vllm-project/vllm-ascend
+════════════════════════════════════════════
+
+X main Nightly-A5 · 33353401984
+Triggered via workflow_dispatch about 1 day ago
+
+JOBS
+✓ Parse trigger and determine test scope in 11s (ID 99370890138)
+- Build nightly-a5 image in 0s (ID 99370890885)
+✓ Export global env vars as job outputs in 3m43s (ID 99370946694)
+✓ single-node (releases-v0.23.0, Qwen3_5_35B_A3B_FP8_A5, linux-aarch64-a5-8, Qwen3_5_35B_A3B_FP8_A5... / Qwen3_5_35B_A3B_FP8_A5 in 54m14s (ID 99371609002)
+X single-node (releases-v0.23.0, Qwen3_32b_w8a8_A5, linux-aarch64-a5-8, Qwen3_32b_w8a8_A5.yaml) / Qwen3_32b_w8a8_A5 in 55m22s (ID 99371609046)
+  ✓ Set up job
+  ✓ Initialize containers
+  ✓ Check npu and CANN info
+  ✓ uninstall vlm vllm-ascend and remove code (if pr test)
+  ✓ Checkout vllm-project/vllm-ascend repo
+  ✓ Move code to /vllm-workspace
+  ✓ Set MAX_JOBS based on runner
+  ✓ Install vllm-project/vllm-ascend
+  - Uninstall Triton for 310P tests
+  ✓ Install aisbench
+  ✓ Show vLLM and vLLM-Ascend version
+  ✓ Install clang
+  ✓ Validate Inputs
+  - Run Pytest (py-driven)
+  X Run Pytest (YAML-driven)
+  - Update good_table.csv on success
+  - Capture test result
+  - Classify failure
+  - Skip - env issue
+  - Check commit age
+  - Skip - old commit
+  - Process - recent real failure
+  - On success
+  ✓ Set benchmark artifact timestamp
+  ✓ Upload benchmark results
+  ✓ Upload benchmark results (GitHub Artifacts)
+  ✓ Post Checkout vllm-project/vllm-ascend repo
+  ✓ Stop containers
+  ✓ Complete job
+✓ single-node (releases-v0.23.0, Qwen3_6_27B_W8A8_A5, linux-aarch64-a5-8, Qwen3_6_27B_W8A8_A5.yaml) / Qwen3_6_27B_W8A8_A5 in 45m49s (ID 99371609053)
+X single-node (releases-v0.23.0, Qwen3_6_27b_A5, linux-aarch64-a5-8, Qwen3_6_27b_A5.yaml) / Qwen3_6_27b_A5 in 42m16s (ID 99371609121)
+  ✓ Set up job
+  ✓ Initialize containers
+  ✓ Check npu and CANN info
+  ✓ uninstall vlm vllm-ascend and remove code (if pr test)
+  ✓ Checkout vllm-project/vllm-ascend repo
+  ✓ Move code to /vllm-workspace
+  ✓ Set MAX_JOBS based on runner
+  ✓ Install vllm-project/vllm-ascend
+  - Uninstall Triton for 310P tests
+  ✓ Install aisbench
+  ✓ Show vLLM and vLLM-Ascend version
+  ✓ Install clang
+  ✓ Validate Inputs
+  - Run Pytest (py-driven)
+  X Run Pytest (YAML-driven)
+  - Update good_table.csv on success
+  - Capture test result
+  - Classify failure
+  - Skip - env issue
+  - Check commit age
+  - Skip - old commit
+  - Process - recent real failure
+  - On success
+  ✓ Set benchmark artifact timestamp
+  ✓ Upload benchmark results
+  ✓ Upload benchmark results (GitHub Artifacts)
+  ✓ Post Checkout vllm-project/vllm-ascend repo
+  ✓ Stop containers
+  ✓ Complete job
+✓ single-node (releases-v0.23.0, Qwen3_235b_w8a8_A5, linux-aarch64-a5-8, Qwen3_235b_w8a8_A5.yaml) / Qwen3_235b_w8a8_A5 in 50m51s (ID 99371609128)
+✓ single-node (releases-v0.23.0, GLM5_1_W4A4_A5, linux-aarch64-a5-8, GLM5_1_W4A4_A5.yaml) / GLM5_1_W4A4_A5 in 20m57s (ID 99371609129)
+X single-node (releases-v0.23.0, DeepSeek_V4_Flash_A5, linux-aarch64-a5-8, DeepSeek_V4_Flash_A5.yaml) / DeepSeek_V4_Flash_A5 in 46m38s (ID 99371609192)
+  ✓ Set up job
+  ✓ Initialize containers
+  ✓ Check npu and CANN info
+  ✓ uninstall vlm vllm-ascend and remove code (if pr test)
+  ✓ Checkout vllm-project/vllm-ascend repo
+  ✓ Move code to /vllm-workspace
+  ✓ Set MAX_JOBS based on runner
+  ✓ Install vllm-project/vllm-ascend
+  - Uninstall Triton for 310P tests
+  ✓ Install aisbench
+  ✓ Show vLLM and vLLM-Ascend version
+  ✓ Install clang
+  ✓ Validate Inputs
+  - Run Pytest (py-driven)
+  X Run Pytest (YAML-driven)
+  - Update good_table.csv on success
+  - Capture test result
+  - Classify failure
+  - Skip - env issue
+  - Check commit age
+  - Skip - old commit
+  - Process - recent real failure
+  - On success
+  ✓ Set benchmark artifact timestamp
+  ✓ Upload benchmark results
+  ✓ Upload benchmark results (GitHub Artifacts)
+  ✓ Post Checkout vllm-project/vllm-ascend repo
+  ✓ Stop containers
+  ✓ Complete job
+X single-node (releases-v0.23.0, DeepSeek_V31_W4A4C8_A5, linux-aarch64-a5-8, DeepSeek_V31_W4A4C8_A5... / DeepSeek_V31_W4A4C8_A5 in 1h12m38s (ID 99371609206)
+  ✓ Set up job
+  ✓ Initialize containers
+  ✓ Check npu and CANN info
+  ✓ uninstall vlm vllm-ascend and remove code (if pr test)
+  ✓ Checkout vllm-project/vllm-ascend repo
+  ✓ Move code to /vllm-workspace
+  ✓ Set MAX_JOBS based on runner
+  ✓ Install vllm-project/vllm-ascend
+  - Uninstall Triton for 310P tests
+  ✓ Install aisbench
+  ✓ Show vLLM and vLLM-Ascend version
+  ✓ Install clang
+  ✓ Validate Inputs
+  - Run Pytest (py-driven)
+  X Run Pytest (YAML-driven)
+  - Update good_table.csv on success
+  - Capture test result
+  - Classify failure
+  - Skip - env issue
+  - Check commit age
+  - Skip - old commit
+  - Process - recent real failure
+  - On success
+  ✓ Set benchmark artifact timestamp
+  ✓ Upload benchmark results
+  ✓ Upload benchmark results (GitHub Artifacts)
+  ✓ Post Checkout vllm-project/vllm-ascend repo
+  ✓ Stop containers
+  ✓ Complete job
+- clear-pre-logs in 0s (ID 99371609310)
+✓ single-node (releases-v0.23.0, Qwen3_5_397B_A17B_w8a8_mxfp8_A5, linux-aarch64-a5-8, Qwen3_5_397B_... / Qwen3_5_397B_A17B_w8a8_mxfp8_A5 in 1h16m5s (ID 99371609836)
+- single-node (releases-v0.23.0, KimiK26_w4a4c8_A5, linux-aarch64-a5-8, KimiK26_w4a4c8_A5.yaml) / inputs.name || inputs.config_file_path || inputs.tests (ID 99371609946)
+X single-node (releases-v0.23.0, DeepSeek_V31_Terminus_w4a8_w8a8_A5, linux-aarch64-a5-8, DeepSeek_V... / DeepSeek_V31_Terminus_w4a8_w8a8_A5 in 1h16m45s (ID 99379696728)
+  ✓ Set up job
+  ✓ Initialize containers
+  ✓ Check npu and CANN info
+  ✓ uninstall vlm vllm-ascend and remove code (if pr test)
+  ✓ Checkout vllm-project/vllm-ascend repo
+  ✓ Move code to /vllm-workspace
+  ✓ Set MAX_JOBS based on runner
+  ✓ Install vllm-project/vllm-ascend
+  - Uninstall Triton for 310P tests
+  ✓ Install aisbench
+  ✓ Show vLLM and vLLM-Ascend version
+  ✓ Install clang
+  ✓ Validate Inputs
+  - Run Pytest (py-driven)
+  X Run Pytest (YAML-driven)
+  - Update good_table.csv on success
+  - Capture test result
+  - Classify failure
+  - Skip - env issue
+  - Check commit age
+  - Skip - old commit
+  - Process - recent real failure
+  - On success
+  ✓ Set benchmark artifact timestamp
+  ✓ Upload benchmark results
+  ✓ Upload benchmark results (GitHub Artifacts)
+  ✓ Post Checkout vllm-project/vllm-ascend repo
+  ✓ Stop containers
+  ✓ Complete job
+✓ Merge benchmark artifacts into nightly-a5.zip in 25s (ID 99425277412)
+
+ANNOTATIONS
+! No files found for path: /vllm-workspace/vllm-ascend/benchmark_results/Qwen3_5_35B_A3B_FP8_A5.json, skipping upload
+single-node (releases-v0.23.0, Qwen3_5_35B_A3B_FP8_A5, linux-aarch64-a5-8, Qwen3_5_35B_A3B_FP8_A5... / Qwen3_5_35B_A3B_FP8_A5: .github#255
+
+! No files found for path: /vllm-workspace/vllm-ascend/benchmark_results/Qwen3_32b_w8a8_A5.json, skipping upload
+single-node (releases-v0.23.0, Qwen3_32b_w8a8_A5, linux-aarch64-a5-8, Qwen3_32b_w8a8_A5.yaml) / Qwen3_32b_w8a8_A5: .github#255
+
+X Executing the custom container implementation failed. Please contact your self hosted runner administrator.
+single-node (releases-v0.23.0, Qwen3_32b_w8a8_A5, linux-aarch64-a5-8, Qwen3_32b_w8a8_A5.yaml) / Qwen3_32b_w8a8_A5: .github#2391
+
+X Process completed with exit code 1.
+single-node (releases-v0.23.0, Qwen3_32b_w8a8_A5, linux-aarch64-a5-8, Qwen3_32b_w8a8_A5.yaml) / Qwen3_32b_w8a8_A5: .github#2390
+
+X Error: failed to run script step: Error: command terminated with non-zero exit code: command terminated with exit code 1
+single-node (releases-v0.23.0, Qwen3_32b_w8a8_A5, linux-aarch64-a5-8, Qwen3_32b_w8a8_A5.yaml) / Qwen3_32b_w8a8_A5: .github#2389
+
+! No files were found with the provided path: /vllm-workspace/vllm-ascend/benchmark_results/releases-v0.23.0-Qwen3_6_27B_W8A8_A5.json. No artifacts will be uploaded.
+single-node (releases-v0.23.0, Qwen3_6_27B_W8A8_A5, linux-aarch64-a5-8, Qwen3_6_27B_W8A8_A5.yaml) / Qwen3_6_27B_W8A8_A5: .github#30
+
+! No files found for path: /vllm-workspace/vllm-ascend/benchmark_results/Qwen3_6_27B_W8A8_A5.json, skipping upload
+single-node (releases-v0.23.0, Qwen3_6_27B_W8A8_A5, linux-aarch64-a5-8, Qwen3_6_27B_W8A8_A5.yaml) / Qwen3_6_27B_W8A8_A5: .github#255
+
+! No files found for path: /vllm-workspace/vllm-ascend/benchmark_results/Qwen3_6_27b_A5.json, skipping upload
+single-node (releases-v0.23.0, Qwen3_6_27b_A5, linux-aarch64-a5-8, Qwen3_6_27b_A5.yaml) / Qwen3_6_27b_A5: .github#255
+
+X Executing the custom container implementation failed. Please contact your self hosted runner administrator.
+single-node (releases-v0.23.0, Qwen3_6_27b_A5, linux-aarch64-a5-8, Qwen3_6_27b_A5.yaml) / Qwen3_6_27b_A5: .github#2370
+
+X Process completed with exit code 1.
+single-node (releases-v0.23.0, Qwen3_6_27b_A5, linux-aarch64-a5-8, Qwen3_6_27b_A5.yaml) / Qwen3_6_27b_A5: .github#2369
+
+X Error: failed to run script step: Error: command terminated with non-zero exit code: command terminated with exit code 1
+single-node (releases-v0.23.0, Qwen3_6_27b_A5, linux-aarch64-a5-8, Qwen3_6_27b_A5.yaml) / Qwen3_6_27b_A5: .github#2368
+
+! No files found for path: /vllm-workspace/vllm-ascend/benchmark_results/Qwen3_235b_w8a8_A5.json, skipping upload
+single-node (releases-v0.23.0, Qwen3_235b_w8a8_A5, linux-aarch64-a5-8, Qwen3_235b_w8a8_A5.yaml) / Qwen3_235b_w8a8_A5: .github#255
+
+! No files were found with the provided path: /vllm-workspace/vllm-ascend/benchmark_results/releases-v0.23.0-GLM5_1_W4A4_A5.json. No artifacts will be uploaded.
+single-node (releases-v0.23.0, GLM5_1_W4A4_A5, linux-aarch64-a5-8, GLM5_1_W4A4_A5.yaml) / GLM5_1_W4A4_A5: .github#30
+
+! No files found for path: /vllm-workspace/vllm-ascend/benchmark_results/GLM5_1_W4A4_A5.json, skipping upload
+single-node (releases-v0.23.0, GLM5_1_W4A4_A5, linux-aarch64-a5-8, GLM5_1_W4A4_A5.yaml) / GLM5_1_W4A4_A5: .github#255
+
+! No files found for path: /vllm-workspace/vllm-ascend/benchmark_results/DeepSeek_V4_Flash_A5.json, skipping upload
+single-node (releases-v0.23.0, DeepSeek_V4_Flash_A5, linux-aarch64-a5-8, DeepSeek_V4_Flash_A5.yaml) / DeepSeek_V4_Flash_A5: .github#255
+
+X Executing the custom container implementation failed. Please contact your self hosted runner administrator.
+single-node (releases-v0.23.0, DeepSeek_V4_Flash_A5, linux-aarch64-a5-8, DeepSeek_V4_Flash_A5.yaml) / DeepSeek_V4_Flash_A5: .github#10607
+
+X Process completed with exit code 1.
+single-node (releases-v0.23.0, DeepSeek_V4_Flash_A5, linux-aarch64-a5-8, DeepSeek_V4_Flash_A5.yaml) / DeepSeek_V4_Flash_A5: .github#10606
+
+X Error: failed to run script step: Error: command terminated with non-zero exit code: command terminated with exit code 1
+single-node (releases-v0.23.0, DeepSeek_V4_Flash_A5, linux-aarch64-a5-8, DeepSeek_V4_Flash_A5.yaml) / DeepSeek_V4_Flash_A5: .github#10605
+
+! No files were found with the provided path: /vllm-workspace/vllm-ascend/benchmark_results/releases-v0.23.0-DeepSeek_V31_W4A4C8_A5.json. No artifacts will be uploaded.
+single-node (releases-v0.23.0, DeepSeek_V31_W4A4C8_A5, linux-aarch64-a5-8, DeepSeek_V31_W4A4C8_A5... / DeepSeek_V31_W4A4C8_A5: .github#30
+
+! No files found for path: /vllm-workspace/vllm-ascend/benchmark_results/DeepSeek_V31_W4A4C8_A5.json, skipping upload
+single-node (releases-v0.23.0, DeepSeek_V31_W4A4C8_A5, linux-aarch64-a5-8, DeepSeek_V31_W4A4C8_A5... / DeepSeek_V31_W4A4C8_A5: .github#255
+
+X Executing the custom container implementation failed. Please contact your self hosted runner administrator.
+single-node (releases-v0.23.0, DeepSeek_V31_W4A4C8_A5, linux-aarch64-a5-8, DeepSeek_V31_W4A4C8_A5... / DeepSeek_V31_W4A4C8_A5: .github#4973
+
+X Process completed with exit code 1.
+single-node (releases-v0.23.0, DeepSeek_V31_W4A4C8_A5, linux-aarch64-a5-8, DeepSeek_V31_W4A4C8_A5... / DeepSeek_V31_W4A4C8_A5: .github#4972
+
+X Error: failed to run script step: Error: command terminated with non-zero exit code: command terminated with exit code 1
+single-node (releases-v0.23.0, DeepSeek_V31_W4A4C8_A5, linux-aarch64-a5-8, DeepSeek_V31_W4A4C8_A5... / DeepSeek_V31_W4A4C8_A5: .github#4971
+
+! No files found for path: /vllm-workspace/vllm-ascend/benchmark_results/Qwen3_5_397B_A17B_w8a8_mxfp8_A5.json, skipping upload
+single-node (releases-v0.23.0, Qwen3_5_397B_A17B_w8a8_mxfp8_A5, linux-aarch64-a5-8, Qwen3_5_397B_... / Qwen3_5_397B_A17B_w8a8_mxfp8_A5: .github#255
+
+! No files found for path: /vllm-workspace/vllm-ascend/benchmark_results/DeepSeek_V31_Terminus_w4a8_w8a8_A5.json, skipping upload
+single-node (releases-v0.23.0, DeepSeek_V31_Terminus_w4a8_w8a8_A5, linux-aarch64-a5-8, DeepSeek_V... / DeepSeek_V31_Terminus_w4a8_w8a8_A5: .github#255
+
+X Executing the custom container implementation failed. Please contact your self hosted runner administrator.
+single-node (releases-v0.23.0, DeepSeek_V31_Terminus_w4a8_w8a8_A5, linux-aarch64-a5-8, DeepSeek_V... / DeepSeek_V31_Terminus_w4a8_w8a8_A5: .github#15654
+
+X Process completed with exit code 1.
+single-node (releases-v0.23.0, DeepSeek_V31_Terminus_w4a8_w8a8_A5, linux-aarch64-a5-8, DeepSeek_V... / DeepSeek_V31_Terminus_w4a8_w8a8_A5: .github#15653
+
+X Error: failed to run script step: Error: command terminated with non-zero exit code: command terminated with exit code 1
+single-node (releases-v0.23.0, DeepSeek_V31_Terminus_w4a8_w8a8_A5, linux-aarch64-a5-8, DeepSeek_V... / DeepSeek_V31_Terminus_w4a8_w8a8_A5: .github#15652
+
+
+ARTIFACTS
+nightly-a5
+
+To see what failed, try: gh run view 33353401984 --log-failed
+View this run on GitHub: https://github.com/vllm-project/vllm-ascend/actions/runs/33353401984
+
+════════════════════════════════════════════
+ 失败 / 取消 Job 详情（共 5 个）
+════════════════════════════════════════════
+
+── [FAILURE] single-node (releases-v0.23.0, Qwen3_32b_w8a8_A5, linux-aarch64-a5-8, Qwen3_32b_w8a8_A5.yaml) / Qwen3_32b_w8a8_A5
+   Runner : linux-aarch64-a5-8-nx52r-runner-5hw27
+   时间   : 2026-08-31T03:22:53Z ~ 2026-08-31T04:18:15Z
+   ── 运行时错误（高优先级）
+single-node (releases-v0.23.0, Qwen3_32b_w8a8_A5, linux-aarch64-a5-8, Qwen3_32b_w8a8_A5.yaml) / Qwen3_32b_w8a8_A5	UNKNOWN STEP	2026-08-31T04:17:44.2974292Z E       AssertionError: some aisbench cases failed, info were shown above.
+single-node (releases-v0.23.0, Qwen3_32b_w8a8_A5, linux-aarch64-a5-8, Qwen3_32b_w8a8_A5.yaml) / Qwen3_32b_w8a8_A5	UNKNOWN STEP	2026-08-31T04:17:44.2974715Z tools/aisbench.py:279: AssertionError
+single-node (releases-v0.23.0, Qwen3_32b_w8a8_A5, linux-aarch64-a5-8, Qwen3_32b_w8a8_A5.yaml) / Qwen3_32b_w8a8_A5	UNKNOWN STEP	2026-08-31T04:17:44.3016445Z E       AssertionError: some aisbench cases failed, info were shown above.
+single-node (releases-v0.23.0, Qwen3_32b_w8a8_A5, linux-aarch64-a5-8, Qwen3_32b_w8a8_A5.yaml) / Qwen3_32b_w8a8_A5	UNKNOWN STEP	2026-08-31T04:17:44.3016863Z tools/aisbench.py:279: AssertionError
+single-node (releases-v0.23.0, Qwen3_32b_w8a8_A5, linux-aarch64-a5-8, Qwen3_32b_w8a8_A5.yaml) / Qwen3_32b_w8a8_A5	UNKNOWN STEP	2026-08-31T04:17:44.3034273Z FAILED tests/e2e/nightly/single_node/models/scripts/test_single_node.py::test_single_node[Qwen_pdmix_performance_001] - AssertionError: some aisbench cases failed, info were shown above.
+single-node (releases-v0.23.0, Qwen3_32b_w8a8_A5, linux-aarch64-a5-8, Qwen3_32b_w8a8_A5.yaml) / Qwen3_32b_w8a8_A5	UNKNOWN STEP	2026-08-31T04:17:44.3035662Z FAILED tests/e2e/nightly/single_node/models/scripts/test_single_node.py::test_single_node[prefix_cache_performance_qwen3_32b_001] - AssertionError: some aisbench cases failed, info were shown above.
+single-node (releases-v0.23.0, Qwen3_32b_w8a8_A5, linux-aarch64-a5-8, Qwen3_32b_w8a8_A5.yaml) / Qwen3_32b_w8a8_A5	UNKNOWN STEP	2026-08-31T04:17:46.8528238Z ##[error]Process completed with exit code 1.
+   ── 最后输出（定位失败阶段）
+
+── [FAILURE] single-node (releases-v0.23.0, Qwen3_6_27b_A5, linux-aarch64-a5-8, Qwen3_6_27b_A5.yaml) / Qwen3_6_27b_A5
+   Runner : linux-aarch64-a5-8-nx52r-runner-c8sxg
+   时间   : 2026-08-31T04:17:08Z ~ 2026-08-31T04:59:24Z
+   ── 运行时错误（高优先级）
+single-node (releases-v0.23.0, Qwen3_6_27b_A5, linux-aarch64-a5-8, Qwen3_6_27b_A5.yaml) / Qwen3_6_27b_A5	UNKNOWN STEP	2026-08-31T04:37:11.2718750Z Capturing CUDA graphs (decode, FULL):   8%|▊         | 4/49 [01:00<07:57, 10.61s/it][2026-08-31 04:37:11.265457][UC][I] No available shared memory broadcast block found in 60 seconds. This typically happens when some processes are hanging or doing some time-consuming work (e.g. compilation, weight/kv cache quantization). [18876,18876][patch_shm_broadcast.py:74,acquire_read]
+single-node (releases-v0.23.0, Qwen3_6_27b_A5, linux-aarch64-a5-8, Qwen3_6_27b_A5.yaml) / Qwen3_6_27b_A5	UNKNOWN STEP	2026-08-31T04:38:11.3157147Z Capturing CUDA graphs (decode, FULL):  33%|███▎      | 16/49 [01:57<02:39,  4.83s/it][2026-08-31 04:38:11.309166][UC][I] No available shared memory broadcast block found in 60 seconds. This typically happens when some processes are hanging or doing some time-consuming work (e.g. compilation, weight/kv cache quantization). [18876,18876][patch_shm_broadcast.py:74,acquire_read]
+single-node (releases-v0.23.0, Qwen3_6_27b_A5, linux-aarch64-a5-8, Qwen3_6_27b_A5.yaml) / Qwen3_6_27b_A5	UNKNOWN STEP	2026-08-31T04:39:11.3639071Z Capturing CUDA graphs (decode, FULL):  59%|█████▉    | 29/49 [02:59<01:33,  4.69s/it][2026-08-31 04:39:11.357566][UC][I] No available shared memory broadcast block found in 60 seconds. This typically happens when some processes are hanging or doing some time-consuming work (e.g. compilation, weight/kv cache quantization). [18876,18876][patch_shm_broadcast.py:74,acquire_read]
+single-node (releases-v0.23.0, Qwen3_6_27b_A5, linux-aarch64-a5-8, Qwen3_6_27b_A5.yaml) / Qwen3_6_27b_A5	UNKNOWN STEP	2026-08-31T04:40:11.4118217Z Capturing CUDA graphs (decode, FULL):  86%|████████▌ | 42/49 [04:00<00:32,  4.70s/it][2026-08-31 04:40:11.405152][UC][I] No available shared memory broadcast block found in 60 seconds. This typically happens when some processes are hanging or doing some time-consuming work (e.g. compilation, weight/kv cache quantization). [18876,18876][patch_shm_broadcast.py:74,acquire_read]
+single-node (releases-v0.23.0, Qwen3_6_27b_A5, linux-aarch64-a5-8, Qwen3_6_27b_A5.yaml) / Qwen3_6_27b_A5	UNKNOWN STEP	2026-08-31T04:58:51.5175885Z E       AssertionError: some aisbench cases failed, info were shown above.
+single-node (releases-v0.23.0, Qwen3_6_27b_A5, linux-aarch64-a5-8, Qwen3_6_27b_A5.yaml) / Qwen3_6_27b_A5	UNKNOWN STEP	2026-08-31T04:58:51.5176306Z tools/aisbench.py:279: AssertionError
+single-node (releases-v0.23.0, Qwen3_6_27b_A5, linux-aarch64-a5-8, Qwen3_6_27b_A5.yaml) / Qwen3_6_27b_A5	UNKNOWN STEP	2026-08-31T04:58:51.5194742Z FAILED tests/e2e/nightly/single_node/models/scripts/test_single_node.py::test_single_node[Dflassh_Acceptance_Rate_Test_05] - AssertionError: some aisbench cases failed, info were shown above.
+single-node (releases-v0.23.0, Qwen3_6_27b_A5, linux-aarch64-a5-8, Qwen3_6_27b_A5.yaml) / Qwen3_6_27b_A5	UNKNOWN STEP	2026-08-31T04:58:53.9035680Z ##[error]Process completed with exit code 1.
+   ── 最后输出（定位失败阶段）
+
+── [FAILURE] single-node (releases-v0.23.0, DeepSeek_V4_Flash_A5, linux-aarch64-a5-8, DeepSeek_V4_Flash_A5.yaml) / DeepSeek_V4_Flash_A5
+   Runner : linux-aarch64-a5-8-nx52r-runner-m7qwx
+   时间   : 2026-08-31T06:12:23Z ~ 2026-08-31T06:59:01Z
+   ── 运行时错误（高优先级）
+single-node (releases-v0.23.0, DeepSeek_V4_Flash_A5, linux-aarch64-a5-8, DeepSeek_V4_Flash_A5.yaml) / DeepSeek_V4_Flash_A5	UNKNOWN STEP	2026-08-31T06:58:08.9541837Z future: <Task finished name='Task-20' coro=<AsyncClient.aclose() done, defined at /usr/local/python3.12.13/lib/python3.12/site-packages/httpx/_client.py:1978> exception=RuntimeError('Event loop is closed')>
+single-node (releases-v0.23.0, DeepSeek_V4_Flash_A5, linux-aarch64-a5-8, DeepSeek_V4_Flash_A5.yaml) / DeepSeek_V4_Flash_A5	UNKNOWN STEP	2026-08-31T06:58:08.9556052Z     raise RuntimeError('Event loop is closed')
+single-node (releases-v0.23.0, DeepSeek_V4_Flash_A5, linux-aarch64-a5-8, DeepSeek_V4_Flash_A5.yaml) / DeepSeek_V4_Flash_A5	UNKNOWN STEP	2026-08-31T06:58:08.9556389Z RuntimeError: Event loop is closed
+single-node (releases-v0.23.0, DeepSeek_V4_Flash_A5, linux-aarch64-a5-8, DeepSeek_V4_Flash_A5.yaml) / DeepSeek_V4_Flash_A5	UNKNOWN STEP	2026-08-31T06:58:27.9013910Z E       AssertionError: some aisbench cases failed, info were shown above.
+single-node (releases-v0.23.0, DeepSeek_V4_Flash_A5, linux-aarch64-a5-8, DeepSeek_V4_Flash_A5.yaml) / DeepSeek_V4_Flash_A5	UNKNOWN STEP	2026-08-31T06:58:27.9014342Z tools/aisbench.py:279: AssertionError
+single-node (releases-v0.23.0, DeepSeek_V4_Flash_A5, linux-aarch64-a5-8, DeepSeek_V4_Flash_A5.yaml) / DeepSeek_V4_Flash_A5	UNKNOWN STEP	2026-08-31T06:58:27.9035791Z FAILED tests/e2e/nightly/single_node/models/scripts/test_single_node.py::test_single_node[DeepSeekV4_Flash_A5_Signle_GPQA_Accuracy_Test_01] - AssertionError: some aisbench cases failed, info were shown above.
+single-node (releases-v0.23.0, DeepSeek_V4_Flash_A5, linux-aarch64-a5-8, DeepSeek_V4_Flash_A5.yaml) / DeepSeek_V4_Flash_A5	UNKNOWN STEP	2026-08-31T06:58:30.4142741Z ##[error]Process completed with exit code 1.
+   ── 最后输出（定位失败阶段）
+
+── [FAILURE] single-node (releases-v0.23.0, DeepSeek_V31_W4A4C8_A5, linux-aarch64-a5-8, DeepSeek_V31_W4A4C8_A5... / DeepSeek_V31_W4A4C8_A5
+   Runner : linux-aarch64-a5-8-nx52r-runner-tpmb4
+   时间   : 2026-08-31T04:59:34Z ~ 2026-08-31T06:12:12Z
+   ── 运行时错误（高优先级）
+single-node (releases-v0.23.0, DeepSeek_V31_W4A4C8_A5, linux-aarch64-a5-8, DeepSeek_V31_W4A4C8_A5... / DeepSeek_V31_W4A4C8_A5	UNKNOWN STEP	2026-08-31T05:29:40.1471593Z E0831 05:29:40.140881 24193 ../torch_npu/csrc/core/npu/NPUCachingAllocator.cpp:1332] NPU out of memory. Tried to allocate 1.75 GiB (NPU 1; 91.75 GiB total capacity; 87.27 GiB already allocated; 87.27 GiB current active; 1.53 GiB free; 87.55 GiB reserved in total by PyTorch).If reserved memory is >> allocated memory try setting max_split_size_mb to avoid fragmentation.
+single-node (releases-v0.23.0, DeepSeek_V31_W4A4C8_A5, linux-aarch64-a5-8, DeepSeek_V31_W4A4C8_A5... / DeepSeek_V31_W4A4C8_A5	UNKNOWN STEP	2026-08-31T05:29:40.1546271Z E0831 05:29:40.148382 24285 ../torch_npu/csrc/core/npu/NPUCachingAllocator.cpp:1332] NPU out of memory. Tried to allocate 1.75 GiB (NPU 2; 91.75 GiB total capacity; 87.27 GiB already allocated; 87.27 GiB current active; 1.53 GiB free; 87.55 GiB reserved in total by PyTorch).If reserved memory is >> allocated memory try setting max_split_size_mb to avoid fragmentation.
+single-node (releases-v0.23.0, DeepSeek_V31_W4A4C8_A5, linux-aarch64-a5-8, DeepSeek_V31_W4A4C8_A5... / DeepSeek_V31_W4A4C8_A5	UNKNOWN STEP	2026-08-31T05:29:40.1785931Z torch.OutOfMemoryError: NPU out of memory. Tried to allocate 1.75 GiB (NPU 1; 91.75 GiB total capacity; 87.27 GiB already allocated; 87.27 GiB current active; 1.53 GiB free; 87.55 GiB reserved in total by PyTorch).If reserved memory is >> allocated memory try setting max_split_size_mb to avoid fragmentation.
+single-node (releases-v0.23.0, DeepSeek_V31_W4A4C8_A5, linux-aarch64-a5-8, DeepSeek_V31_W4A4C8_A5... / DeepSeek_V31_W4A4C8_A5	UNKNOWN STEP	2026-08-31T05:29:40.1842405Z torch.OutOfMemoryError: NPU out of memory. Tried to allocate 1.75 GiB (NPU 1; 91.75 GiB total capacity; 87.27 GiB already allocated; 87.27 GiB current active; 1.53 GiB free; 87.55 GiB reserved in total by PyTorch).If reserved memory is >> allocated memory try setting max_split_size_mb to avoid fragmentation.
+single-node (releases-v0.23.0, DeepSeek_V31_W4A4C8_A5, linux-aarch64-a5-8, DeepSeek_V31_W4A4C8_A5... / DeepSeek_V31_W4A4C8_A5	UNKNOWN STEP	2026-08-31T05:29:40.1899657Z torch.OutOfMemoryError: NPU out of memory. Tried to allocate 1.75 GiB (NPU 2; 91.75 GiB total capacity; 87.27 GiB already allocated; 87.27 GiB current active; 1.53 GiB free; 87.55 GiB reserved in total by PyTorch).If reserved memory is >> allocated memory try setting max_split_size_mb to avoid fragmentation.
+single-node (releases-v0.23.0, DeepSeek_V31_W4A4C8_A5, linux-aarch64-a5-8, DeepSeek_V31_W4A4C8_A5... / DeepSeek_V31_W4A4C8_A5	UNKNOWN STEP	2026-08-31T05:29:40.1966453Z torch.OutOfMemoryError: NPU out of memory. Tried to allocate 1.75 GiB (NPU 2; 91.75 GiB total capacity; 87.27 GiB already allocated; 87.27 GiB current active; 1.53 GiB free; 87.55 GiB reserved in total by PyTorch).If reserved memory is >> allocated memory try setting max_split_size_mb to avoid fragmentation.
+single-node (releases-v0.23.0, DeepSeek_V31_W4A4C8_A5, linux-aarch64-a5-8, DeepSeek_V31_W4A4C8_A5... / DeepSeek_V31_W4A4C8_A5	UNKNOWN STEP	2026-08-31T05:29:40.1969159Z E0831 05:29:40.160814 24660 ../torch_npu/csrc/core/npu/NPUCachingAllocator.cpp:1332] NPU out of memory. Tried to allocate 1.75 GiB (NPU 6; 91.75 GiB total capacity; 87.27 GiB already allocated; 87.27 GiB current active; 1.53 GiB free; 87.55 GiB reserved in total by PyTorch).If reserved memory is >> allocated memory try setting max_split_size_mb to avoid fragmentation.
+single-node (releases-v0.23.0, DeepSeek_V31_W4A4C8_A5, linux-aarch64-a5-8, DeepSeek_V31_W4A4C8_A5... / DeepSeek_V31_W4A4C8_A5	UNKNOWN STEP	2026-08-31T05:29:40.1971764Z E0831 05:29:40.166357 24566 ../torch_npu/csrc/core/npu/NPUCachingAllocator.cpp:1332] NPU out of memory. Tried to allocate 1.75 GiB (NPU 5; 91.75 GiB total capacity; 87.27 GiB already allocated; 87.27 GiB current active; 1.53 GiB free; 87.55 GiB reserved in total by PyTorch).If reserved memory is >> allocated memory try setting max_split_size_mb to avoid fragmentation.
+single-node (releases-v0.23.0, DeepSeek_V31_W4A4C8_A5, linux-aarch64-a5-8, DeepSeek_V31_W4A4C8_A5... / DeepSeek_V31_W4A4C8_A5	UNKNOWN STEP	2026-08-31T05:29:40.2028734Z torch.OutOfMemoryError: NPU out of memory. Tried to allocate 1.75 GiB (NPU 6; 91.75 GiB total capacity; 87.27 GiB already allocated; 87.27 GiB current active; 1.53 GiB free; 87.55 GiB reserved in total by PyTorch).If reserved memory is >> allocated memory try setting max_split_size_mb to avoid fragmentation.
+single-node (releases-v0.23.0, DeepSeek_V31_W4A4C8_A5, linux-aarch64-a5-8, DeepSeek_V31_W4A4C8_A5... / DeepSeek_V31_W4A4C8_A5	UNKNOWN STEP	2026-08-31T05:29:40.2084873Z torch.OutOfMemoryError: NPU out of memory. Tried to allocate 1.75 GiB (NPU 6; 91.75 GiB total capacity; 87.27 GiB already allocated; 87.27 GiB current active; 1.53 GiB free; 87.55 GiB reserved in total by PyTorch).If reserved memory is >> allocated memory try setting max_split_size_mb to avoid fragmentation.
+single-node (releases-v0.23.0, DeepSeek_V31_W4A4C8_A5, linux-aarch64-a5-8, DeepSeek_V31_W4A4C8_A5... / DeepSeek_V31_W4A4C8_A5	UNKNOWN STEP	2026-08-31T05:29:40.2141953Z torch.OutOfMemoryError: NPU out of memory. Tried to allocate 1.75 GiB (NPU 5; 91.75 GiB total capacity; 87.27 GiB already allocated; 87.27 GiB current active; 1.53 GiB free; 87.55 GiB reserved in total by PyTorch).If reserved memory is >> allocated memory try setting max_split_size_mb to avoid fragmentation.
+single-node (releases-v0.23.0, DeepSeek_V31_W4A4C8_A5, linux-aarch64-a5-8, DeepSeek_V31_W4A4C8_A5... / DeepSeek_V31_W4A4C8_A5	UNKNOWN STEP	2026-08-31T05:29:40.2207453Z torch.OutOfMemoryError: NPU out of memory. Tried to allocate 1.75 GiB (NPU 5; 91.75 GiB total capacity; 87.27 GiB already allocated; 87.27 GiB current active; 1.53 GiB free; 87.55 GiB reserved in total by PyTorch).If reserved memory is >> allocated memory try setting max_split_size_mb to avoid fragmentation.
+single-node (releases-v0.23.0, DeepSeek_V31_W4A4C8_A5, linux-aarch64-a5-8, DeepSeek_V31_W4A4C8_A5... / DeepSeek_V31_W4A4C8_A5	UNKNOWN STEP	2026-08-31T05:29:40.2210249Z E0831 05:29:40.181422 24378 ../torch_npu/csrc/core/npu/NPUCachingAllocator.cpp:1332] NPU out of memory. Tried to allocate 1.75 GiB (NPU 3; 91.75 GiB total capacity; 87.27 GiB already allocated; 87.27 GiB current active; 1.53 GiB free; 87.55 GiB reserved in total by PyTorch).If reserved memory is >> allocated memory try setting max_split_size_mb to avoid fragmentation.
+single-node (releases-v0.23.0, DeepSeek_V31_W4A4C8_A5, linux-aarch64-a5-8, DeepSeek_V31_W4A4C8_A5... / DeepSeek_V31_W4A4C8_A5	UNKNOWN STEP	2026-08-31T05:29:40.2256208Z torch.OutOfMemoryError: NPU out of memory. Tried to allocate 1.75 GiB (NPU 3; 91.75 GiB total capacity; 87.27 GiB already allocated; 87.27 GiB current active; 1.53 GiB free; 87.55 GiB reserved in total by PyTorch).If reserved memory is >> allocated memory try setting max_split_size_mb to avoid fragmentation.
+single-node (releases-v0.23.0, DeepSeek_V31_W4A4C8_A5, linux-aarch64-a5-8, DeepSeek_V31_W4A4C8_A5... / DeepSeek_V31_W4A4C8_A5	UNKNOWN STEP	2026-08-31T05:29:40.2279075Z torch.OutOfMemoryError: NPU out of memory. Tried to allocate 1.75 GiB (NPU 3; 91.75 GiB total capacity; 87.27 GiB already allocated; 87.27 GiB current active; 1.53 GiB free; 87.55 GiB reserved in total by PyTorch).If reserved memory is >> allocated memory try setting max_split_size_mb to avoid fragmentation.
+   ── 最后输出（定位失败阶段）
+
+── [FAILURE] single-node (releases-v0.23.0, DeepSeek_V31_Terminus_w4a8_w8a8_A5, linux-aarch64-a5-8, DeepSeek_V... / DeepSeek_V31_Terminus_w4a8_w8a8_A5
+   Runner : linux-aarch64-a5-8-nx52r-runner-n7qns
+   时间   : 2026-08-31T06:59:12Z ~ 2026-08-31T08:15:57Z
+   ── 运行时错误（高优先级）
+single-node (releases-v0.23.0, DeepSeek_V31_Terminus_w4a8_w8a8_A5, linux-aarch64-a5-8, DeepSeek_V... / DeepSeek_V31_Terminus_w4a8_w8a8_A5	UNKNOWN STEP	2026-08-31T07:27:42.2376933Z future: <Task finished name='Task-8' coro=<AsyncClient.aclose() done, defined at /usr/local/python3.12.13/lib/python3.12/site-packages/httpx/_client.py:1978> exception=RuntimeError('Event loop is closed')>
+single-node (releases-v0.23.0, DeepSeek_V31_Terminus_w4a8_w8a8_A5, linux-aarch64-a5-8, DeepSeek_V... / DeepSeek_V31_Terminus_w4a8_w8a8_A5	UNKNOWN STEP	2026-08-31T07:27:42.2390577Z     raise RuntimeError('Event loop is closed')
+single-node (releases-v0.23.0, DeepSeek_V31_Terminus_w4a8_w8a8_A5, linux-aarch64-a5-8, DeepSeek_V... / DeepSeek_V31_Terminus_w4a8_w8a8_A5	UNKNOWN STEP	2026-08-31T07:27:42.2390897Z RuntimeError: Event loop is closed
+single-node (releases-v0.23.0, DeepSeek_V31_Terminus_w4a8_w8a8_A5, linux-aarch64-a5-8, DeepSeek_V... / DeepSeek_V31_Terminus_w4a8_w8a8_A5	UNKNOWN STEP	2026-08-31T07:31:35.2916974Z future: <Task finished name='Task-12' coro=<AsyncClient.aclose() done, defined at /usr/local/python3.12.13/lib/python3.12/site-packages/httpx/_client.py:1978> exception=RuntimeError('Event loop is closed')>
+single-node (releases-v0.23.0, DeepSeek_V31_Terminus_w4a8_w8a8_A5, linux-aarch64-a5-8, DeepSeek_V... / DeepSeek_V31_Terminus_w4a8_w8a8_A5	UNKNOWN STEP	2026-08-31T07:31:35.2930788Z     raise RuntimeError('Event loop is closed')
+single-node (releases-v0.23.0, DeepSeek_V31_Terminus_w4a8_w8a8_A5, linux-aarch64-a5-8, DeepSeek_V... / DeepSeek_V31_Terminus_w4a8_w8a8_A5	UNKNOWN STEP	2026-08-31T07:31:35.2931107Z RuntimeError: Event loop is closed
+single-node (releases-v0.23.0, DeepSeek_V31_Terminus_w4a8_w8a8_A5, linux-aarch64-a5-8, DeepSeek_V... / DeepSeek_V31_Terminus_w4a8_w8a8_A5	UNKNOWN STEP	2026-08-31T07:35:22.2950983Z future: <Task finished name='Task-16' coro=<AsyncClient.aclose() done, defined at /usr/local/python3.12.13/lib/python3.12/site-packages/httpx/_client.py:1978> exception=RuntimeError('Event loop is closed')>
+single-node (releases-v0.23.0, DeepSeek_V31_Terminus_w4a8_w8a8_A5, linux-aarch64-a5-8, DeepSeek_V... / DeepSeek_V31_Terminus_w4a8_w8a8_A5	UNKNOWN STEP	2026-08-31T07:35:22.2964982Z     raise RuntimeError('Event loop is closed')
+single-node (releases-v0.23.0, DeepSeek_V31_Terminus_w4a8_w8a8_A5, linux-aarch64-a5-8, DeepSeek_V... / DeepSeek_V31_Terminus_w4a8_w8a8_A5	UNKNOWN STEP	2026-08-31T07:35:22.2965299Z RuntimeError: Event loop is closed
+single-node (releases-v0.23.0, DeepSeek_V31_Terminus_w4a8_w8a8_A5, linux-aarch64-a5-8, DeepSeek_V... / DeepSeek_V31_Terminus_w4a8_w8a8_A5	UNKNOWN STEP	2026-08-31T07:39:15.3482902Z future: <Task finished name='Task-20' coro=<AsyncClient.aclose() done, defined at /usr/local/python3.12.13/lib/python3.12/site-packages/httpx/_client.py:1978> exception=RuntimeError('Event loop is closed')>
+single-node (releases-v0.23.0, DeepSeek_V31_Terminus_w4a8_w8a8_A5, linux-aarch64-a5-8, DeepSeek_V... / DeepSeek_V31_Terminus_w4a8_w8a8_A5	UNKNOWN STEP	2026-08-31T07:39:15.3496541Z     raise RuntimeError('Event loop is closed')
+single-node (releases-v0.23.0, DeepSeek_V31_Terminus_w4a8_w8a8_A5, linux-aarch64-a5-8, DeepSeek_V... / DeepSeek_V31_Terminus_w4a8_w8a8_A5	UNKNOWN STEP	2026-08-31T07:39:15.3496857Z RuntimeError: Event loop is closed
+single-node (releases-v0.23.0, DeepSeek_V31_Terminus_w4a8_w8a8_A5, linux-aarch64-a5-8, DeepSeek_V... / DeepSeek_V31_Terminus_w4a8_w8a8_A5	UNKNOWN STEP	2026-08-31T07:43:02.1843408Z future: <Task finished name='Task-24' coro=<AsyncClient.aclose() done, defined at /usr/local/python3.12.13/lib/python3.12/site-packages/httpx/_client.py:1978> exception=RuntimeError('Event loop is closed')>
+single-node (releases-v0.23.0, DeepSeek_V31_Terminus_w4a8_w8a8_A5, linux-aarch64-a5-8, DeepSeek_V... / DeepSeek_V31_Terminus_w4a8_w8a8_A5	UNKNOWN STEP	2026-08-31T07:43:02.1857586Z     raise RuntimeError('Event loop is closed')
+single-node (releases-v0.23.0, DeepSeek_V31_Terminus_w4a8_w8a8_A5, linux-aarch64-a5-8, DeepSeek_V... / DeepSeek_V31_Terminus_w4a8_w8a8_A5	UNKNOWN STEP	2026-08-31T07:43:02.1857902Z RuntimeError: Event loop is closed
+   ── 最后输出（定位失败阶段）
+
+════════════════════════════════════════════
+ 补充命令（按需使用）：
+   完整日志 : gh run view --job <id> --log --repo vllm-project/vllm-ascend
+   PR diff  : gh pr diff <pr> --repo vllm-project/vllm-ascend --name-only
+   kubectl  : kubectl get pods --all-namespaces | grep <runner_name>
+════════════════════════════════════════════

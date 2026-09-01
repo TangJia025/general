@@ -1,0 +1,105 @@
+════════════════════════════════════════════
+ Run 33384486947 | vllm-project/vllm-ascend
+════════════════════════════════════════════
+
+X main Nightly-A2 · 33384486947
+Triggered via workflow_dispatch about 21 hours ago
+
+JOBS
+✓ Parse trigger and determine test scope in 18s (ID 99463917445)
+- Build nightly-a2 image in 0s (ID 99463918283)
+✓ Export global env vars as job outputs in 3m48s (ID 99464081266)
+- Generate accuracy test matrix (ID 99464082443)
+- multi-node (main, multi-node-Kimi-K2.5-W4A8-A2, Kimi-K2_5-W4A8-A2-dual-nodes.yaml, tests/e2e/nigh... / inputs.config_file_path (ID 99465083725)
+- multi-node (main, multi-node-qwen3-235b-dp, Qwen3-235B-A22B-A2.yaml, tests/e2e/nightly/multi_node... / inputs.config_file_path (ID 99465083853)
+- multi-node (main, multi-node-GLM-5.1-w8a8-A2, GLM5_1-W8A8-A2-dual-nodes.yaml, tests/e2e/nightly/m... / inputs.config_file_path (ID 99465083965)
+- Remove node taints in 0s (ID 99465084815)
+X single-node (main, gemma4, linux-aarch64-a2b3-4, Gemma4.yaml) / gemma4 in 30m43s (ID 99465084990)
+  ✓ Set up job
+  ✓ Initialize containers
+  ✓ Check npu and CANN info
+  ✓ uninstall vlm vllm-ascend and remove code (if pr test)
+  ✓ Checkout vllm-project/vllm-ascend repo
+  ✓ Move code to /vllm-workspace
+  ✓ Set MAX_JOBS based on runner
+  ✓ Install vllm-project/vllm-ascend
+  - Uninstall Triton for 310P tests
+  ✓ Install aisbench
+  ✓ Show vLLM and vLLM-Ascend version
+  ✓ Install clang
+  ✓ Validate Inputs
+  - Run Pytest (py-driven)
+  X Run Pytest (YAML-driven)
+  - Update good_table.csv on success
+  - Capture test result
+  - Classify failure
+  - Skip - env issue
+  - Check commit age
+  - Skip - old commit
+  - Process - recent real failure
+  - On success
+  ✓ Set benchmark artifact timestamp
+  ✓ Upload benchmark results
+  ✓ Upload benchmark results (GitHub Artifacts)
+  ✓ Post Checkout vllm-project/vllm-ascend repo
+  ✓ Stop containers
+  ✓ Complete job
+- clear-pre-logs in 0s (ID 99465085261)
+- single-node-accuracy-tests in 0s (ID 99465085334)
+- single-node-accuracy-tests-pr-only in 0s (ID 99465085526)
+- single-node (main, qwen3-32b-int8, linux-aarch64-a2b3-4, Qwen3-32B-Int8-A2.yaml) / inputs.name || inputs.config_file_path || inputs.tests in 0s (ID 99465085829)
+- single-node (main, Qwen3.5-27B-w8a8-A2, linux-aarch64-a2b3-2, Qwen3.5-27B-w8a8-A2.yaml) / inputs.name || inputs.config_file_path || inputs.tests in 0s (ID 99465086131)
+- single-node (main, Qwen3.8-27B-w8a8-A2, linux-aarch64-a2b3-2, Qwen3.8-27B-w8a8-A2.yaml) / inputs.name || inputs.config_file_path || inputs.tests in 0s (ID 99465086181)
+- single-node (main, qwen3-vl-32b-instruct-w8a8, linux-aarch64-a2b3-4, Qwen3-VL-32B-Instruct-W8A8.y... / inputs.name || inputs.config_file_path || inputs.tests in 0s (ID 99465086196)
+- single-node (main, Qwen3.5-397B-A17B-w4a8-mtp, linux-aarch64-a2b3-8, Qwen3.5-397B-A17B-w4a8-mtp-A... / inputs.name || inputs.config_file_path || inputs.tests in 0s (ID 99465086263)
+- single-node (main, MiniMax-M2.5-w8a8-QuaRot-A2, linux-aarch64-a2b3-8, MiniMax-M2.5-w8a8-QuaRot-A2... / inputs.name || inputs.config_file_path || inputs.tests in 0s (ID 99465086316)
+- single-node (main, rejection-sample, linux-aarch64-a2b3-1, tests/e2e/nightly/single_node/ops/sing... / inputs.name || inputs.config_file_path || inputs.tests in 0s (ID 99465086323)
+- single-node (main, gemma4-31b-dense, linux-aarch64-a2b3-4, Gemma4-31B-Dense.yaml) / inputs.name || inputs.config_file_path || inputs.tests in 0s (ID 99465086660)
+✓ Merge benchmark artifacts into nightly-a2.zip in 13s (ID 99472594432)
+
+ANNOTATIONS
+! No files were found with the provided path: /vllm-workspace/vllm-ascend/benchmark_results/main-gemma4.json. No artifacts will be uploaded.
+single-node (main, gemma4, linux-aarch64-a2b3-4, Gemma4.yaml) / gemma4: .github#30
+
+! No files found for path: /vllm-workspace/vllm-ascend/benchmark_results/gemma4.json, skipping upload
+single-node (main, gemma4, linux-aarch64-a2b3-4, Gemma4.yaml) / gemma4: .github#257
+
+X Executing the custom container implementation failed. Please contact your self hosted runner administrator.
+single-node (main, gemma4, linux-aarch64-a2b3-4, Gemma4.yaml) / gemma4: .github#956
+
+X Process completed with exit code 1.
+single-node (main, gemma4, linux-aarch64-a2b3-4, Gemma4.yaml) / gemma4: .github#955
+
+X Error: failed to run script step: Error: command terminated with non-zero exit code: command terminated with exit code 1
+single-node (main, gemma4, linux-aarch64-a2b3-4, Gemma4.yaml) / gemma4: .github#954
+
+X No artifacts found matching pattern 'nightly-test-benchmark-results-*'
+Merge benchmark artifacts into nightly-a2.zip: .github#14
+
+
+To see what failed, try: gh run view 33384486947 --log-failed
+View this run on GitHub: https://github.com/vllm-project/vllm-ascend/actions/runs/33384486947
+
+════════════════════════════════════════════
+ 失败 / 取消 Job 详情（共 1 个）
+════════════════════════════════════════════
+
+── [FAILURE] single-node (main, gemma4, linux-aarch64-a2b3-4, Gemma4.yaml) / gemma4
+   Runner : linux-aarch64-a2b3-4-z2f8p-runner-6v88s
+   时间   : 2026-08-31T10:59:37Z ~ 2026-08-31T11:30:20Z
+   ── 运行时错误（高优先级）
+single-node (main, gemma4, linux-aarch64-a2b3-4, Gemma4.yaml) / gemma4	UNKNOWN STEP	2026-08-31T11:29:34.6896014Z (APIServer pid=25131)     raise RuntimeError(
+single-node (main, gemma4, linux-aarch64-a2b3-4, Gemma4.yaml) / gemma4	UNKNOWN STEP	2026-08-31T11:29:34.6897151Z (APIServer pid=25131) RuntimeError: Engine core initialization failed. See root cause above. Failed core proc(s): {}
+single-node (main, gemma4, linux-aarch64-a2b3-4, Gemma4.yaml) / gemma4	UNKNOWN STEP	2026-08-31T11:29:45.8670688Z >                       raise RuntimeError(f"Server at {node_ip} exited unexpectedly.") from None
+single-node (main, gemma4, linux-aarch64-a2b3-4, Gemma4.yaml) / gemma4	UNKNOWN STEP	2026-08-31T11:29:45.8671768Z E                       RuntimeError: Server at 0.0.0.0 exited unexpectedly.
+single-node (main, gemma4, linux-aarch64-a2b3-4, Gemma4.yaml) / gemma4	UNKNOWN STEP	2026-08-31T11:29:45.8672570Z tests/e2e/conftest.py:430: RuntimeError
+single-node (main, gemma4, linux-aarch64-a2b3-4, Gemma4.yaml) / gemma4	UNKNOWN STEP	2026-08-31T11:29:45.8688559Z FAILED tests/e2e/nightly/single_node/models/scripts/test_single_node.py::test_single_node[Gemma4-full-decode-graph] - RuntimeError: Server at 0.0.0.0 exited unexpectedly.
+single-node (main, gemma4, linux-aarch64-a2b3-4, Gemma4.yaml) / gemma4	UNKNOWN STEP	2026-08-31T11:29:49.2634945Z ##[error]Process completed with exit code 1.
+   ── 最后输出（定位失败阶段）
+
+════════════════════════════════════════════
+ 补充命令（按需使用）：
+   完整日志 : gh run view --job <id> --log --repo vllm-project/vllm-ascend
+   PR diff  : gh pr diff <pr> --repo vllm-project/vllm-ascend --name-only
+   kubectl  : kubectl get pods --all-namespaces | grep <runner_name>
+════════════════════════════════════════════

@@ -1,0 +1,552 @@
+════════════════════════════════════════════
+ Run 33410218421 | vllm-project/vllm-ascend
+════════════════════════════════════════════
+
+X main Nightly-A2 · 33410218421
+Triggered via workflow_dispatch about 16 hours ago
+
+JOBS
+✓ Parse trigger and determine test scope in 11s (ID 99547666381)
+- Build nightly-a2 image (ID 99547667321)
+✓ Generate accuracy test matrix in 3m34s (ID 99547834224)
+✓ Export global env vars as job outputs in 3m35s (ID 99547834252)
+X multi-node (main, multi-node-qwen3-235b-dp, Qwen3-235B-A22B-A2.yaml, tests/e2e/nightly/multi_node... / Qwen3-235B-A22B-A2.yaml in 25m2s (ID 99549356252)
+  ✓ Set up job
+  ✓ Initialize containers
+  ✓ Decode kubeconfig
+  ✓ Checkout code
+  ✓ Set job variables
+  ✓ Prepare scripts
+  ✓ Clear resources
+  ✓ Launch cluster
+  ✓ Wait for pods ready
+  X Stream logs
+  - Update good_table.csv on success
+  ✓ Fetch benchmark results from PVC
+  ✓ Post process
+  ✓ Collect Ascend logs
+  ✓ Upload Ascend logs
+  ✓ Upload Ascend logs (GitHub Artifacts)
+  ✓ Set benchmark artifact timestamp
+  ✓ Upload benchmark results
+  ✓ Upload benchmark results (GitHub Artifacts)
+  ✓ Post Checkout code
+  ✓ Stop containers
+  ✓ Complete job
+X multi-node (main, multi-node-Kimi-K2.5-W4A8-A2, Kimi-K2_5-W4A8-A2-dual-nodes.yaml, tests/e2e/nigh... / Kimi-K2_5-W4A8-A2-dual-nodes.yaml in 22m56s (ID 99549356305)
+  ✓ Set up job
+  ✓ Initialize containers
+  ✓ Decode kubeconfig
+  ✓ Checkout code
+  ✓ Set job variables
+  ✓ Prepare scripts
+  ✓ Clear resources
+  ✓ Launch cluster
+  X Wait for pods ready
+  - Stream logs
+  - Update good_table.csv on success
+  ✓ Fetch benchmark results from PVC
+  ✓ Post process
+  ✓ Collect Ascend logs
+  ✓ Upload Ascend logs
+  ✓ Upload Ascend logs (GitHub Artifacts)
+  ✓ Set benchmark artifact timestamp
+  ✓ Upload benchmark results
+  ✓ Upload benchmark results (GitHub Artifacts)
+  ✓ Post Checkout code
+  ✓ Stop containers
+  ✓ Complete job
+X multi-node (main, multi-node-GLM-5.1-w8a8-A2, GLM5_1-W8A8-A2-dual-nodes.yaml, tests/e2e/nightly/m... / GLM5_1-W8A8-A2-dual-nodes.yaml in 22m46s (ID 99549356406)
+  ✓ Set up job
+  ✓ Initialize containers
+  ✓ Decode kubeconfig
+  ✓ Checkout code
+  ✓ Set job variables
+  ✓ Prepare scripts
+  ✓ Clear resources
+  ✓ Launch cluster
+  X Wait for pods ready
+  - Stream logs
+  - Update good_table.csv on success
+  ✓ Fetch benchmark results from PVC
+  ✓ Post process
+  ✓ Collect Ascend logs
+  ✓ Upload Ascend logs
+  ✓ Upload Ascend logs (GitHub Artifacts)
+  ✓ Set benchmark artifact timestamp
+  ✓ Upload benchmark results
+  ✓ Upload benchmark results (GitHub Artifacts)
+  ✓ Post Checkout code
+  ✓ Stop containers
+  ✓ Complete job
+✓ Remove node taints in 18s (ID 99557272394)
+- clear-pre-logs in 0s (ID 99557273984)
+- single-node-accuracy-tests-pr-only in 0s (ID 99557488588)
+X single-node-accuracy-tests (main, accuracy-group-4, linux-aarch64-a2b3-4, Qwen3-Next-80B-A3B-Inst... / [
+  "Qwen3-Next-80B-A3B-Instruct",
+  "Qwen3-Omni-30B-A3B-Instruct",
+  "Mixtral-8x7B-Instruct-v0.1"
+] accuracy test in 31m13s (ID 99557488723)
+  ✓ Set up job
+  ✓ Initialize containers
+  ✓ Check npu and CANN info
+  - Uninstall vllm and remove code (if pr test)
+  - Checkout vllm-project/vllm-ascend repo
+  - Move vllm-ascend code to /vllm-workspace
+  ✓ Set MAX_JOBS based on runner
+  - Install vllm-project/vllm-ascend
+  - Install tensorflow (for Molmo-7B-D-0924)
+  ✓ Get vLLM commit hash and URL
+  ✓ Get vLLM-Ascend commit hash and URL
+  ✓ Collect version info
+  ✓ Compute effective model list
+  X Run vllm-project/vllm-ascend accuracy test
+  X Generate step summary
+  - Set artifact timestamp
+  - Upload Report
+  - Upload Report (GitHub Artifacts)
+  ✓ Stop containers
+  ✓ Complete job
+✓ single-node-accuracy-tests (main, accuracy-group-1, linux-aarch64-a2b3-1, Qwen3-VL-8B-Instruct-W8... / [
+  "Qwen3-VL-8B-Instruct-W8A8",
+  "Qwen3-8B",
+  "Qwen2-Audio-7B-Instruct",
+  "Qwen3-8B-W8A8",
+  "Qwen3-VL-8B-Instruct",
+  "Minitron-8B-Base"
+] accuracy test in 1h15m33s (ID 99557488740)
+X single-node-accuracy-tests (main, accuracy-group-3, linux-aarch64-a2b3-2, Qwen3-30B-A3B, Qwen3-VL... / [
+  "Qwen3-30B-A3B",
+  "Qwen3-VL-30B-A3B-Instruct",
+  "Qwen3-30B-A3B-W8A8"
+] accuracy test in 23m30s (ID 99557488743)
+  ✓ Set up job
+  ✓ Initialize containers
+  ✓ Check npu and CANN info
+  - Uninstall vllm and remove code (if pr test)
+  - Checkout vllm-project/vllm-ascend repo
+  - Move vllm-ascend code to /vllm-workspace
+  ✓ Set MAX_JOBS based on runner
+  - Install vllm-project/vllm-ascend
+  - Install tensorflow (for Molmo-7B-D-0924)
+  ✓ Get vLLM commit hash and URL
+  ✓ Get vLLM-Ascend commit hash and URL
+  ✓ Collect version info
+  ✓ Compute effective model list
+  X Run vllm-project/vllm-ascend accuracy test
+  X Generate step summary
+  - Set artifact timestamp
+  - Upload Report
+  - Upload Report (GitHub Artifacts)
+  ✓ Stop containers
+  ✓ Complete job
+✓ single-node (main, MiniMax-M2.5-w8a8-QuaRot-A2, linux-aarch64-a2b3-8, MiniMax-M2.5-w8a8-QuaRot-A2... / MiniMax-M2.5-w8a8-QuaRot-A2 in 1h19m32s (ID 99557488797)
+✓ single-node (main, Qwen3.5-27B-w8a8-A2, linux-aarch64-a2b3-2, Qwen3.5-27B-w8a8-A2.yaml) / Qwen3.5-27B-w8a8-A2 in 28m20s (ID 99557488850)
+✓ single-node (main, qwen3-32b-int8, linux-aarch64-a2b3-4, Qwen3-32B-Int8-A2.yaml) / qwen3-32b-int8 in 41m56s (ID 99557488917)
+X single-node (main, Qwen3.5-397B-A17B-w4a8-mtp, linux-aarch64-a2b3-8, Qwen3.5-397B-A17B-w4a8-mtp-A... / Qwen3.5-397B-A17B-w4a8-mtp in 19m1s (ID 99557488933)
+  ✓ Set up job
+  ✓ Initialize containers
+  ✓ Check npu and CANN info
+  - uninstall vlm vllm-ascend and remove code (if pr test)
+  - Checkout vllm-project/vllm-ascend repo
+  - Move code to /vllm-workspace
+  ✓ Set MAX_JOBS based on runner
+  - Install vllm-project/vllm-ascend
+  - Uninstall Triton for 310P tests
+  - Install aisbench
+  ✓ Show vLLM and vLLM-Ascend version
+  ✓ Install clang
+  ✓ Validate Inputs
+  - Run Pytest (py-driven)
+  X Run Pytest (YAML-driven)
+  - Update good_table.csv on success
+  - Capture test result
+  - Classify failure
+  - Skip - env issue
+  - Check commit age
+  - Skip - old commit
+  - Process - recent real failure
+  - On success
+  ✓ Set benchmark artifact timestamp
+  ✓ Upload benchmark results
+  ✓ Upload benchmark results (GitHub Artifacts)
+  ✓ Stop containers
+  ✓ Complete job
+✓ single-node (main, Qwen3.8-27B-w8a8-A2, linux-aarch64-a2b3-2, Qwen3.8-27B-w8a8-A2.yaml) / Qwen3.8-27B-w8a8-A2 in 29m20s (ID 99557488961)
+✓ single-node (main, qwen3-vl-32b-instruct-w8a8, linux-aarch64-a2b3-4, Qwen3-VL-32B-Instruct-W8A8.y... / qwen3-vl-32b-instruct-w8a8 in 14m1s (ID 99557489002)
+X single-node (main, gemma4, linux-aarch64-a2b3-4, Gemma4.yaml) / gemma4 in 4m41s (ID 99557489011)
+  ✓ Set up job
+  ✓ Initialize containers
+  ✓ Check npu and CANN info
+  - uninstall vlm vllm-ascend and remove code (if pr test)
+  - Checkout vllm-project/vllm-ascend repo
+  - Move code to /vllm-workspace
+  ✓ Set MAX_JOBS based on runner
+  - Install vllm-project/vllm-ascend
+  - Uninstall Triton for 310P tests
+  - Install aisbench
+  ✓ Show vLLM and vLLM-Ascend version
+  ✓ Install clang
+  ✓ Validate Inputs
+  - Run Pytest (py-driven)
+  X Run Pytest (YAML-driven)
+  - Update good_table.csv on success
+  - Capture test result
+  - Classify failure
+  - Skip - env issue
+  - Check commit age
+  - Skip - old commit
+  - Process - recent real failure
+  - On success
+  ✓ Set benchmark artifact timestamp
+  ✓ Upload benchmark results
+  ✓ Upload benchmark results (GitHub Artifacts)
+  ✓ Stop containers
+  ✓ Complete job
+✓ single-node (main, rejection-sample, linux-aarch64-a2b3-1, tests/e2e/nightly/single_node/ops/sing... / rejection-sample in 14m46s (ID 99557489032)
+✓ single-node (main, gemma4-31b-dense, linux-aarch64-a2b3-4, Gemma4-31B-Dense.yaml) / gemma4-31b-dense in 26m57s (ID 99557489144)
+✓ Merge benchmark artifacts into nightly-a2.zip in 17s (ID 99599160715)
+
+ANNOTATIONS
+! No files were found with the provided path: /tmp/benchmark_results/. No artifacts will be uploaded.
+multi-node (main, multi-node-qwen3-235b-dp, Qwen3-235B-A22B-A2.yaml, tests/e2e/nightly/multi_node... / Qwen3-235B-A22B-A2.yaml: .github#22
+
+! No files found for path: /tmp/benchmark_results/, skipping upload
+multi-node (main, multi-node-qwen3-235b-dp, Qwen3-235B-A22B-A2.yaml, tests/e2e/nightly/multi_node... / Qwen3-235B-A22B-A2.yaml: .github#225
+
+X Executing the custom container implementation failed. Please contact your self hosted runner administrator.
+multi-node (main, multi-node-qwen3-235b-dp, Qwen3-235B-A22B-A2.yaml, tests/e2e/nightly/multi_node... / Qwen3-235B-A22B-A2.yaml: .github#246
+
+X Process completed with exit code 1.
+multi-node (main, multi-node-qwen3-235b-dp, Qwen3-235B-A22B-A2.yaml, tests/e2e/nightly/multi_node... / Qwen3-235B-A22B-A2.yaml: .github#245
+
+X Error: failed to run script step: Error: command terminated with non-zero exit code: command terminated with exit code 1
+multi-node (main, multi-node-qwen3-235b-dp, Qwen3-235B-A22B-A2.yaml, tests/e2e/nightly/multi_node... / Qwen3-235B-A22B-A2.yaml: .github#244
+
+X Upload failed. See log:
+multi-node (main, multi-node-qwen3-235b-dp, Qwen3-235B-A22B-A2.yaml, tests/e2e/nightly/multi_node... / Qwen3-235B-A22B-A2.yaml: .github#226
+
+X Executing the custom container implementation failed. Please contact your self hosted runner administrator.
+multi-node (main, multi-node-qwen3-235b-dp, Qwen3-235B-A22B-A2.yaml, tests/e2e/nightly/multi_node... / Qwen3-235B-A22B-A2.yaml: .github#1658
+
+X Process completed with exit code 1.
+multi-node (main, multi-node-qwen3-235b-dp, Qwen3-235B-A22B-A2.yaml, tests/e2e/nightly/multi_node... / Qwen3-235B-A22B-A2.yaml: .github#1657
+
+X Error: failed to run script step: Error: command terminated with non-zero exit code: command terminated with exit code 1
+multi-node (main, multi-node-qwen3-235b-dp, Qwen3-235B-A22B-A2.yaml, tests/e2e/nightly/multi_node... / Qwen3-235B-A22B-A2.yaml: .github#1656
+
+! No files were found with the provided path: /tmp/benchmark_results/. No artifacts will be uploaded.
+multi-node (main, multi-node-Kimi-K2.5-W4A8-A2, Kimi-K2_5-W4A8-A2-dual-nodes.yaml, tests/e2e/nigh... / Kimi-K2_5-W4A8-A2-dual-nodes.yaml: .github#22
+
+! No files found for path: /tmp/benchmark_results/, skipping upload
+multi-node (main, multi-node-Kimi-K2.5-W4A8-A2, Kimi-K2_5-W4A8-A2-dual-nodes.yaml, tests/e2e/nigh... / Kimi-K2_5-W4A8-A2-dual-nodes.yaml: .github#225
+
+X Executing the custom container implementation failed. Please contact your self hosted runner administrator.
+multi-node (main, multi-node-Kimi-K2.5-W4A8-A2, Kimi-K2_5-W4A8-A2-dual-nodes.yaml, tests/e2e/nigh... / Kimi-K2_5-W4A8-A2-dual-nodes.yaml: .github#246
+
+X Process completed with exit code 1.
+multi-node (main, multi-node-Kimi-K2.5-W4A8-A2, Kimi-K2_5-W4A8-A2-dual-nodes.yaml, tests/e2e/nigh... / Kimi-K2_5-W4A8-A2-dual-nodes.yaml: .github#245
+
+X Error: failed to run script step: Error: command terminated with non-zero exit code: command terminated with exit code 1
+multi-node (main, multi-node-Kimi-K2.5-W4A8-A2, Kimi-K2_5-W4A8-A2-dual-nodes.yaml, tests/e2e/nigh... / Kimi-K2_5-W4A8-A2-dual-nodes.yaml: .github#244
+
+X Upload failed. See log:
+multi-node (main, multi-node-Kimi-K2.5-W4A8-A2, Kimi-K2_5-W4A8-A2-dual-nodes.yaml, tests/e2e/nigh... / Kimi-K2_5-W4A8-A2-dual-nodes.yaml: .github#226
+
+X Executing the custom container implementation failed. Please contact your self hosted runner administrator.
+multi-node (main, multi-node-Kimi-K2.5-W4A8-A2, Kimi-K2_5-W4A8-A2-dual-nodes.yaml, tests/e2e/nigh... / Kimi-K2_5-W4A8-A2-dual-nodes.yaml: .github#1320
+
+X Process completed with exit code 1.
+multi-node (main, multi-node-Kimi-K2.5-W4A8-A2, Kimi-K2_5-W4A8-A2-dual-nodes.yaml, tests/e2e/nigh... / Kimi-K2_5-W4A8-A2-dual-nodes.yaml: .github#1319
+
+X Error: failed to run script step: Error: command terminated with non-zero exit code: command terminated with exit code 1
+multi-node (main, multi-node-Kimi-K2.5-W4A8-A2, Kimi-K2_5-W4A8-A2-dual-nodes.yaml, tests/e2e/nigh... / Kimi-K2_5-W4A8-A2-dual-nodes.yaml: .github#1318
+
+! No files were found with the provided path: /tmp/benchmark_results/. No artifacts will be uploaded.
+multi-node (main, multi-node-GLM-5.1-w8a8-A2, GLM5_1-W8A8-A2-dual-nodes.yaml, tests/e2e/nightly/m... / GLM5_1-W8A8-A2-dual-nodes.yaml: .github#22
+
+! No files found for path: /tmp/benchmark_results/, skipping upload
+multi-node (main, multi-node-GLM-5.1-w8a8-A2, GLM5_1-W8A8-A2-dual-nodes.yaml, tests/e2e/nightly/m... / GLM5_1-W8A8-A2-dual-nodes.yaml: .github#225
+
+X Executing the custom container implementation failed. Please contact your self hosted runner administrator.
+multi-node (main, multi-node-GLM-5.1-w8a8-A2, GLM5_1-W8A8-A2-dual-nodes.yaml, tests/e2e/nightly/m... / GLM5_1-W8A8-A2-dual-nodes.yaml: .github#246
+
+X Process completed with exit code 1.
+multi-node (main, multi-node-GLM-5.1-w8a8-A2, GLM5_1-W8A8-A2-dual-nodes.yaml, tests/e2e/nightly/m... / GLM5_1-W8A8-A2-dual-nodes.yaml: .github#245
+
+X Error: failed to run script step: Error: command terminated with non-zero exit code: command terminated with exit code 1
+multi-node (main, multi-node-GLM-5.1-w8a8-A2, GLM5_1-W8A8-A2-dual-nodes.yaml, tests/e2e/nightly/m... / GLM5_1-W8A8-A2-dual-nodes.yaml: .github#244
+
+X Upload failed. See log:
+multi-node (main, multi-node-GLM-5.1-w8a8-A2, GLM5_1-W8A8-A2-dual-nodes.yaml, tests/e2e/nightly/m... / GLM5_1-W8A8-A2-dual-nodes.yaml: .github#226
+
+X Executing the custom container implementation failed. Please contact your self hosted runner administrator.
+multi-node (main, multi-node-GLM-5.1-w8a8-A2, GLM5_1-W8A8-A2-dual-nodes.yaml, tests/e2e/nightly/m... / GLM5_1-W8A8-A2-dual-nodes.yaml: .github#1318
+
+X Process completed with exit code 1.
+multi-node (main, multi-node-GLM-5.1-w8a8-A2, GLM5_1-W8A8-A2-dual-nodes.yaml, tests/e2e/nightly/m... / GLM5_1-W8A8-A2-dual-nodes.yaml: .github#1317
+
+X Error: failed to run script step: Error: command terminated with non-zero exit code: command terminated with exit code 1
+multi-node (main, multi-node-GLM-5.1-w8a8-A2, GLM5_1-W8A8-A2-dual-nodes.yaml, tests/e2e/nightly/m... / GLM5_1-W8A8-A2-dual-nodes.yaml: .github#1316
+
+X Executing the custom container implementation failed. Please contact your self hosted runner administrator.
+single-node-accuracy-tests (main, accuracy-group-4, linux-aarch64-a2b3-4, Qwen3-Next-80B-A3B-Inst... / [
+  "Qwen3-Next-80B-A3B-Instruct",
+  "Qwen3-Omni-30B-A3B-Instruct",
+  "Mixtral-8x7B-Instruct-v0.1"
+] accuracy test: .github#31
+
+X Process completed with exit code 1.
+single-node-accuracy-tests (main, accuracy-group-4, linux-aarch64-a2b3-4, Qwen3-Next-80B-A3B-Inst... / [
+  "Qwen3-Next-80B-A3B-Instruct",
+  "Qwen3-Omni-30B-A3B-Instruct",
+  "Mixtral-8x7B-Instruct-v0.1"
+] accuracy test: .github#30
+
+X Error: failed to run script step: Error: command terminated with non-zero exit code: command terminated with exit code 1
+single-node-accuracy-tests (main, accuracy-group-4, linux-aarch64-a2b3-4, Qwen3-Next-80B-A3B-Inst... / [
+  "Qwen3-Next-80B-A3B-Instruct",
+  "Qwen3-Omni-30B-A3B-Instruct",
+  "Mixtral-8x7B-Instruct-v0.1"
+] accuracy test: .github#29
+
+X Executing the custom container implementation failed. Please contact your self hosted runner administrator.
+single-node-accuracy-tests (main, accuracy-group-4, linux-aarch64-a2b3-4, Qwen3-Next-80B-A3B-Inst... / [
+  "Qwen3-Next-80B-A3B-Instruct",
+  "Qwen3-Omni-30B-A3B-Instruct",
+  "Mixtral-8x7B-Instruct-v0.1"
+] accuracy test: .github#3189
+
+X Process completed with exit code 1.
+single-node-accuracy-tests (main, accuracy-group-4, linux-aarch64-a2b3-4, Qwen3-Next-80B-A3B-Inst... / [
+  "Qwen3-Next-80B-A3B-Instruct",
+  "Qwen3-Omni-30B-A3B-Instruct",
+  "Mixtral-8x7B-Instruct-v0.1"
+] accuracy test: .github#3188
+
+X Error: failed to run script step: Error: command terminated with non-zero exit code: command terminated with exit code 1
+single-node-accuracy-tests (main, accuracy-group-4, linux-aarch64-a2b3-4, Qwen3-Next-80B-A3B-Inst... / [
+  "Qwen3-Next-80B-A3B-Instruct",
+  "Qwen3-Omni-30B-A3B-Instruct",
+  "Mixtral-8x7B-Instruct-v0.1"
+] accuracy test: .github#3187
+
+X Executing the custom container implementation failed. Please contact your self hosted runner administrator.
+single-node-accuracy-tests (main, accuracy-group-3, linux-aarch64-a2b3-2, Qwen3-30B-A3B, Qwen3-VL... / [
+  "Qwen3-30B-A3B",
+  "Qwen3-VL-30B-A3B-Instruct",
+  "Qwen3-30B-A3B-W8A8"
+] accuracy test: .github#31
+
+X Process completed with exit code 1.
+single-node-accuracy-tests (main, accuracy-group-3, linux-aarch64-a2b3-2, Qwen3-30B-A3B, Qwen3-VL... / [
+  "Qwen3-30B-A3B",
+  "Qwen3-VL-30B-A3B-Instruct",
+  "Qwen3-30B-A3B-W8A8"
+] accuracy test: .github#30
+
+X Error: failed to run script step: Error: command terminated with non-zero exit code: command terminated with exit code 1
+single-node-accuracy-tests (main, accuracy-group-3, linux-aarch64-a2b3-2, Qwen3-30B-A3B, Qwen3-VL... / [
+  "Qwen3-30B-A3B",
+  "Qwen3-VL-30B-A3B-Instruct",
+  "Qwen3-30B-A3B-W8A8"
+] accuracy test: .github#29
+
+X Executing the custom container implementation failed. Please contact your self hosted runner administrator.
+single-node-accuracy-tests (main, accuracy-group-3, linux-aarch64-a2b3-2, Qwen3-30B-A3B, Qwen3-VL... / [
+  "Qwen3-30B-A3B",
+  "Qwen3-VL-30B-A3B-Instruct",
+  "Qwen3-30B-A3B-W8A8"
+] accuracy test: .github#1806
+
+X Process completed with exit code 1.
+single-node-accuracy-tests (main, accuracy-group-3, linux-aarch64-a2b3-2, Qwen3-30B-A3B, Qwen3-VL... / [
+  "Qwen3-30B-A3B",
+  "Qwen3-VL-30B-A3B-Instruct",
+  "Qwen3-30B-A3B-W8A8"
+] accuracy test: .github#1805
+
+X Error: failed to run script step: Error: command terminated with non-zero exit code: command terminated with exit code 1
+single-node-accuracy-tests (main, accuracy-group-3, linux-aarch64-a2b3-2, Qwen3-30B-A3B, Qwen3-VL... / [
+  "Qwen3-30B-A3B",
+  "Qwen3-VL-30B-A3B-Instruct",
+  "Qwen3-30B-A3B-W8A8"
+] accuracy test: .github#1804
+
+! No files found for path: /vllm-workspace/vllm-ascend/benchmark_results/MiniMax-M2.5-w8a8-QuaRot-A2.json, skipping upload
+single-node (main, MiniMax-M2.5-w8a8-QuaRot-A2, linux-aarch64-a2b3-8, MiniMax-M2.5-w8a8-QuaRot-A2... / MiniMax-M2.5-w8a8-QuaRot-A2: .github#257
+
+! No files found for path: /vllm-workspace/vllm-ascend/benchmark_results/Qwen3.5-27B-w8a8-A2.json, skipping upload
+single-node (main, Qwen3.5-27B-w8a8-A2, linux-aarch64-a2b3-2, Qwen3.5-27B-w8a8-A2.yaml) / Qwen3.5-27B-w8a8-A2: .github#257
+
+! No files found for path: /vllm-workspace/vllm-ascend/benchmark_results/qwen3-32b-int8.json, skipping upload
+single-node (main, qwen3-32b-int8, linux-aarch64-a2b3-4, Qwen3-32B-Int8-A2.yaml) / qwen3-32b-int8: .github#257
+
+! No files were found with the provided path: /vllm-workspace/vllm-ascend/benchmark_results/main-Qwen3.5-397B-A17B-w4a8-mtp.json. No artifacts will be uploaded.
+single-node (main, Qwen3.5-397B-A17B-w4a8-mtp, linux-aarch64-a2b3-8, Qwen3.5-397B-A17B-w4a8-mtp-A... / Qwen3.5-397B-A17B-w4a8-mtp: .github#30
+
+! No files found for path: /vllm-workspace/vllm-ascend/benchmark_results/Qwen3.5-397B-A17B-w4a8-mtp.json, skipping upload
+single-node (main, Qwen3.5-397B-A17B-w4a8-mtp, linux-aarch64-a2b3-8, Qwen3.5-397B-A17B-w4a8-mtp-A... / Qwen3.5-397B-A17B-w4a8-mtp: .github#257
+
+X Executing the custom container implementation failed. Please contact your self hosted runner administrator.
+single-node (main, Qwen3.5-397B-A17B-w4a8-mtp, linux-aarch64-a2b3-8, Qwen3.5-397B-A17B-w4a8-mtp-A... / Qwen3.5-397B-A17B-w4a8-mtp: .github#1508
+
+X Process completed with exit code 1.
+single-node (main, Qwen3.5-397B-A17B-w4a8-mtp, linux-aarch64-a2b3-8, Qwen3.5-397B-A17B-w4a8-mtp-A... / Qwen3.5-397B-A17B-w4a8-mtp: .github#1507
+
+X Error: failed to run script step: Error: command terminated with non-zero exit code: command terminated with exit code 1
+single-node (main, Qwen3.5-397B-A17B-w4a8-mtp, linux-aarch64-a2b3-8, Qwen3.5-397B-A17B-w4a8-mtp-A... / Qwen3.5-397B-A17B-w4a8-mtp: .github#1506
+
+! No files found for path: /vllm-workspace/vllm-ascend/benchmark_results/Qwen3.8-27B-w8a8-A2.json, skipping upload
+single-node (main, Qwen3.8-27B-w8a8-A2, linux-aarch64-a2b3-2, Qwen3.8-27B-w8a8-A2.yaml) / Qwen3.8-27B-w8a8-A2: .github#257
+
+! No files found for path: /vllm-workspace/vllm-ascend/benchmark_results/qwen3-vl-32b-instruct-w8a8.json, skipping upload
+single-node (main, qwen3-vl-32b-instruct-w8a8, linux-aarch64-a2b3-4, Qwen3-VL-32B-Instruct-W8A8.y... / qwen3-vl-32b-instruct-w8a8: .github#257
+
+! No files were found with the provided path: /vllm-workspace/vllm-ascend/benchmark_results/main-gemma4.json. No artifacts will be uploaded.
+single-node (main, gemma4, linux-aarch64-a2b3-4, Gemma4.yaml) / gemma4: .github#30
+
+! No files found for path: /vllm-workspace/vllm-ascend/benchmark_results/gemma4.json, skipping upload
+single-node (main, gemma4, linux-aarch64-a2b3-4, Gemma4.yaml) / gemma4: .github#257
+
+X Executing the custom container implementation failed. Please contact your self hosted runner administrator.
+single-node (main, gemma4, linux-aarch64-a2b3-4, Gemma4.yaml) / gemma4: .github#956
+
+X Process completed with exit code 1.
+single-node (main, gemma4, linux-aarch64-a2b3-4, Gemma4.yaml) / gemma4: .github#955
+
+X Error: failed to run script step: Error: command terminated with non-zero exit code: command terminated with exit code 1
+single-node (main, gemma4, linux-aarch64-a2b3-4, Gemma4.yaml) / gemma4: .github#954
+
+! No files found for path: /vllm-workspace/vllm-ascend/benchmark_results/gemma4-31b-dense.json, skipping upload
+single-node (main, gemma4-31b-dense, linux-aarch64-a2b3-4, Gemma4-31B-Dense.yaml) / gemma4-31b-dense: .github#257
+
+
+ARTIFACTS
+nightly-a2
+main-Qwen3-235B-A22B-A2-ascend-logs
+main-Kimi-K2_5-W4A8-A2-dual-nodes-ascend-logs
+main-GLM5_1-W8A8-A2-dual-nodes-ascend-logs
+
+To see what failed, try: gh run view 33410218421 --log-failed
+View this run on GitHub: https://github.com/vllm-project/vllm-ascend/actions/runs/33410218421
+
+════════════════════════════════════════════
+ 失败 / 取消 Job 详情（共 7 个）
+════════════════════════════════════════════
+
+── [FAILURE] multi-node (main, multi-node-qwen3-235b-dp, Qwen3-235B-A22B-A2.yaml, tests/e2e/nightly/multi_node... / Qwen3-235B-A22B-A2.yaml
+   Runner : linux-amd64-cpu-8-hk-ds7vs-runner-x97tx
+   时间   : 2026-08-31T15:50:50Z ~ 2026-08-31T16:15:52Z
+   ── 运行时错误（高优先级）
+multi-node (main, multi-node-qwen3-235b-dp, Qwen3-235B-A22B-A2.yaml, tests/e2e/nightly/multi_node... / Qwen3-235B-A22B-A2.yaml	UNKNOWN STEP	2026-08-31T16:13:26.0471649Z     raise RuntimeError(
+multi-node (main, multi-node-qwen3-235b-dp, Qwen3-235B-A22B-A2.yaml, tests/e2e/nightly/multi_node... / Qwen3-235B-A22B-A2.yaml	UNKNOWN STEP	2026-08-31T16:13:26.0480690Z RuntimeError: Engine core initialization failed. See root cause above. Failed core proc(s): {}
+multi-node (main, multi-node-qwen3-235b-dp, Qwen3-235B-A22B-A2.yaml, tests/e2e/nightly/multi_node... / Qwen3-235B-A22B-A2.yaml	UNKNOWN STEP	2026-08-31T16:13:39.1409532Z >                       raise RuntimeError(f"Server at {node_ip} exited unexpectedly.") from None
+multi-node (main, multi-node-qwen3-235b-dp, Qwen3-235B-A22B-A2.yaml, tests/e2e/nightly/multi_node... / Qwen3-235B-A22B-A2.yaml	UNKNOWN STEP	2026-08-31T16:13:39.1418317Z E                       RuntimeError: Server at 10.0.2.131 exited unexpectedly.
+multi-node (main, multi-node-qwen3-235b-dp, Qwen3-235B-A22B-A2.yaml, tests/e2e/nightly/multi_node... / Qwen3-235B-A22B-A2.yaml	UNKNOWN STEP	2026-08-31T16:13:39.1435658Z tests/e2e/conftest.py:430: RuntimeError
+multi-node (main, multi-node-qwen3-235b-dp, Qwen3-235B-A22B-A2.yaml, tests/e2e/nightly/multi_node... / Qwen3-235B-A22B-A2.yaml	UNKNOWN STEP	2026-08-31T16:13:54.1132041Z ##[error]Process completed with exit code 1.
+multi-node (main, multi-node-qwen3-235b-dp, Qwen3-235B-A22B-A2.yaml, tests/e2e/nightly/multi_node... / Qwen3-235B-A22B-A2.yaml	UNKNOWN STEP	2026-08-31T16:15:11.3568566Z ##[error]Process completed with exit code 1.
+   ── 最后输出（定位失败阶段）
+
+── [FAILURE] multi-node (main, multi-node-Kimi-K2.5-W4A8-A2, Kimi-K2_5-W4A8-A2-dual-nodes.yaml, tests/e2e/nigh... / Kimi-K2_5-W4A8-A2-dual-nodes.yaml
+   Runner : linux-amd64-cpu-8-hk-ds7vs-runner-9trl6
+   时间   : 2026-08-31T15:50:47Z ~ 2026-08-31T16:13:43Z
+   ── 运行时错误（高优先级）
+multi-node (main, multi-node-Kimi-K2.5-W4A8-A2, Kimi-K2_5-W4A8-A2-dual-nodes.yaml, tests/e2e/nigh... / Kimi-K2_5-W4A8-A2-dual-nodes.yaml	UNKNOWN STEP	2026-08-31T16:11:27.1614015Z ##[error]Process completed with exit code 1.
+multi-node (main, multi-node-Kimi-K2.5-W4A8-A2, Kimi-K2_5-W4A8-A2-dual-nodes.yaml, tests/e2e/nigh... / Kimi-K2_5-W4A8-A2-dual-nodes.yaml	UNKNOWN STEP	2026-08-31T16:13:00.5052314Z ##[error]Process completed with exit code 1.
+   ── 编译/安装错误（次优先级）
+multi-node (main, multi-node-Kimi-K2.5-W4A8-A2, Kimi-K2_5-W4A8-A2-dual-nodes.yaml, tests/e2e/nigh... / Kimi-K2_5-W4A8-A2-dual-nodes.yaml	UNKNOWN STEP	2026-08-31T16:11:27.1560268Z ##[error]Error: failed to run script step: Error: command terminated with non-zero exit code: command terminated with exit code 1
+multi-node (main, multi-node-Kimi-K2.5-W4A8-A2, Kimi-K2_5-W4A8-A2-dual-nodes.yaml, tests/e2e/nigh... / Kimi-K2_5-W4A8-A2-dual-nodes.yaml	UNKNOWN STEP	2026-08-31T16:12:59.3070585Z ^[[36;1m    echo "::error::Upload failed. See log:"^[[0m
+multi-node (main, multi-node-Kimi-K2.5-W4A8-A2, Kimi-K2_5-W4A8-A2-dual-nodes.yaml, tests/e2e/nigh... / Kimi-K2_5-W4A8-A2-dual-nodes.yaml	UNKNOWN STEP	2026-08-31T16:13:00.4959234Z ##[error]Error: failed to run script step: Error: command terminated with non-zero exit code: command terminated with exit code 1
+multi-node (main, multi-node-Kimi-K2.5-W4A8-A2, Kimi-K2_5-W4A8-A2-dual-nodes.yaml, tests/e2e/nigh... / Kimi-K2_5-W4A8-A2-dual-nodes.yaml	UNKNOWN STEP	2026-08-31T16:13:12.3722749Z ^[[36;1m    echo "::error::Upload failed. See log:"^[[0m
+   ── 最后输出（定位失败阶段）
+
+── [FAILURE] multi-node (main, multi-node-GLM-5.1-w8a8-A2, GLM5_1-W8A8-A2-dual-nodes.yaml, tests/e2e/nightly/m... / GLM5_1-W8A8-A2-dual-nodes.yaml
+   Runner : linux-amd64-cpu-8-hk-ds7vs-runner-lnpvg
+   时间   : 2026-08-31T15:50:50Z ~ 2026-08-31T16:13:36Z
+   ── 运行时错误（高优先级）
+multi-node (main, multi-node-GLM-5.1-w8a8-A2, GLM5_1-W8A8-A2-dual-nodes.yaml, tests/e2e/nightly/m... / GLM5_1-W8A8-A2-dual-nodes.yaml	UNKNOWN STEP	2026-08-31T16:11:29.3987931Z ##[error]Process completed with exit code 1.
+multi-node (main, multi-node-GLM-5.1-w8a8-A2, GLM5_1-W8A8-A2-dual-nodes.yaml, tests/e2e/nightly/m... / GLM5_1-W8A8-A2-dual-nodes.yaml	UNKNOWN STEP	2026-08-31T16:12:53.3955134Z ##[error]Process completed with exit code 1.
+   ── 编译/安装错误（次优先级）
+multi-node (main, multi-node-GLM-5.1-w8a8-A2, GLM5_1-W8A8-A2-dual-nodes.yaml, tests/e2e/nightly/m... / GLM5_1-W8A8-A2-dual-nodes.yaml	UNKNOWN STEP	2026-08-31T16:11:29.3930949Z ##[error]Error: failed to run script step: Error: command terminated with non-zero exit code: command terminated with exit code 1
+multi-node (main, multi-node-GLM-5.1-w8a8-A2, GLM5_1-W8A8-A2-dual-nodes.yaml, tests/e2e/nightly/m... / GLM5_1-W8A8-A2-dual-nodes.yaml	UNKNOWN STEP	2026-08-31T16:12:51.9657893Z ^[[36;1m    echo "::error::Upload failed. See log:"^[[0m
+multi-node (main, multi-node-GLM-5.1-w8a8-A2, GLM5_1-W8A8-A2-dual-nodes.yaml, tests/e2e/nightly/m... / GLM5_1-W8A8-A2-dual-nodes.yaml	UNKNOWN STEP	2026-08-31T16:12:53.3867631Z ##[error]Error: failed to run script step: Error: command terminated with non-zero exit code: command terminated with exit code 1
+multi-node (main, multi-node-GLM-5.1-w8a8-A2, GLM5_1-W8A8-A2-dual-nodes.yaml, tests/e2e/nightly/m... / GLM5_1-W8A8-A2-dual-nodes.yaml	UNKNOWN STEP	2026-08-31T16:13:05.2596853Z ^[[36;1m    echo "::error::Upload failed. See log:"^[[0m
+   ── 最后输出（定位失败阶段）
+
+── [FAILURE] single-node-accuracy-tests (main, accuracy-group-4, linux-aarch64-a2b3-4, Qwen3-Next-80B-A3B-Inst... / [
+  "Qwen3-Next-80B-A3B-Instruct",
+  "Qwen3-Omni-30B-A3B-Instruct",
+  "Mixtral-8x7B-Instruct-v0.1"
+] accuracy test
+   Runner : linux-aarch64-a2b3-4-z2f8p-runner-lnmqt
+   时间   : 2026-08-31T16:46:44Z ~ 2026-08-31T17:17:57Z
+   ── 运行时错误（高优先级）
+] accuracy test	UNKNOWN STEP	2026-08-31T17:03:14.5425188Z >               raise RuntimeError(
+] accuracy test	UNKNOWN STEP	2026-08-31T17:03:14.5428543Z E               RuntimeError: Engine core initialization failed. See root cause above. Failed core proc(s): {}
+] accuracy test	UNKNOWN STEP	2026-08-31T17:03:14.5429601Z ../vllm/vllm/v1/engine/utils.py:1253: RuntimeError
+] accuracy test	UNKNOWN STEP	2026-08-31T17:03:14.5454704Z FAILED tests/e2e/models/test_lm_eval_correctness.py::test_lm_eval_correctness_param[config_filename0] - RuntimeError: Engine core initialization failed. See root cause above. Failed core proc(s): {}
+] accuracy test	UNKNOWN STEP	2026-08-31T17:05:22.4038495Z >               raise RuntimeError(
+] accuracy test	UNKNOWN STEP	2026-08-31T17:05:22.4042115Z E               RuntimeError: Engine core initialization failed. See root cause above. Failed core proc(s): {}
+] accuracy test	UNKNOWN STEP	2026-08-31T17:05:22.4043184Z ../vllm/vllm/v1/engine/utils.py:1253: RuntimeError
+] accuracy test	UNKNOWN STEP	2026-08-31T17:05:22.4082487Z FAILED tests/e2e/models/test_lm_eval_correctness.py::test_lm_eval_correctness_param[config_filename0] - RuntimeError: Engine core initialization failed. See root cause above. Failed core proc(s): {}
+] accuracy test	UNKNOWN STEP	2026-08-31T17:17:48.7112157Z ##[error]Process completed with exit code 1.
+] accuracy test	UNKNOWN STEP	2026-08-31T17:17:50.4298280Z ##[error]Process completed with exit code 1.
+   ── 最后输出（定位失败阶段）
+
+── [FAILURE] single-node-accuracy-tests (main, accuracy-group-3, linux-aarch64-a2b3-2, Qwen3-30B-A3B, Qwen3-VL... / [
+  "Qwen3-30B-A3B",
+  "Qwen3-VL-30B-A3B-Instruct",
+  "Qwen3-30B-A3B-W8A8"
+] accuracy test
+   Runner : linux-aarch64-a2b3-2-6l84j-runner-2cz8v
+   时间   : 2026-08-31T16:45:57Z ~ 2026-08-31T17:09:27Z
+   ── 运行时错误（高优先级）
+] accuracy test	UNKNOWN STEP	2026-08-31T17:04:47.7420582Z >               raise RuntimeError(
+] accuracy test	UNKNOWN STEP	2026-08-31T17:04:47.7424196Z E               RuntimeError: Engine core initialization failed. See root cause above. Failed core proc(s): {}
+] accuracy test	UNKNOWN STEP	2026-08-31T17:04:47.7425325Z ../vllm/vllm/v1/engine/utils.py:1253: RuntimeError
+] accuracy test	UNKNOWN STEP	2026-08-31T17:04:47.7451810Z FAILED tests/e2e/models/test_lm_eval_correctness.py::test_lm_eval_correctness_param[config_filename0] - RuntimeError: Engine core initialization failed. See root cause above. Failed core proc(s): {}
+] accuracy test	UNKNOWN STEP	2026-08-31T17:06:59.3213937Z >               raise RuntimeError(
+] accuracy test	UNKNOWN STEP	2026-08-31T17:06:59.3217490Z E               RuntimeError: Engine core initialization failed. See root cause above. Failed core proc(s): {}
+] accuracy test	UNKNOWN STEP	2026-08-31T17:06:59.3218643Z ../vllm/vllm/v1/engine/utils.py:1253: RuntimeError
+] accuracy test	UNKNOWN STEP	2026-08-31T17:06:59.3248197Z FAILED tests/e2e/models/test_lm_eval_correctness.py::test_lm_eval_correctness_param[config_filename0] - RuntimeError: Engine core initialization failed. See root cause above. Failed core proc(s): {}
+] accuracy test	UNKNOWN STEP	2026-08-31T17:09:14.6887712Z >               raise RuntimeError(
+] accuracy test	UNKNOWN STEP	2026-08-31T17:09:14.6891357Z E               RuntimeError: Engine core initialization failed. See root cause above. Failed core proc(s): {}
+] accuracy test	UNKNOWN STEP	2026-08-31T17:09:14.6892473Z ../vllm/vllm/v1/engine/utils.py:1253: RuntimeError
+] accuracy test	UNKNOWN STEP	2026-08-31T17:09:14.6918394Z FAILED tests/e2e/models/test_lm_eval_correctness.py::test_lm_eval_correctness_param[config_filename0] - RuntimeError: Engine core initialization failed. See root cause above. Failed core proc(s): {}
+] accuracy test	UNKNOWN STEP	2026-08-31T17:09:19.1302995Z ##[error]Process completed with exit code 1.
+] accuracy test	UNKNOWN STEP	2026-08-31T17:09:20.8741336Z ##[error]Process completed with exit code 1.
+   ── 最后输出（定位失败阶段）
+
+── [FAILURE] single-node (main, Qwen3.5-397B-A17B-w4a8-mtp, linux-aarch64-a2b3-8, Qwen3.5-397B-A17B-w4a8-mtp-A... / Qwen3.5-397B-A17B-w4a8-mtp
+   Runner : linux-aarch64-a2b3-8-bj8h9-runner-mqlrw
+   时间   : 2026-08-31T17:32:50Z ~ 2026-08-31T17:51:51Z
+   ── 运行时错误（高优先级）
+single-node (main, Qwen3.5-397B-A17B-w4a8-mtp, linux-aarch64-a2b3-8, Qwen3.5-397B-A17B-w4a8-mtp-A... / Qwen3.5-397B-A17B-w4a8-mtp	UNKNOWN STEP	2026-08-31T17:51:10.8027494Z (APIServer pid=1884)     raise RuntimeError(
+single-node (main, Qwen3.5-397B-A17B-w4a8-mtp, linux-aarch64-a2b3-8, Qwen3.5-397B-A17B-w4a8-mtp-A... / Qwen3.5-397B-A17B-w4a8-mtp	UNKNOWN STEP	2026-08-31T17:51:10.8028593Z (APIServer pid=1884) RuntimeError: Engine core initialization failed. See root cause above. Failed core proc(s): {}
+single-node (main, Qwen3.5-397B-A17B-w4a8-mtp, linux-aarch64-a2b3-8, Qwen3.5-397B-A17B-w4a8-mtp-A... / Qwen3.5-397B-A17B-w4a8-mtp	UNKNOWN STEP	2026-08-31T17:51:23.9116667Z >                       raise RuntimeError(f"Server at {node_ip} exited unexpectedly.") from None
+single-node (main, Qwen3.5-397B-A17B-w4a8-mtp, linux-aarch64-a2b3-8, Qwen3.5-397B-A17B-w4a8-mtp-A... / Qwen3.5-397B-A17B-w4a8-mtp	UNKNOWN STEP	2026-08-31T17:51:23.9117736Z E                       RuntimeError: Server at 0.0.0.0 exited unexpectedly.
+single-node (main, Qwen3.5-397B-A17B-w4a8-mtp, linux-aarch64-a2b3-8, Qwen3.5-397B-A17B-w4a8-mtp-A... / Qwen3.5-397B-A17B-w4a8-mtp	UNKNOWN STEP	2026-08-31T17:51:23.9118770Z tests/e2e/conftest.py:430: RuntimeError
+single-node (main, Qwen3.5-397B-A17B-w4a8-mtp, linux-aarch64-a2b3-8, Qwen3.5-397B-A17B-w4a8-mtp-A... / Qwen3.5-397B-A17B-w4a8-mtp	UNKNOWN STEP	2026-08-31T17:51:23.9139510Z FAILED tests/e2e/nightly/single_node/models/scripts/test_single_node.py::test_single_node[Qwen3.5-397B-A17B-w4a8-mtp] - RuntimeError: Server at 0.0.0.0 exited unexpectedly.
+single-node (main, Qwen3.5-397B-A17B-w4a8-mtp, linux-aarch64-a2b3-8, Qwen3.5-397B-A17B-w4a8-mtp-A... / Qwen3.5-397B-A17B-w4a8-mtp	UNKNOWN STEP	2026-08-31T17:51:27.6777259Z ##[error]Process completed with exit code 1.
+   ── 最后输出（定位失败阶段）
+
+── [FAILURE] single-node (main, gemma4, linux-aarch64-a2b3-4, Gemma4.yaml) / gemma4
+   Runner : linux-aarch64-a2b3-4-z2f8p-runner-9k64w
+   时间   : 2026-08-31T17:02:05Z ~ 2026-08-31T17:06:46Z
+   ── 运行时错误（高优先级）
+single-node (main, gemma4, linux-aarch64-a2b3-4, Gemma4.yaml) / gemma4	UNKNOWN STEP	2026-08-31T17:06:12.3507282Z (APIServer pid=1831)     raise RuntimeError(
+single-node (main, gemma4, linux-aarch64-a2b3-4, Gemma4.yaml) / gemma4	UNKNOWN STEP	2026-08-31T17:06:12.3508563Z (APIServer pid=1831) RuntimeError: Engine core initialization failed. See root cause above. Failed core proc(s): {}
+single-node (main, gemma4, linux-aarch64-a2b3-4, Gemma4.yaml) / gemma4	UNKNOWN STEP	2026-08-31T17:06:20.9194193Z >                       raise RuntimeError(f"Server at {node_ip} exited unexpectedly.") from None
+single-node (main, gemma4, linux-aarch64-a2b3-4, Gemma4.yaml) / gemma4	UNKNOWN STEP	2026-08-31T17:06:20.9195458Z E                       RuntimeError: Server at 0.0.0.0 exited unexpectedly.
+single-node (main, gemma4, linux-aarch64-a2b3-4, Gemma4.yaml) / gemma4	UNKNOWN STEP	2026-08-31T17:06:20.9196555Z tests/e2e/conftest.py:430: RuntimeError
+single-node (main, gemma4, linux-aarch64-a2b3-4, Gemma4.yaml) / gemma4	UNKNOWN STEP	2026-08-31T17:06:20.9215245Z FAILED tests/e2e/nightly/single_node/models/scripts/test_single_node.py::test_single_node[Gemma4-full-decode-graph] - RuntimeError: Server at 0.0.0.0 exited unexpectedly.
+single-node (main, gemma4, linux-aarch64-a2b3-4, Gemma4.yaml) / gemma4	UNKNOWN STEP	2026-08-31T17:06:24.8842662Z ##[error]Process completed with exit code 1.
+   ── 最后输出（定位失败阶段）
+
+════════════════════════════════════════════
+ 补充命令（按需使用）：
+   完整日志 : gh run view --job <id> --log --repo vllm-project/vllm-ascend
+   PR diff  : gh pr diff <pr> --repo vllm-project/vllm-ascend --name-only
+   kubectl  : kubectl get pods --all-namespaces | grep <runner_name>
+════════════════════════════════════════════

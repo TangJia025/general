@@ -1,0 +1,126 @@
+════════════════════════════════════════════
+ Run 33484457087 | vllm-project/vllm-ascend
+════════════════════════════════════════════
+
+X pcp_weight_transfer E2E vllm-project/vllm-ascend#14814 · 33484457087
+Triggered via pull_request about 40 minutes ago
+
+JOBS
+X pre-commit in 2m22s (ID 99781198364)
+  ✓ Set up job
+  ✓ Initialize containers
+  ✓ Validate PR title prefix
+  ✓ Checkout vllm-project/vllm-ascend repo
+  ✓ Read verified vLLM refs
+  ✓ cp problem matchers
+  ✓ Run echo "::add-matcher::$RUNNER_TEMP/actionlint.json"
+  ✓ Run echo "::add-matcher::$RUNNER_TEMP/markdownlint.json"
+  ✓ Run echo "::add-matcher::$RUNNER_TEMP/mypy.json"
+  ✓ Checkout vllm-project/vllm repo
+  ✓ Run dorny/paths-filter@v4
+  - Install vllm-ascend dev (conditional)
+  ✓ Install and run Gitleaks Secret Scan
+  ✓ Get pre-commit config hash
+  ✓ Restore pre-commit cache
+  X Run pre-commit
+  - Run mypy
+  ✓ Post Checkout vllm-project/vllm repo
+  ✓ Post Checkout vllm-project/vllm-ascend repo
+  ✓ Stop containers
+  ✓ Complete job
+X select-tests in 1m10s (ID 99782065577)
+  ✓ Set up job
+  ✓ Initialize containers
+  ✓ Checkout vllm-project/vllm-ascend repo
+  ✓ Resolve source snapshot
+  ✓ Run dorny/paths-filter@v4
+  ✓ Validate test coverage config
+  X Decide test selection mode
+  - Select tests from coverage recommendations
+  - Select all tests
+  - Set no-tests output when no tests selected
+  - Select A5 tests
+  - Set no-tests output for A5 when source paths unchanged
+  - Add upstream test cache target
+  ✓ Post Checkout vllm-project/vllm-ascend repo
+  ✓ Stop containers
+  ✓ Complete job
+- Recommend tests from coverage in 0s (ID 99782066694)
+- ensure-csrc-cache (ID 99782496885)
+X ci-gate in 9s (ID 99782496910)
+  ✓ Set up job
+  X Check all required jobs
+  ✓ Complete job
+- run-selected-tests-upstream (ID 99782497477)
+- run-selected-tests-a5 (ID 99782497753)
+- run-selected-tests (ID 99782498021)
+
+ANNOTATIONS
+X Executing the custom container implementation failed. Please contact your self hosted runner administrator.
+pre-commit: .github#251
+
+X Process completed with exit code 1.
+pre-commit: .github#250
+
+X Error: failed to run script step: Error: command terminated with non-zero exit code: command terminated with exit code 1
+pre-commit: .github#249
+
+X Executing the custom container implementation failed. Please contact your self hosted runner administrator.
+select-tests: .github#31
+
+X Process completed with exit code 1.
+select-tests: .github#30
+
+X Error: failed to run script step: Error: command terminated with non-zero exit code: command terminated with exit code 1
+select-tests: .github#29
+
+X Coverage test recommendation did not succeed (result: skipped); not falling back to all tests
+select-tests: .github#28
+
+X Process completed with exit code 1.
+ci-gate: .github#74
+
+X pre-commit did not succeed (result: failure)
+ci-gate: .github#73
+
+
+To see what failed, try: gh run view 33484457087 --log-failed
+View this run on GitHub: https://github.com/vllm-project/vllm-ascend/actions/runs/33484457087
+
+════════════════════════════════════════════
+ 失败 / 取消 Job 详情（共 3 个）
+════════════════════════════════════════════
+
+── [FAILURE] pre-commit
+   Runner : linux-amd64-cpu-8-hk-ds7vs-runner-mrzk9
+   时间   : 2026-09-01T07:56:32Z ~ 2026-09-01T07:58:54Z
+   ── 运行时错误（高优先级）
+pre-commit	Run pre-commit	2026-09-01T07:58:08.2074713Z              raise RuntimeError(^[[m
+pre-commit	Run pre-commit	2026-09-01T07:58:08.2087324Z              raise RuntimeError(^[[m
+pre-commit	Run pre-commit	2026-09-01T07:58:08.2486316Z ##[error]Process completed with exit code 1.
+   ── 最后输出（定位失败阶段）
+
+── [FAILURE] select-tests
+   Runner : linux-amd64-cpu-8-hk-ds7vs-runner-85n8t
+   时间   : 2026-09-01T07:59:24Z ~ 2026-09-01T08:00:34Z
+   ── 运行时错误（高优先级）
+select-tests	Decide test selection mode	2026-09-01T08:00:11.2688376Z ##[error]Process completed with exit code 1.
+   ── 编译/安装错误（次优先级）
+select-tests	Resolve source snapshot	2026-09-01T08:00:04.8184044Z ^[[36;1m  echo "::error::CSRC build workflows changed on $BASE_REF, please rebase the code."^[[0m
+select-tests	Decide test selection mode	2026-09-01T08:00:11.2627423Z ##[error]Error: failed to run script step: Error: command terminated with non-zero exit code: command terminated with exit code 1
+   ── 最后输出（定位失败阶段）
+
+── [FAILURE] ci-gate
+   Runner : linux-amd64-cpu-2-hk-lwxb6-runner-g48vp
+   时间   : 2026-09-01T08:01:06Z ~ 2026-09-01T08:01:15Z
+   ── 运行时错误（高优先级）
+ci-gate	Check all required jobs	2026-09-01T08:01:08.4546033Z ##[error]Process completed with exit code 1.
+   ── 编译/安装错误（次优先级）
+   ── 最后输出（定位失败阶段）
+
+════════════════════════════════════════════
+ 补充命令（按需使用）：
+   完整日志 : gh run view --job <id> --log --repo vllm-project/vllm-ascend
+   PR diff  : gh pr diff <pr> --repo vllm-project/vllm-ascend --name-only
+   kubectl  : kubectl get pods --all-namespaces | grep <runner_name>
+════════════════════════════════════════════

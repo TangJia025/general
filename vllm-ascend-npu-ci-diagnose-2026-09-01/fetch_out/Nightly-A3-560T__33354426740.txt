@@ -1,0 +1,129 @@
+════════════════════════════════════════════
+ Run 33354426740 | vllm-project/vllm-ascend
+════════════════════════════════════════════
+
+X main Nightly-A3-560T · 33354426740
+Triggered via workflow_dispatch about 1 day ago
+
+JOBS
+✓ Parse trigger and determine test scope in 12s (ID 99373736405)
+- Build nightly-a3 image (ID 99373738319)
+✓ Export global env vars as job outputs in 3m30s (ID 99373833024)
+✓ Wait for all double-node pods launched / Poll GitHub commit statuses in 5s (ID 99374416442)
+- multi-node (main, multi-node-deepseek-v3.2-W8A8-EP, DeepSeek-V3_2-W8A8-EP.yaml, 4) / inputs.config_file_path (ID 99374416518)
+- multi-node (main, multi-node-GLM-5.2-w8a8-A3, GLM5_2-W8A8-A3-dual-nodes.yaml, 2) / inputs.config_file_path (ID 99374416614)
+- multi-node (main, multi-node-deepseek-v3.1, DeepSeek-V3.1-BF16.yaml, 2) / inputs.config_file_path in 0s (ID 99374416968)
+- double-node (main, multi-node-GLM-5.1-w8a8-A3, GLM5_1-W8A8-A3-dual-nodes.yaml, 2) / inputs.config_file_path in 0s (ID 99374417539)
+- double-node (main, multi-node-qwen3-dp, Qwen3-235B-A22B.yaml, 2) / inputs.config_file_path in 0s (ID 99374417551)
+- double-node (main, multi-node-qwen-disagg-pd, Qwen3-235B-disagg-pd.yaml, 2) / inputs.config_file_path in 0s (ID 99374417559)
+- double-node (main, multi-node-dpsk3.2-2node, DeepSeek-V3_2-W8A8-A3-dual-nodes.yaml, 2) / inputs.config_file_path in 0s (ID 99374417573)
+- double-node (main, multi-node-qwen-vl-disagg-pd, Qwen3-VL-235B-disagg-pd.yaml, 2) / inputs.config_file_path in 0s (ID 99374417795)
+- double-node (main, multi-node-qwenw8a8-2node-eplb, Qwen3-235B-W8A8-EPLB.yaml, 2) / inputs.config_file_path (ID 99374418198)
+- clear-pre-logs (ID 99374418407)
+X single-node (main, qwen3-235b-a22b-w8a8, linux-aarch64-a3-16-cn12-001, Qwen3-235B-A22B-W8A8.yaml) / qwen3-235b-a22b-w8a8 in 57m40s (ID 99374645552)
+  ✓ Set up job
+  ✓ Initialize containers
+  ✓ Check npu and CANN info
+  ✓ uninstall vlm vllm-ascend and remove code (if pr test)
+  ✓ Checkout vllm-project/vllm-ascend repo
+  ✓ Move code to /vllm-workspace
+  ✓ Set MAX_JOBS based on runner
+  ✓ Install vllm-project/vllm-ascend
+  ✓ Install aisbench
+  ✓ Show vLLM and vLLM-Ascend version
+  ✓ Install clang
+  ✓ Validate Inputs
+  - Run Pytest (py-driven)
+  X Run Pytest (YAML-driven)
+  - Update good_table.csv on success
+  - Capture test result
+  - Classify failure
+  - Skip - env issue
+  - Check commit age
+  - Skip - old commit
+  - Process - recent real failure
+  - On success
+  ✓ Set benchmark artifact timestamp
+  ✓ Upload benchmark results
+  ✓ Upload benchmark results (GitHub Artifacts)
+  ✓ Post Checkout vllm-project/vllm-ascend repo
+  ✓ Stop containers
+  ✓ Complete job
+- single-node (main, mtpx-deepseek-r1-0528-w8a8, linux-aarch64-a3-16-cn12-001, MTPX-DeepSeek-R1-052... / inputs.name || inputs.config_file_path || inputs.tests (ID 99374645954)
+- single-node (main, qwen3-32b-int8-prefix-cache, linux-aarch64-a3-4-cn12-001, Prefix-Cache-Qwen3-3... / inputs.name || inputs.config_file_path || inputs.tests (ID 99374646054)
+- single-node (main, qwen3-30b-acc, linux-aarch64-a3-4-cn12-001, tests/e2e/weekly/single_node/model... / inputs.name || inputs.config_file_path || inputs.tests (ID 99374646081)
+- single-node (main, qwen3-30b-a3b-w8a8, linux-aarch64-a3-4-cn12-001, Qwen3-30B-A3B-W8A8.yaml) / inputs.name || inputs.config_file_path || inputs.tests (ID 99374646110)
+- single-node (main, Qwen3-32B-W8A8C8-A3, linux-aarch64-a3-4-cn12-001, Qwen3-32B-W8A8C8-A3.yaml) / inputs.name || inputs.config_file_path || inputs.tests (ID 99374646142)
+- single-node (main, qwen3-32b-int8, linux-aarch64-a3-4-cn12-001, Qwen3-32B-Int8.yaml) / inputs.name || inputs.config_file_path || inputs.tests (ID 99374646154)
+- single-node (main, Qwen3-32B-QuaRot, linux-aarch64-a3-2-cn12-001, Qwen3-32B-QuaRot-eagle3.yaml) / inputs.name || inputs.config_file_path || inputs.tests (ID 99374646193)
+- single-node (main, Qwen3-30B-A3B-W4A8-llm-compressor, linux-aarch64-a3-2-cn12-001, Qwen3-30B-A3B-... / inputs.name || inputs.config_file_path || inputs.tests (ID 99374646372)
+- single-node (main, deepseek-r1-0528-w8a8, linux-aarch64-a3-16-cn12-001, DeepSeek-R1-0528-W8A8.yaml) / inputs.name || inputs.config_file_path || inputs.tests (ID 99374646430)
+- single-node (main, kimi-k2-thinking, linux-aarch64-a3-16-cn12-001, Kimi-K2-Thinking.yaml) / inputs.name || inputs.config_file_path || inputs.tests (ID 99374646441)
+- single-node (main, kimi-k2.5, linux-aarch64-a3-16-cn12-001, Kimi-K2.5.yaml) / inputs.name || inputs.config_file_path || inputs.tests (ID 99374646506)
+- single-node (main, deepseek-v3-2-w8a8, linux-aarch64-a3-16-cn12-001, DeepSeek-V3.2-W8A8.yaml) / inputs.name || inputs.config_file_path || inputs.tests (ID 99374646520)
+- single-node (main, Qwen3.5-122B-A10B-W8A8-A3, linux-aarch64-a3-16-cn12-001, Qwen3.5-122B-A10B-W8A... / inputs.name || inputs.config_file_path || inputs.tests (ID 99374646559)
+- single-node (main, glm-5.1-w8a8-prefill-mc2, linux-aarch64-a3-16-cn12-001, GLM-5.1-W8A8-PrefillMC... / inputs.name || inputs.config_file_path || inputs.tests (ID 99374646565)
+- single-node (main, Qwen3.5-27B-w8a8-A3, linux-aarch64-a3-2-cn12-001, Qwen3.5-27B-w8a8-A3.yaml) / inputs.name || inputs.config_file_path || inputs.tests (ID 99374646567)
+- single-node (main, Qwen3-30B-QuaRot, linux-aarch64-a3-2-cn12-001, Qwen3-30B-QuaRot-eagle3.yaml) / inputs.name || inputs.config_file_path || inputs.tests (ID 99374646584)
+- single-node (main, DeepSeek-V4-Flash-W8A8-A3, linux-aarch64-a3-16-cn12-001, DeepSeek-V4-Flash-W8A... / inputs.name || inputs.config_file_path || inputs.tests (ID 99374646637)
+- single-node (main, Qwen3.5-397B-A17B-w8a8-mtp, linux-aarch64-a3-16-cn12-001, Qwen3.5-397B-A17B-W8... / inputs.name || inputs.config_file_path || inputs.tests in 0s (ID 99374647549)
+- single-node (main, glm-4.7-w8a8, linux-aarch64-a3-16-cn12-001, GLM-4.7.yaml) / inputs.name || inputs.config_file_path || inputs.tests in 0s (ID 99374647577)
+- single-node (main, qwen3-vl-235b-a22b-instruct-w8a8, linux-aarch64-a3-16-cn12-001, Qwen3-VL-235B-... / inputs.name || inputs.config_file_path || inputs.tests in 0s (ID 99374647676)
+- single-node (main, deepseek-r1-0528-w8a8-prefix-cache, linux-aarch64-a3-16-cn12-001, Prefix-Cache... / inputs.name || inputs.config_file_path || inputs.tests in 0s (ID 99374647820)
+✓ Merge benchmark artifacts into nightly-a3-560t.zip in 10s (ID 99387891554)
+- Remove node taints in 0s (ID 99387892812)
+
+ANNOTATIONS
+! No files were found with the provided path: /vllm-workspace/vllm-ascend/benchmark_results/main-qwen3-235b-a22b-w8a8.json. No artifacts will be uploaded.
+single-node (main, qwen3-235b-a22b-w8a8, linux-aarch64-a3-16-cn12-001, Qwen3-235B-A22B-W8A8.yaml) / qwen3-235b-a22b-w8a8: .github#30
+
+! No files found for path: /vllm-workspace/vllm-ascend/benchmark_results/qwen3-235b-a22b-w8a8.json, skipping upload
+single-node (main, qwen3-235b-a22b-w8a8, linux-aarch64-a3-16-cn12-001, Qwen3-235B-A22B-W8A8.yaml) / qwen3-235b-a22b-w8a8: .github#255
+
+X Executing the custom container implementation failed. Please contact your self hosted runner administrator.
+single-node (main, qwen3-235b-a22b-w8a8, linux-aarch64-a3-16-cn12-001, Qwen3-235B-A22B-W8A8.yaml) / qwen3-235b-a22b-w8a8: .github#300566
+
+X Process completed with exit code 1.
+single-node (main, qwen3-235b-a22b-w8a8, linux-aarch64-a3-16-cn12-001, Qwen3-235B-A22B-W8A8.yaml) / qwen3-235b-a22b-w8a8: .github#300565
+
+X Error: failed to run script step: Error: command terminated with non-zero exit code: command terminated with exit code 1
+single-node (main, qwen3-235b-a22b-w8a8, linux-aarch64-a3-16-cn12-001, Qwen3-235B-A22B-W8A8.yaml) / qwen3-235b-a22b-w8a8: .github#300564
+
+X No artifacts found matching pattern 'nightly-test-benchmark-results-*'
+Merge benchmark artifacts into nightly-a3-560t.zip: .github#13
+
+
+To see what failed, try: gh run view 33354426740 --log-failed
+View this run on GitHub: https://github.com/vllm-project/vllm-ascend/actions/runs/33354426740
+
+════════════════════════════════════════════
+ 失败 / 取消 Job 详情（共 1 个）
+════════════════════════════════════════════
+
+── [FAILURE] single-node (main, qwen3-235b-a22b-w8a8, linux-aarch64-a3-16-cn12-001, Qwen3-235B-A22B-W8A8.yaml) / qwen3-235b-a22b-w8a8
+   Runner : linux-aarch64-a3-16-cn12-001-8gkpq-runner-wccx8
+   时间   : 2026-08-31T04:11:00Z ~ 2026-08-31T05:08:40Z
+   ── 运行时错误（高优先级）
+single-node (main, qwen3-235b-a22b-w8a8, linux-aarch64-a3-16-cn12-001, Qwen3-235B-A22B-W8A8.yaml) / qwen3-235b-a22b-w8a8	UNKNOWN STEP	2026-08-31T04:44:01.5148886Z [2026-08-31 04:44:01.511887][UC][I] No available shared memory broadcast block found in 60 seconds. This typically happens when some processes are hanging or doing some time-consuming work (e.g. compilation, weight/kv cache quantization). [23632,23632][shm_broadcast.py:802,acquire_read]
+single-node (main, qwen3-235b-a22b-w8a8, linux-aarch64-a3-16-cn12-001, Qwen3-235B-A22B-W8A8.yaml) / qwen3-235b-a22b-w8a8	UNKNOWN STEP	2026-08-31T04:44:02.5805514Z [2026-08-31 04:44:02.579377][UC][I] No available shared memory broadcast block found in 60 seconds. This typically happens when some processes are hanging or doing some time-consuming work (e.g. compilation, weight/kv cache quantization). [23765,23765][shm_broadcast.py:802,acquire_read]
+single-node (main, qwen3-235b-a22b-w8a8, linux-aarch64-a3-16-cn12-001, Qwen3-235B-A22B-W8A8.yaml) / qwen3-235b-a22b-w8a8	UNKNOWN STEP	2026-08-31T04:44:02.7928393Z [2026-08-31 04:44:02.791966][UC][I] No available shared memory broadcast block found in 60 seconds. This typically happens when some processes are hanging or doing some time-consuming work (e.g. compilation, weight/kv cache quantization). [23675,23675][shm_broadcast.py:802,acquire_read]
+single-node (main, qwen3-235b-a22b-w8a8, linux-aarch64-a3-16-cn12-001, Qwen3-235B-A22B-W8A8.yaml) / qwen3-235b-a22b-w8a8	UNKNOWN STEP	2026-08-31T04:44:02.8125031Z [2026-08-31 04:44:02.811952][UC][I] No available shared memory broadcast block found in 60 seconds. This typically happens when some processes are hanging or doing some time-consuming work (e.g. compilation, weight/kv cache quantization). [23720,23720][shm_broadcast.py:802,acquire_read]
+single-node (main, qwen3-235b-a22b-w8a8, linux-aarch64-a3-16-cn12-001, Qwen3-235B-A22B-W8A8.yaml) / qwen3-235b-a22b-w8a8	UNKNOWN STEP	2026-08-31T04:46:11.4681273Z [2026-08-31 04:46:10.704679][UC][E] EngineCore encountered a fatal error.
+single-node (main, qwen3-235b-a22b-w8a8, linux-aarch64-a3-16-cn12-001, Qwen3-235B-A22B-W8A8.yaml) / qwen3-235b-a22b-w8a8	UNKNOWN STEP	2026-08-31T04:46:11.4694179Z     raise RuntimeError(
+single-node (main, qwen3-235b-a22b-w8a8, linux-aarch64-a3-16-cn12-001, Qwen3-235B-A22B-W8A8.yaml) / qwen3-235b-a22b-w8a8	UNKNOWN STEP	2026-08-31T04:46:11.4694480Z RuntimeError: Worker failed with error '
+single-node (main, qwen3-235b-a22b-w8a8, linux-aarch64-a3-16-cn12-001, Qwen3-235B-A22B-W8A8.yaml) / qwen3-235b-a22b-w8a8	UNKNOWN STEP	2026-08-31T04:46:11.5691438Z vllm.v1.engine.exceptions.EngineDeadError: EngineCore encountered an issue. See stack trace (above) for the root cause. [23813,23813][async_llm.py:724,output_handler]
+single-node (main, qwen3-235b-a22b-w8a8, linux-aarch64-a3-16-cn12-001, Qwen3-235B-A22B-W8A8.yaml) / qwen3-235b-a22b-w8a8	UNKNOWN STEP	2026-08-31T04:46:11.5693290Z vllm.v1.engine.exceptions.EngineDeadError: EngineCore encountered an issue. See stack trace (above) for the root cause. [23812,23812][async_llm.py:724,output_handler]
+single-node (main, qwen3-235b-a22b-w8a8, linux-aarch64-a3-16-cn12-001, Qwen3-235B-A22B-W8A8.yaml) / qwen3-235b-a22b-w8a8	UNKNOWN STEP	2026-08-31T04:46:11.5695234Z vllm.v1.engine.exceptions.EngineDeadError: EngineCore encountered an issue. See stack trace (above) for the root cause. [23811,23811][async_llm.py:724,output_handler]
+single-node (main, qwen3-235b-a22b-w8a8, linux-aarch64-a3-16-cn12-001, Qwen3-235B-A22B-W8A8.yaml) / qwen3-235b-a22b-w8a8	UNKNOWN STEP	2026-08-31T04:46:11.5697079Z vllm.v1.engine.exceptions.EngineDeadError: EngineCore encountered an issue. See stack trace (above) for the root cause. [23810,23810][async_llm.py:724,output_handler]
+single-node (main, qwen3-235b-a22b-w8a8, linux-aarch64-a3-16-cn12-001, Qwen3-235B-A22B-W8A8.yaml) / qwen3-235b-a22b-w8a8	UNKNOWN STEP	2026-08-31T04:46:12.5852416Z     raise RuntimeError(
+single-node (main, qwen3-235b-a22b-w8a8, linux-aarch64-a3-16-cn12-001, Qwen3-235B-A22B-W8A8.yaml) / qwen3-235b-a22b-w8a8	UNKNOWN STEP	2026-08-31T04:46:12.5853641Z RuntimeError: Process ApiServer_3 (PID: 23813) died with exit code None [23546,23546][utils.py:584,wait_for_completion_or_failure]
+single-node (main, qwen3-235b-a22b-w8a8, linux-aarch64-a3-16-cn12-001, Qwen3-235B-A22B-W8A8.yaml) / qwen3-235b-a22b-w8a8	UNKNOWN STEP	2026-08-31T04:46:14.0604664Z [2026-08-31 04:46:13.104028][UC][E] EngineCore encountered a fatal error.
+single-node (main, qwen3-235b-a22b-w8a8, linux-aarch64-a3-16-cn12-001, Qwen3-235B-A22B-W8A8.yaml) / qwen3-235b-a22b-w8a8	UNKNOWN STEP	2026-08-31T04:46:14.0609562Z     raise RuntimeError(
+   ── 最后输出（定位失败阶段）
+
+════════════════════════════════════════════
+ 补充命令（按需使用）：
+   完整日志 : gh run view --job <id> --log --repo vllm-project/vllm-ascend
+   PR diff  : gh pr diff <pr> --repo vllm-project/vllm-ascend --name-only
+   kubectl  : kubectl get pods --all-namespaces | grep <runner_name>
+════════════════════════════════════════════

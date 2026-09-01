@@ -1,0 +1,59 @@
+════════════════════════════════════════════
+ Run 33403470270 | vllm-project/vllm-ascend
+════════════════════════════════════════════
+
+X main Main2Main · 33403470270
+Triggered via workflow_dispatch about 17 hours ago
+
+JOBS
+X resolve-source in 1m57s (ID 99534278463)
+  ✓ Set up job
+  ✓ Checkout vllm-project/vllm-ascend repo
+  X Checkout vllm-project/vllm repo
+  - Resolve fixed vllm-ascend source
+  ✓ Post Checkout vllm-project/vllm repo
+  ✓ Post Checkout vllm-project/vllm-ascend repo
+  ✓ Complete job
+- ensure-csrc-cache (ID 99535030347)
+- main2main (ID 99535030586)
+
+ANNOTATIONS
+X The process '/usr/bin/git' failed with exit code 128
+resolve-source: .github#720
+
+X remote error: upload-pack: not our ref 1a086ce8ab27a01d2b2fdef32797b6d989f4727f
+resolve-source: .github#719
+
+X remote error: upload-pack: not our ref 1a086ce8ab27a01d2b2fdef32797b6d989f4727f
+resolve-source: .github#715
+
+X remote error: upload-pack: not our ref 1a086ce8ab27a01d2b2fdef32797b6d989f4727f
+resolve-source: .github#711
+
+
+To see what failed, try: gh run view 33403470270 --log-failed
+View this run on GitHub: https://github.com/vllm-project/vllm-ascend/actions/runs/33403470270
+
+════════════════════════════════════════════
+ 失败 / 取消 Job 详情（共 1 个）
+════════════════════════════════════════════
+
+── [FAILURE] resolve-source
+   Runner : linux-amd64-cpu-4-hk-s4kqs-runner-6jrfz
+   时间   : 2026-08-31T15:03:29Z ~ 2026-08-31T15:05:26Z
+   ── 运行时错误（高优先级）
+   ── 编译/安装错误（次优先级）
+resolve-source	UNKNOWN STEP	2026-08-31T15:04:32.3324778Z  * [new branch]            wentao-fix-python-install-ci-error -> origin/wentao-fix-python-install-ci-error
+   ── 最后输出（定位失败阶段）
+resolve-source	UNKNOWN STEP	2026-08-31T15:05:20.1837533Z [command]/usr/bin/git config --local --unset includeif.gitdir:/github/workspace/.git/worktrees/*.path \/github\/runner_temp\/git\-credentials\-423b4aad\-8e6b\-4a27\-b9d4\-3e2e07b69824\.config
+resolve-source	UNKNOWN STEP	2026-08-31T15:05:20.1958604Z [command]/usr/bin/git submodule foreach --recursive git config --local --show-origin --name-only --get-regexp remote.origin.url
+resolve-source	UNKNOWN STEP	2026-08-31T15:05:20.2265849Z Removing credentials config '/home/runner/_work/_temp/git-credentials-423b4aad-8e6b-4a27-b9d4-3e2e07b69824.config'
+resolve-source	UNKNOWN STEP	2026-08-31T15:05:20.2513755Z Evaluate and set job outputs
+resolve-source	UNKNOWN STEP	2026-08-31T15:05:20.2522520Z Cleaning up orphan processes
+
+════════════════════════════════════════════
+ 补充命令（按需使用）：
+   完整日志 : gh run view --job <id> --log --repo vllm-project/vllm-ascend
+   PR diff  : gh pr diff <pr> --repo vllm-project/vllm-ascend --name-only
+   kubectl  : kubectl get pods --all-namespaces | grep <runner_name>
+════════════════════════════════════════════

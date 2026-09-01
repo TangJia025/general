@@ -1,0 +1,84 @@
+════════════════════════════════════════════
+ Run 33484618242 | vllm-project/vllm-ascend
+════════════════════════════════════════════
+
+X codex/fix-dsv4-mooncake-scheduler-block-size E2E vllm-project/vllm-ascend#14920 · 33484618242
+Triggered via pull_request about 37 minutes ago
+
+JOBS
+✓ pre-commit in 3m47s (ID 99781696441)
+✓ Recommend tests from coverage in 1m18s (ID 99782811110)
+X select-tests in 51s (ID 99783312558)
+  ✓ Set up job
+  ✓ Initialize containers
+  ✓ Checkout vllm-project/vllm-ascend repo
+  X Resolve source snapshot
+  - Run dorny/paths-filter@v4
+  - Validate test coverage config
+  - Decide test selection mode
+  - Select tests from coverage recommendations
+  - Select all tests
+  - Set no-tests output when no tests selected
+  - Select A5 tests
+  - Set no-tests output for A5 when source paths unchanged
+  - Add upstream test cache target
+  ✓ Post Checkout vllm-project/vllm-ascend repo
+  ✓ Stop containers
+  ✓ Complete job
+X ci-gate in 8s (ID 99783697060)
+  ✓ Set up job
+  X Check all required jobs
+  ✓ Complete job
+- run-selected-tests-a5 in 0s (ID 99783697420)
+- run-selected-tests in 0s (ID 99783697954)
+- ensure-csrc-cache in 0s (ID 99783698179)
+- run-selected-tests-upstream in 0s (ID 99783698180)
+
+ANNOTATIONS
+X Executing the custom container implementation failed. Please contact your self hosted runner administrator.
+select-tests: .github#51
+
+X Process completed with exit code 1.
+select-tests: .github#50
+
+X Error: failed to run script step: Error: command terminated with non-zero exit code: command terminated with exit code 1
+select-tests: .github#49
+
+X Process completed with exit code 1.
+ci-gate: .github#74
+
+X select-tests did not succeed (result: failure)
+ci-gate: .github#73
+
+
+To see what failed, try: gh run view 33484618242 --log-failed
+View this run on GitHub: https://github.com/vllm-project/vllm-ascend/actions/runs/33484618242
+
+════════════════════════════════════════════
+ 失败 / 取消 Job 详情（共 2 个）
+════════════════════════════════════════════
+
+── [FAILURE] select-tests
+   Runner : linux-amd64-cpu-8-hk-ds7vs-runner-w68sd
+   时间   : 2026-09-01T08:04:19Z ~ 2026-09-01T08:05:10Z
+   ── 运行时错误（高优先级）
+select-tests	Resolve source snapshot	2026-09-01T08:04:46.9189567Z ##[error]Process completed with exit code 1.
+   ── 编译/安装错误（次优先级）
+select-tests	Resolve source snapshot	2026-09-01T08:04:44.9996243Z ^[[36;1m  echo "::error::CSRC build workflows changed on $BASE_REF, please rebase the code."^[[0m
+select-tests	Resolve source snapshot	2026-09-01T08:04:46.9111927Z ##[error]Error: failed to run script step: Error: command terminated with non-zero exit code: command terminated with exit code 1
+   ── 最后输出（定位失败阶段）
+
+── [FAILURE] ci-gate
+   Runner : linux-amd64-cpu-2-hk-lwxb6-runner-s8kzj
+   时间   : 2026-09-01T08:05:45Z ~ 2026-09-01T08:05:53Z
+   ── 运行时错误（高优先级）
+ci-gate	Check all required jobs	2026-09-01T08:05:47.8021537Z ##[error]Process completed with exit code 1.
+   ── 编译/安装错误（次优先级）
+   ── 最后输出（定位失败阶段）
+
+════════════════════════════════════════════
+ 补充命令（按需使用）：
+   完整日志 : gh run view --job <id> --log --repo vllm-project/vllm-ascend
+   PR diff  : gh pr diff <pr> --repo vllm-project/vllm-ascend --name-only
+   kubectl  : kubectl get pods --all-namespaces | grep <runner_name>
+════════════════════════════════════════════

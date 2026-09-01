@@ -1,0 +1,4343 @@
+{
+ "E2E": [
+  {
+   "run": 33485146106,
+   "created": "2026-09-01 16:03:53",
+   "branch": "feat/minimax-m3-a5-msa-index-fp8-main"
+  },
+  {
+   "run": 33485133703,
+   "created": "2026-09-01 16:03:44",
+   "branch": "new-refactor"
+  },
+  {
+   "run": 33484949088,
+   "created": "2026-09-01 16:01:27",
+   "branch": "kv_pool_supoort_qos"
+  },
+  {
+   "run": 33484761005,
+   "created": "2026-09-01 15:59:16",
+   "branch": "feat/layerwise-kv-pool-v2-runner"
+  },
+  {
+   "run": 33484734889,
+   "created": "2026-09-01 15:58:54",
+   "branch": "test/reenable-deepseek-v4-mtp-eager"
+  },
+  {
+   "run": 33484618242,
+   "created": "2026-09-01 15:57:23",
+   "branch": "codex/fix-dsv4-mooncake-scheduler-block-size"
+  },
+  {
+   "run": 33484540041,
+   "created": "2026-09-01 15:56:23",
+   "branch": "feature/add-Qwen3-8B-E2E-test"
+  },
+  {
+   "run": 33484457087,
+   "created": "2026-09-01 15:55:21",
+   "branch": "pcp_weight_transfer"
+  },
+  {
+   "run": 33484389426,
+   "created": "2026-09-01 15:54:30",
+   "branch": "backport/record-stream-v0.26.0rc"
+  },
+  {
+   "run": 33484377214,
+   "created": "2026-09-01 15:54:21",
+   "branch": "fix/record-stream-cross-stream-lifetime"
+  },
+  {
+   "run": 33484333333,
+   "created": "2026-09-01 15:53:47",
+   "branch": "feature/dsa-pcp-aclgraph"
+  },
+  {
+   "run": 33484256067,
+   "created": "2026-09-01 15:52:47",
+   "branch": "mrv2-extract-hidden-states-5b6a"
+  },
+  {
+   "run": 33484138153,
+   "created": "2026-09-01 15:51:15",
+   "branch": "feat/minimax-m3-a3-prefill-kv-gather-q"
+  },
+  {
+   "run": 33483986301,
+   "created": "2026-09-01 15:49:21",
+   "branch": "feat/mrv1-dspark-aclgraph"
+  },
+  {
+   "run": 33483912016,
+   "created": "2026-09-01 15:48:23",
+   "branch": "feat/kvpp-eager-runtime"
+  },
+  {
+   "run": 33483890934,
+   "created": "2026-09-01 15:48:07",
+   "branch": "fix/mxfp4-support"
+  },
+  {
+   "run": 33483658804,
+   "created": "2026-09-01 15:45:17",
+   "branch": "feat/layerwise-kv-pool-v2-runner"
+  },
+  {
+   "run": 33483357684,
+   "created": "2026-09-01 15:41:36",
+   "branch": "pcp_weight_transfer"
+  },
+  {
+   "run": 33483269234,
+   "created": "2026-09-01 15:40:30",
+   "branch": "d2d"
+  },
+  {
+   "run": 33483263041,
+   "created": "2026-09-01 15:40:25",
+   "branch": "feat/minimax-m3-a5-msa-index-fp8-main"
+  },
+  {
+   "run": 33483135148,
+   "created": "2026-09-01 15:38:55",
+   "branch": "kv_pool_supoort_qos"
+  },
+  {
+   "run": 33482978575,
+   "created": "2026-09-01 15:36:57",
+   "branch": "feat/megamoe-intermediate-size-fallback"
+  },
+  {
+   "run": 33482663594,
+   "created": "2026-09-01 15:32:57",
+   "branch": "feat/minimax-m3-a5-msa-index-fp8-main"
+  },
+  {
+   "run": 33482511878,
+   "created": "2026-09-01 15:31:02",
+   "branch": "kv_pool_supoort_qos"
+  },
+  {
+   "run": 33482165988,
+   "created": "2026-09-01 15:26:47",
+   "branch": "wxs/mrv2/fix-dspark-graph"
+  },
+  {
+   "run": 33482071340,
+   "created": "2026-09-01 15:25:36",
+   "branch": "kv_pool_supoort_qos"
+  },
+  {
+   "run": 33481978147,
+   "created": "2026-09-01 15:24:25",
+   "branch": "spec_decode_nightly"
+  },
+  {
+   "run": 33481745771,
+   "created": "2026-09-01 15:21:27",
+   "branch": "fix_mtp_graph_token_2"
+  },
+  {
+   "run": 33481740032,
+   "created": "2026-09-01 15:21:23",
+   "branch": "new-refactor"
+  },
+  {
+   "run": 33481725049,
+   "created": "2026-09-01 15:21:13",
+   "branch": "feat/main-image-sync-swr"
+  },
+  {
+   "run": 33481694241,
+   "created": "2026-09-01 15:20:51",
+   "branch": "mrv2_310p_pc_new"
+  },
+  {
+   "run": 33481536428,
+   "created": "2026-09-01 15:18:56",
+   "branch": "mrv2-extract-hidden-states-5b6a"
+  },
+  {
+   "run": 33481400509,
+   "created": "2026-09-01 15:17:12",
+   "branch": "feat/minimax-m3-a5-msa-index-fp8-main"
+  },
+  {
+   "run": 33481273199,
+   "created": "2026-09-01 15:15:34",
+   "branch": "kv_pool_supoort_qos"
+  },
+  {
+   "run": 33481117257,
+   "created": "2026-09-01 15:13:38",
+   "branch": "fix_mtp_graph_token_2"
+  },
+  {
+   "run": 33480945152,
+   "created": "2026-09-01 15:11:29",
+   "branch": "combine_quant"
+  },
+  {
+   "run": 33480933238,
+   "created": "2026-09-01 15:11:20",
+   "branch": "main0824refactor"
+  },
+  {
+   "run": 33480916009,
+   "created": "2026-09-01 15:11:06",
+   "branch": "glm53-pr-graph-timing"
+  },
+  {
+   "run": 33480897067,
+   "created": "2026-09-01 15:10:51",
+   "branch": "mrv2-extract-hidden-states-5b6a"
+  },
+  {
+   "run": 33480781973,
+   "created": "2026-09-01 15:09:23",
+   "branch": "feature/add-Qwen3-8B-E2E-test"
+  },
+  {
+   "run": 33480528780,
+   "created": "2026-09-01 15:06:02",
+   "branch": "fix_mtp_graph_token_2"
+  },
+  {
+   "run": 33479990501,
+   "created": "2026-09-01 14:59:07",
+   "branch": "kv_pool_supoort_qos"
+  },
+  {
+   "run": 33479978233,
+   "created": "2026-09-01 14:58:57",
+   "branch": "perf/ascend-v2-slot-mappings"
+  },
+  {
+   "run": 33479963302,
+   "created": "2026-09-01 14:58:45",
+   "branch": "feature/add-Qwen3-8B-E2E-test"
+  },
+  {
+   "run": 33479727689,
+   "created": "2026-09-01 14:55:35",
+   "branch": "kv_pool_supoort_qos"
+  },
+  {
+   "run": 33479634803,
+   "created": "2026-09-01 14:54:21",
+   "branch": "agent/bugfix-sp-config"
+  },
+  {
+   "run": 33479331936,
+   "created": "2026-09-01 14:50:12",
+   "branch": "main0824refactor"
+  },
+  {
+   "run": 33479328349,
+   "created": "2026-09-01 14:50:09",
+   "branch": "ut_no_npu"
+  },
+  {
+   "run": 33479207972,
+   "created": "2026-09-01 14:48:28",
+   "branch": "fix_mtp_graph_token_2"
+  },
+  {
+   "run": 33479016048,
+   "created": "2026-09-01 14:45:49",
+   "branch": "main"
+  },
+  {
+   "run": 33478731989,
+   "created": "2026-09-01 14:41:58",
+   "branch": "bugfix/m3-mrv2-fullgraph-update-backend"
+  },
+  {
+   "run": 33478539022,
+   "created": "2026-09-01 14:39:22",
+   "branch": "main_verify"
+  },
+  {
+   "run": 33478193752,
+   "created": "2026-09-01 14:34:33",
+   "branch": "fix_mtp_graph_token_2"
+  },
+  {
+   "run": 33478182299,
+   "created": "2026-09-01 14:34:24",
+   "branch": "perf/ascend-v2-slot-mappings"
+  },
+  {
+   "run": 33477623241,
+   "created": "2026-09-01 14:26:41",
+   "branch": "perf/compressor-sp-stepb-v0260rc"
+  },
+  {
+   "run": 33477538068,
+   "created": "2026-09-01 14:25:32",
+   "branch": "main"
+  },
+  {
+   "run": 33477193186,
+   "created": "2026-09-01 14:20:35",
+   "branch": "spec1"
+  },
+  {
+   "run": 33477056425,
+   "created": "2026-09-01 14:18:38",
+   "branch": "fix_mtp_graph_token_2"
+  },
+  {
+   "run": 33476616503,
+   "created": "2026-09-01 14:12:29",
+   "branch": "spec1"
+  },
+  {
+   "run": 33476459618,
+   "created": "2026-09-01 14:10:14",
+   "branch": "wxs/mrv2/enable-v2"
+  },
+  {
+   "run": 33472241432,
+   "created": "2026-09-01 13:05:09",
+   "branch": "main_verify"
+  },
+  {
+   "run": 33469797625,
+   "created": "2026-09-01 12:25:40",
+   "branch": "megamoe_0.26"
+  },
+  {
+   "run": 33469466834,
+   "created": "2026-09-01 12:20:20",
+   "branch": "fix/mxfp4-support"
+  },
+  {
+   "run": 33469310933,
+   "created": "2026-09-01 12:17:53",
+   "branch": "codex/deepseek-v4-vision-main"
+  },
+  {
+   "run": 33468984053,
+   "created": "2026-09-01 12:12:42",
+   "branch": "feat/main-image-sync-swr"
+  },
+  {
+   "run": 33468895902,
+   "created": "2026-09-01 12:11:13",
+   "branch": "fix/mxfp4-support"
+  },
+  {
+   "run": 33468797621,
+   "created": "2026-09-01 12:09:39",
+   "branch": "spec1"
+  },
+  {
+   "run": 33468767989,
+   "created": "2026-09-01 12:09:09",
+   "branch": "codex/deepseek-v4-vision-main"
+  },
+  {
+   "run": 33468736229,
+   "created": "2026-09-01 12:08:37",
+   "branch": "fix/moe-sp-down-projection-overlap"
+  },
+  {
+   "run": 33468691120,
+   "created": "2026-09-01 12:07:53",
+   "branch": "codex/kimi-k3-a3-c8-main"
+  },
+  {
+   "run": 33468483006,
+   "created": "2026-09-01 12:04:27",
+   "branch": "fix/mxfp4-support"
+  },
+  {
+   "run": 33468422386,
+   "created": "2026-09-01 12:03:28",
+   "branch": "fix/moe-sp-down-projection-overlap"
+  },
+  {
+   "run": 33468299974,
+   "created": "2026-09-01 12:01:26",
+   "branch": "codex/kimi-k3-a3-c8-main"
+  },
+  {
+   "run": 33468277188,
+   "created": "2026-09-01 12:01:02",
+   "branch": "overlap_metadata"
+  },
+  {
+   "run": 33468181311,
+   "created": "2026-09-01 11:59:29",
+   "branch": "codex/deepseek-v4-vision-main"
+  },
+  {
+   "run": 33467837162,
+   "created": "2026-09-01 11:53:25",
+   "branch": "feat/cpp-srf-composition"
+  },
+  {
+   "run": 33467810750,
+   "created": "2026-09-01 11:52:59",
+   "branch": "fix/mxfp4-support"
+  },
+  {
+   "run": 33467645015,
+   "created": "2026-09-01 11:50:10",
+   "branch": "feat/mrv2-pcp-mtp-eagle3-v2"
+  },
+  {
+   "run": 33467526182,
+   "created": "2026-09-01 11:48:10",
+   "branch": "glm52_v2_dspark"
+  },
+  {
+   "run": 33467476553,
+   "created": "2026-09-01 11:47:22",
+   "branch": "codex/deepseek-v4-vision-main"
+  },
+  {
+   "run": 33467443635,
+   "created": "2026-09-01 11:46:49",
+   "branch": "fix/mla-preprocess-aclnn-graph"
+  },
+  {
+   "run": 33467422949,
+   "created": "2026-09-01 11:46:27",
+   "branch": "fix/mxfp4-support"
+  },
+  {
+   "run": 33467380673,
+   "created": "2026-09-01 11:45:47",
+   "branch": "overlap_metadata"
+  },
+  {
+   "run": 33467290798,
+   "created": "2026-09-01 11:44:20",
+   "branch": "ut_80"
+  },
+  {
+   "run": 33467278300,
+   "created": "2026-09-01 11:44:09",
+   "branch": "fix_mtp_graph_token_2"
+  },
+  {
+   "run": 33467097805,
+   "created": "2026-09-01 11:41:05",
+   "branch": "codex/deepseek-v4-vision-main"
+  },
+  {
+   "run": 33467072243,
+   "created": "2026-09-01 11:40:39",
+   "branch": "main"
+  },
+  {
+   "run": 33466986459,
+   "created": "2026-09-01 11:39:14",
+   "branch": "doc_eplb_fix"
+  },
+  {
+   "run": 33466843457,
+   "created": "2026-09-01 11:36:50",
+   "branch": "main"
+  },
+  {
+   "run": 33466778892,
+   "created": "2026-09-01 11:35:42",
+   "branch": "fix/mxfp4-support"
+  },
+  {
+   "run": 33466711527,
+   "created": "2026-09-01 11:34:34",
+   "branch": "patch-1"
+  },
+  {
+   "run": 33466584359,
+   "created": "2026-09-01 11:32:24",
+   "branch": "ds_lora_moe_v25"
+  },
+  {
+   "run": 33466433374,
+   "created": "2026-09-01 11:30:00",
+   "branch": "megamoe_0.26"
+  },
+  {
+   "run": 33466094936,
+   "created": "2026-09-01 11:24:28",
+   "branch": "feat/mrv2-pcp-mtp-eagle3-v2"
+  },
+  {
+   "run": 33465859416,
+   "created": "2026-09-01 11:20:31",
+   "branch": "fix/mxfp4-support"
+  },
+  {
+   "run": 33465635269,
+   "created": "2026-09-01 11:16:48",
+   "branch": "perf/skip-topk-gating"
+  },
+  {
+   "run": 33465519887,
+   "created": "2026-09-01 11:14:55",
+   "branch": "codex/v0.26.0rc-80d8c194f"
+  },
+  {
+   "run": 33465503513,
+   "created": "2026-09-01 11:14:39",
+   "branch": "feat/mrv2-pcp-mtp-eagle3-v2"
+  },
+  {
+   "run": 33465445800,
+   "created": "2026-09-01 11:13:44",
+   "branch": "wxs/mrv2/enable-v2"
+  },
+  {
+   "run": 33465444721,
+   "created": "2026-09-01 11:13:43",
+   "branch": "doc_update"
+  },
+  {
+   "run": 33465115551,
+   "created": "2026-09-01 11:08:28",
+   "branch": "glm52_v2_dspark"
+  },
+  {
+   "run": 33465036124,
+   "created": "2026-09-01 11:07:09",
+   "branch": "combine_quant"
+  },
+  {
+   "run": 33464932249,
+   "created": "2026-09-01 11:05:26",
+   "branch": "main_dp_padding"
+  },
+  {
+   "run": 33464839877,
+   "created": "2026-09-01 11:03:55",
+   "branch": "get_cos_and_sin"
+  },
+  {
+   "run": 33464663868,
+   "created": "2026-09-01 11:01:00",
+   "branch": "perf/skip-topk-gating"
+  },
+  {
+   "run": 33464467194,
+   "created": "2026-09-01 10:57:40",
+   "branch": "spec1"
+  },
+  {
+   "run": 33464324870,
+   "created": "2026-09-01 10:55:16",
+   "branch": "main_megamoe"
+  },
+  {
+   "run": 33464037118,
+   "created": "2026-09-01 10:50:30",
+   "branch": "refactor/mrv2-pcp-mla"
+  },
+  {
+   "run": 33463879657,
+   "created": "2026-09-01 10:47:56",
+   "branch": "wxs/mrv2/fix-dspark-graph"
+  },
+  {
+   "run": 33463823736,
+   "created": "2026-09-01 10:47:03",
+   "branch": "spec1"
+  },
+  {
+   "run": 33463628818,
+   "created": "2026-09-01 10:43:57",
+   "branch": "glm52_v2_dspark"
+  },
+  {
+   "run": 33463618603,
+   "created": "2026-09-01 10:43:47",
+   "branch": "v26-dspark-al-fix"
+  },
+  {
+   "run": 33463142550,
+   "created": "2026-09-01 10:36:00",
+   "branch": "spec1"
+  },
+  {
+   "run": 33462972161,
+   "created": "2026-09-01 10:33:18",
+   "branch": "v26-dspark-al-fix"
+  },
+  {
+   "run": 33462909643,
+   "created": "2026-09-01 10:32:20",
+   "branch": "sfa_graph_pcp"
+  },
+  {
+   "run": 33462533332,
+   "created": "2026-09-01 10:26:20",
+   "branch": "rm-megamoe"
+  },
+  {
+   "run": 33462411197,
+   "created": "2026-09-01 10:24:24",
+   "branch": "refactor/mrv2-pcp-gqa"
+  },
+  {
+   "run": 33462327953,
+   "created": "2026-09-01 10:23:01",
+   "branch": "dsv31_nightly"
+  },
+  {
+   "run": 33462265552,
+   "created": "2026-09-01 10:22:00",
+   "branch": "sfa_graph_pcp"
+  },
+  {
+   "run": 33462177487,
+   "created": "2026-09-01 10:20:33",
+   "branch": "refactor_layerwise_part1"
+  },
+  {
+   "run": 33462032954,
+   "created": "2026-09-01 10:18:18",
+   "branch": "main_dp_padding"
+  },
+  {
+   "run": 33461771044,
+   "created": "2026-09-01 10:14:04",
+   "branch": "feat/minimax-m3-a3-prefill-kv-gather-q"
+  },
+  {
+   "run": 33461654567,
+   "created": "2026-09-01 10:12:12",
+   "branch": "perf/revert-scatter-pa-kv-cache-write"
+  },
+  {
+   "run": 33461279533,
+   "created": "2026-09-01 10:06:19",
+   "branch": "feat/mrv2-pcp-mtp-eagle3-v2"
+  },
+  {
+   "run": 33461258471,
+   "created": "2026-09-01 10:05:59",
+   "branch": "overlap_metadata"
+  },
+  {
+   "run": 33460840323,
+   "created": "2026-09-01 09:59:32",
+   "branch": "feat/main-image-sync-swr"
+  },
+  {
+   "run": 33460336116,
+   "created": "2026-09-01 09:51:27",
+   "branch": "overlap_metadata"
+  },
+  {
+   "run": 33460118131,
+   "created": "2026-09-01 09:47:53",
+   "branch": "fix-13853-qwen35-blocksize"
+  },
+  {
+   "run": 33460102749,
+   "created": "2026-09-01 09:47:39",
+   "branch": "perf/skip-topk-gating"
+  },
+  {
+   "run": 33460015162,
+   "created": "2026-09-01 09:46:15",
+   "branch": "moe_support_a5"
+  },
+  {
+   "run": 33459870590,
+   "created": "2026-09-01 09:44:04",
+   "branch": "dspark_op"
+  },
+  {
+   "run": 33459603417,
+   "created": "2026-09-01 09:39:50",
+   "branch": "test/reenable-deepseek-v4-mtp-eager"
+  },
+  {
+   "run": 33459533511,
+   "created": "2026-09-01 09:38:42",
+   "branch": "main2mian0828"
+  },
+  {
+   "run": 33459322383,
+   "created": "2026-09-01 09:35:22",
+   "branch": "fix-13853-qwen35-blocksize"
+  },
+  {
+   "run": 33459247572,
+   "created": "2026-09-01 09:34:15",
+   "branch": "combine_quant"
+  },
+  {
+   "run": 33458933534,
+   "created": "2026-09-01 09:29:21",
+   "branch": "cursor/hccl-sleep-lifecycle-anchor-b927"
+  },
+  {
+   "run": 33458836527,
+   "created": "2026-09-01 09:27:49",
+   "branch": "rfork_pd_bugfix_0831"
+  },
+  {
+   "run": 33458425603,
+   "created": "2026-09-01 09:21:38",
+   "branch": "spec1"
+  },
+  {
+   "run": 33458300058,
+   "created": "2026-09-01 09:19:44",
+   "branch": "sfa_graph_pcp"
+  },
+  {
+   "run": 33457701992,
+   "created": "2026-09-01 09:10:38",
+   "branch": "szy_a5_test"
+  },
+  {
+   "run": 33457076636,
+   "created": "2026-09-01 09:01:05",
+   "branch": "feat/gdn-preamble-fusion"
+  },
+  {
+   "run": 33456706204,
+   "created": "2026-09-01 08:55:33",
+   "branch": "eccpu-connector"
+  },
+  {
+   "run": 33448209901,
+   "created": "2026-09-01 06:52:28",
+   "branch": "codex/minimax-m3-eagle3-pp"
+  },
+  {
+   "run": 33442644187,
+   "created": "2026-09-01 05:41:45",
+   "branch": "feat/fia-v2-sink"
+  },
+  {
+   "run": 33414146521,
+   "created": "2026-09-01 00:26:57",
+   "branch": "ds_lora_moe_v25"
+  },
+  {
+   "run": 33410398586,
+   "created": "2026-08-31 23:46:54",
+   "branch": "bugfix-prefetch-offload"
+  },
+  {
+   "run": 33408551132,
+   "created": "2026-08-31 23:27:35",
+   "branch": "ds_lora_moe_v25"
+  },
+  {
+   "run": 33403479993,
+   "created": "2026-08-31 22:35:01",
+   "branch": "0.26.0_bugfix_structure"
+  },
+  {
+   "run": 33400805477,
+   "created": "2026-08-31 22:07:34",
+   "branch": "glm53-pr-conv-staging"
+  },
+  {
+   "run": 33399852937,
+   "created": "2026-08-31 21:57:40",
+   "branch": "refactor_moe"
+  },
+  {
+   "run": 33399657816,
+   "created": "2026-08-31 21:55:34",
+   "branch": "fix/draft-mlapo-model-config-v026"
+  },
+  {
+   "run": 33399651225,
+   "created": "2026-08-31 21:55:30",
+   "branch": "fix/draft-mlapo-model-config-main"
+  },
+  {
+   "run": 33399645221,
+   "created": "2026-08-31 21:55:26",
+   "branch": "perf/kimi-kda-preprocess-fusion-no-mla-v1"
+  },
+  {
+   "run": 33399601258,
+   "created": "2026-08-31 21:54:57",
+   "branch": "feat/main-image-sync-swr"
+  },
+  {
+   "run": 33398968041,
+   "created": "2026-08-31 21:48:13",
+   "branch": "glm53-pr-mhc-fused"
+  },
+  {
+   "run": 33398942036,
+   "created": "2026-08-31 21:47:56",
+   "branch": "fix/ascendstore-tp-mismatch-event-chain"
+  },
+  {
+   "run": 33398266255,
+   "created": "2026-08-31 21:40:32",
+   "branch": "a3_debug"
+  },
+  {
+   "run": 33397750289,
+   "created": "2026-08-31 21:34:56",
+   "branch": "codex/minimax-m3-eagle3-pp"
+  },
+  {
+   "run": 33397422307,
+   "created": "2026-08-31 21:31:20",
+   "branch": "dspark-al-fix"
+  },
+  {
+   "run": 33397159309,
+   "created": "2026-08-31 21:28:26",
+   "branch": "moe_support_a5"
+  },
+  {
+   "run": 33396006987,
+   "created": "2026-08-31 21:15:53",
+   "branch": "moe_support_a5"
+  },
+  {
+   "run": 33395733556,
+   "created": "2026-08-31 21:12:58",
+   "branch": "a00302-14-oproj-tp-mrv2"
+  },
+  {
+   "run": 33395508985,
+   "created": "2026-08-31 21:10:30",
+   "branch": "main_verify"
+  },
+  {
+   "run": 33395215019,
+   "created": "2026-08-31 21:07:14",
+   "branch": "fix/ascendstore-tp-mismatch-event-chain"
+  },
+  {
+   "run": 33395100924,
+   "created": "2026-08-31 21:05:55",
+   "branch": "main_verify"
+  },
+  {
+   "run": 33394728501,
+   "created": "2026-08-31 21:01:38",
+   "branch": "moe_support_a5"
+  },
+  {
+   "run": 33394684550,
+   "created": "2026-08-31 21:01:06",
+   "branch": "refactor_moe"
+  },
+  {
+   "run": 33393977647,
+   "created": "2026-08-31 20:52:53",
+   "branch": "refactor_moe"
+  },
+  {
+   "run": 33393666048,
+   "created": "2026-08-31 20:49:13",
+   "branch": "feat/main-image-sync-swr"
+  },
+  {
+   "run": 33393568848,
+   "created": "2026-08-31 20:48:02",
+   "branch": "main2mian0828"
+  },
+  {
+   "run": 33393107070,
+   "created": "2026-08-31 20:42:34",
+   "branch": "refactor/remove-unused-npu-flash-attention"
+  },
+  {
+   "run": 33391924683,
+   "created": "2026-08-31 20:28:24",
+   "branch": "perf/kimi-kda-preprocess-fusion-no-mla-v1"
+  },
+  {
+   "run": 33391673549,
+   "created": "2026-08-31 20:25:21",
+   "branch": "fix/draft-mlapo-model-config-main"
+  },
+  {
+   "run": 33391647558,
+   "created": "2026-08-31 20:25:05",
+   "branch": "fix/draft-mlapo-model-config-v026"
+  },
+  {
+   "run": 33391610453,
+   "created": "2026-08-31 20:24:38",
+   "branch": "pd"
+  },
+  {
+   "run": 33391485979,
+   "created": "2026-08-31 20:23:09",
+   "branch": "fix/auto-quant-mtp-draft"
+  },
+  {
+   "run": 33390996346,
+   "created": "2026-08-31 20:17:08",
+   "branch": "dspark-al-fix"
+  },
+  {
+   "run": 33390720284,
+   "created": "2026-08-31 20:13:52",
+   "branch": "pd"
+  },
+  {
+   "run": 33390458044,
+   "created": "2026-08-31 20:10:43",
+   "branch": "main_dp_padding"
+  },
+  {
+   "run": 33389555766,
+   "created": "2026-08-31 19:59:44",
+   "branch": "feat/minimax-m3-a5-msa-index-fp8-main"
+  },
+  {
+   "run": 33389540505,
+   "created": "2026-08-31 19:59:31",
+   "branch": "feat/glm-5.3-a5-support"
+  },
+  {
+   "run": 33389517658,
+   "created": "2026-08-31 19:59:12",
+   "branch": "sparse-weight-transfer-pr"
+  },
+  {
+   "run": 33389407818,
+   "created": "2026-08-31 19:57:44",
+   "branch": "codex/minimax-m3-eagle3-pp"
+  },
+  {
+   "run": 33389113014,
+   "created": "2026-08-31 19:53:57",
+   "branch": "fix/record-stream-cross-stream-lifetime"
+  },
+  {
+   "run": 33389108971,
+   "created": "2026-08-31 19:53:54",
+   "branch": "backport/record-stream-v0.26.0rc"
+  },
+  {
+   "run": 33389103435,
+   "created": "2026-08-31 19:53:50",
+   "branch": "backport/record-stream-v0.23.0"
+  },
+  {
+   "run": 33388967117,
+   "created": "2026-08-31 19:52:03",
+   "branch": "bugfix/m3-mrv2-fullgraph-update-backend"
+  },
+  {
+   "run": 33388077802,
+   "created": "2026-08-31 19:40:33",
+   "branch": "fix/megamoe-prefill-buffer-capacity-main"
+  },
+  {
+   "run": 33387116628,
+   "created": "2026-08-31 19:28:26",
+   "branch": "fix/record-stream-cross-stream-lifetime"
+  },
+  {
+   "run": 33386460345,
+   "created": "2026-08-31 19:19:54",
+   "branch": "refactor_layerwise_part1"
+  },
+  {
+   "run": 33386294507,
+   "created": "2026-08-31 19:17:41",
+   "branch": "bugfix-prefetch-offload"
+  },
+  {
+   "run": 33385805276,
+   "created": "2026-08-31 19:11:21",
+   "branch": "fix/record-stream-cross-stream-lifetime"
+  },
+  {
+   "run": 33385485011,
+   "created": "2026-08-31 19:07:22",
+   "branch": "fix/bisect-vllm-target-device"
+  },
+  {
+   "run": 33385425728,
+   "created": "2026-08-31 19:06:37",
+   "branch": "perf/kimi-kda-preprocess-fusion-no-mla-v1"
+  },
+  {
+   "run": 33385108422,
+   "created": "2026-08-31 19:02:31",
+   "branch": "bugfix-prefetch-offload"
+  },
+  {
+   "run": 33384863315,
+   "created": "2026-08-31 18:59:18",
+   "branch": "fix/batch-invariant-mixed-fia"
+  },
+  {
+   "run": 33384846873,
+   "created": "2026-08-31 18:59:04",
+   "branch": "update0.28.0"
+  },
+  {
+   "run": 33384789140,
+   "created": "2026-08-31 18:58:16",
+   "branch": "codex/minimax-m3-eagle3-pp"
+  },
+  {
+   "run": 33383787354,
+   "created": "2026-08-31 18:44:39",
+   "branch": "dev"
+  },
+  {
+   "run": 33383762181,
+   "created": "2026-08-31 18:44:19",
+   "branch": "codex/dsa-c4-compressor-overlap-main"
+  },
+  {
+   "run": 33383692792,
+   "created": "2026-08-31 18:43:24",
+   "branch": "0.27.1_main2main0828"
+  },
+  {
+   "run": 33383056360,
+   "created": "2026-08-31 18:34:56",
+   "branch": "fix/bisect-vllm-target-device"
+  },
+  {
+   "run": 33382964100,
+   "created": "2026-08-31 18:33:46",
+   "branch": "codex/rms-norm-cast-v0.26"
+  },
+  {
+   "run": 33382671452,
+   "created": "2026-08-31 18:29:58",
+   "branch": "dev"
+  },
+  {
+   "run": 33381865149,
+   "created": "2026-08-31 18:19:13",
+   "branch": "0.27.1_main2main0828"
+  },
+  {
+   "run": 33381835402,
+   "created": "2026-08-31 18:18:50",
+   "branch": "backport/record-stream-v0.26.0rc"
+  },
+  {
+   "run": 33381590973,
+   "created": "2026-08-31 18:15:37",
+   "branch": "backport/record-stream-v0.23.0"
+  },
+  {
+   "run": 33381430461,
+   "created": "2026-08-31 18:13:32",
+   "branch": "fix-13853-qwen35-blocksize"
+  },
+  {
+   "run": 33381179195,
+   "created": "2026-08-31 18:10:20",
+   "branch": "codex/k3-four-card-ci-20260831"
+  },
+  {
+   "run": 33380901547,
+   "created": "2026-08-31 18:06:51",
+   "branch": "dsv4-sparse-flash-mla-bf16"
+  },
+  {
+   "run": 33380674087,
+   "created": "2026-08-31 18:03:59",
+   "branch": "patch/stop-token-ids-validation-main"
+  },
+  {
+   "run": 33380650009,
+   "created": "2026-08-31 18:03:39",
+   "branch": "codex/deepseek-v4-trailing-system-11951"
+  },
+  {
+   "run": 33380550241,
+   "created": "2026-08-31 18:02:21",
+   "branch": "test/proxy-system-test"
+  },
+  {
+   "run": 33380402439,
+   "created": "2026-08-31 18:00:30",
+   "branch": "feat/minimax-m3-a3-prefill-kv-gather-q"
+  },
+  {
+   "run": 33380241187,
+   "created": "2026-08-31 17:58:21",
+   "branch": "agent/bugfix-sp-config"
+  },
+  {
+   "run": 33379838834,
+   "created": "2026-08-31 17:53:03",
+   "branch": "eccpu-connector"
+  },
+  {
+   "run": 33379814191,
+   "created": "2026-08-31 17:52:43",
+   "branch": "main_dp_padding"
+  },
+  {
+   "run": 33379542849,
+   "created": "2026-08-31 17:49:14",
+   "branch": "mrv2_310p_pc_new"
+  },
+  {
+   "run": 33379372627,
+   "created": "2026-08-31 17:47:02",
+   "branch": "bugfix/m3-mrv2-fullgraph-update-backend"
+  },
+  {
+   "run": 33379025707,
+   "created": "2026-08-31 17:42:46",
+   "branch": "perf/compressor-sp-stepb-v0260rc"
+  },
+  {
+   "run": 33378911019,
+   "created": "2026-08-31 17:41:22",
+   "branch": "perf/skip-topk-gating"
+  },
+  {
+   "run": 33378285715,
+   "created": "2026-08-31 17:33:41",
+   "branch": "doc_update"
+  },
+  {
+   "run": 33377881826,
+   "created": "2026-08-31 17:28:58",
+   "branch": "codex/k3-four-card-ci-20260831"
+  },
+  {
+   "run": 33377719684,
+   "created": "2026-08-31 17:27:00",
+   "branch": "perf/skip-topk-gating"
+  },
+  {
+   "run": 33377596946,
+   "created": "2026-08-31 17:25:30",
+   "branch": "fa3_e2e_refactor"
+  },
+  {
+   "run": 33377075966,
+   "created": "2026-08-31 17:19:18",
+   "branch": "agent/bugfix-sp-config"
+  },
+  {
+   "run": 33376623606,
+   "created": "2026-08-31 17:13:46",
+   "branch": "perf/skip-topk-gating"
+  },
+  {
+   "run": 33376356065,
+   "created": "2026-08-31 17:10:27",
+   "branch": "glm5.3-main"
+  },
+  {
+   "run": 33376293868,
+   "created": "2026-08-31 17:09:42",
+   "branch": "feat/xlite-glm-5.2"
+  },
+  {
+   "run": 33375929796,
+   "created": "2026-08-31 17:05:12",
+   "branch": "doc_update"
+  },
+  {
+   "run": 33375856644,
+   "created": "2026-08-31 17:04:17",
+   "branch": "fix/qwen38-a3-graph-mtp"
+  },
+  {
+   "run": 33375650774,
+   "created": "2026-08-31 17:01:42",
+   "branch": "perf/skip-topk-gating"
+  },
+  {
+   "run": 33375585823,
+   "created": "2026-08-31 17:00:52",
+   "branch": "hjp_818"
+  },
+  {
+   "run": 33375433844,
+   "created": "2026-08-31 16:58:58",
+   "branch": "fix/skip-mega-moe-load-when-fused-mc2-disabled"
+  },
+  {
+   "run": 33375111988,
+   "created": "2026-08-31 16:54:42",
+   "branch": "glm5.3-main"
+  },
+  {
+   "run": 33374893358,
+   "created": "2026-08-31 16:51:56",
+   "branch": "fix/qwen35-mtp-checkpoint-preflight"
+  },
+  {
+   "run": 33374799485,
+   "created": "2026-08-31 16:50:40",
+   "branch": "hjp_818"
+  },
+  {
+   "run": 33374429801,
+   "created": "2026-08-31 16:45:47",
+   "branch": "fused-sgmv-lora"
+  },
+  {
+   "run": 33374308555,
+   "created": "2026-08-31 16:44:17",
+   "branch": "kv_offload_disk_dev"
+  },
+  {
+   "run": 33374276214,
+   "created": "2026-08-31 16:43:52",
+   "branch": "hjp_818"
+  },
+  {
+   "run": 33374259967,
+   "created": "2026-08-31 16:43:40",
+   "branch": "feat/main-image-sync-swr"
+  },
+  {
+   "run": 33374212293,
+   "created": "2026-08-31 16:43:03",
+   "branch": "feat/mrv2-pcp-mtp-eagle3-v2"
+  },
+  {
+   "run": 33373793927,
+   "created": "2026-08-31 16:37:38",
+   "branch": "fix/qwen35-mtp-checkpoint-preflight"
+  },
+  {
+   "run": 33373753368,
+   "created": "2026-08-31 16:37:08",
+   "branch": "feat/mrv2-pcp-mtp-eagle3-v2"
+  },
+  {
+   "run": 33373504094,
+   "created": "2026-08-31 16:34:00",
+   "branch": "agent/bugfix-sp-config"
+  },
+  {
+   "run": 33373499082,
+   "created": "2026-08-31 16:33:56",
+   "branch": "codex/slot-mapping-kernel-paths"
+  },
+  {
+   "run": 33373481639,
+   "created": "2026-08-31 16:33:43",
+   "branch": "codex/slot-map-opt-113"
+  },
+  {
+   "run": 33373111162,
+   "created": "2026-08-31 16:29:04",
+   "branch": "codex/minimax-m3-eagle3-pp"
+  },
+  {
+   "run": 33373076114,
+   "created": "2026-08-31 16:28:34",
+   "branch": "feat/mrv2-pcp-mtp-eagle3-v2"
+  },
+  {
+   "run": 33373000019,
+   "created": "2026-08-31 16:27:34",
+   "branch": "refactor/mrv2-pcp-mla"
+  },
+  {
+   "run": 33372618451,
+   "created": "2026-08-31 16:22:41",
+   "branch": "refactor_layerwise_part1"
+  },
+  {
+   "run": 33372456201,
+   "created": "2026-08-31 16:20:33",
+   "branch": "feat/mrv2-pcp-mtp-eagle3-v2"
+  },
+  {
+   "run": 33372447591,
+   "created": "2026-08-31 16:20:26",
+   "branch": "codex/fix-attention-docstrings"
+  },
+  {
+   "run": 33372284601,
+   "created": "2026-08-31 16:18:22",
+   "branch": "fix/gdn-chunk-ops-cann92"
+  },
+  {
+   "run": 33372226923,
+   "created": "2026-08-31 16:17:38",
+   "branch": "codex/minimax-m3-eagle3-pp"
+  },
+  {
+   "run": 33372194660,
+   "created": "2026-08-31 16:17:12",
+   "branch": "feat/minimax-m3-a5-msa-index-fp8-main"
+  },
+  {
+   "run": 33372059035,
+   "created": "2026-08-31 16:15:33",
+   "branch": "codex/kimi-k3-reduced-layer-loading"
+  },
+  {
+   "run": 33372030307,
+   "created": "2026-08-31 16:15:13",
+   "branch": "refactor/mrv2-pcp-gqa"
+  },
+  {
+   "run": 33371931960,
+   "created": "2026-08-31 16:14:02",
+   "branch": "refactor/mrv2-pcp-mla"
+  },
+  {
+   "run": 33371646789,
+   "created": "2026-08-31 16:10:27",
+   "branch": "fix_mtp"
+  },
+  {
+   "run": 33371550832,
+   "created": "2026-08-31 16:09:17",
+   "branch": "agent/bugfix-sp-config"
+  },
+  {
+   "run": 33370388413,
+   "created": "2026-08-31 15:53:41",
+   "branch": "refactor/mrv2-pcp-gqa"
+  },
+  {
+   "run": 33370023805,
+   "created": "2026-08-31 15:48:43",
+   "branch": "refactor/mrv2-pcp-mla"
+  },
+  {
+   "run": 33369820902,
+   "created": "2026-08-31 15:46:00",
+   "branch": "feature/glm52-dsv4-mxfp4-moe"
+  },
+  {
+   "run": 33369541751,
+   "created": "2026-08-31 15:42:13",
+   "branch": "codex/deepseek-v4-trailing-system-11951"
+  },
+  {
+   "run": 33369176921,
+   "created": "2026-08-31 15:37:12",
+   "branch": "hjp_818"
+  },
+  {
+   "run": 33369085405,
+   "created": "2026-08-31 15:36:00",
+   "branch": "feat/mrv2-pcp-mtp-eagle3-v2"
+  },
+  {
+   "run": 33368974027,
+   "created": "2026-08-31 15:34:32",
+   "branch": "wxs/mrv2/fix-dspark-graph"
+  },
+  {
+   "run": 33368586736,
+   "created": "2026-08-31 15:29:21",
+   "branch": "feat/qwen3-moe-plus-plus"
+  },
+  {
+   "run": 33368133098,
+   "created": "2026-08-31 15:22:58",
+   "branch": "fix_mtp"
+  },
+  {
+   "run": 33367779499,
+   "created": "2026-08-31 15:18:12",
+   "branch": "d2d"
+  },
+  {
+   "run": 33367710725,
+   "created": "2026-08-31 15:17:14",
+   "branch": "a00302-14-oproj-tp-mrv2"
+  },
+  {
+   "run": 33367334761,
+   "created": "2026-08-31 15:12:12",
+   "branch": "zhengsj/revert-chunk-matmul"
+  },
+  {
+   "run": 33367005496,
+   "created": "2026-08-31 15:07:38",
+   "branch": "feat/main-image-sync-swr"
+  },
+  {
+   "run": 33366819708,
+   "created": "2026-08-31 15:05:04",
+   "branch": "hjp_818"
+  },
+  {
+   "run": 33366258234,
+   "created": "2026-08-31 14:57:02",
+   "branch": "hjp_818"
+  },
+  {
+   "run": 33366159845,
+   "created": "2026-08-31 14:55:34",
+   "branch": "dsv4-sparse-flash-mla-bf16"
+  },
+  {
+   "run": 33366092924,
+   "created": "2026-08-31 14:54:37",
+   "branch": "zijie_performance_0.26"
+  },
+  {
+   "run": 33365312136,
+   "created": "2026-08-31 14:42:56",
+   "branch": "wxs/mrv2/fix-dspark-graph"
+  },
+  {
+   "run": 33365044820,
+   "created": "2026-08-31 14:38:52",
+   "branch": "fix_mtp"
+  },
+  {
+   "run": 33365025019,
+   "created": "2026-08-31 14:38:34",
+   "branch": "feat/xlite-glm-5.2"
+  },
+  {
+   "run": 33364922401,
+   "created": "2026-08-31 14:37:01",
+   "branch": "refactor_layerwise_part1"
+  },
+  {
+   "run": 33363719468,
+   "created": "2026-08-31 14:19:19",
+   "branch": "feat/xlite-glm-5.2"
+  },
+  {
+   "run": 33363717664,
+   "created": "2026-08-31 14:19:17",
+   "branch": "wxs/mrv2/fix-dspark-graph"
+  },
+  {
+   "run": 33363551441,
+   "created": "2026-08-31 14:16:49",
+   "branch": "feat/minimax-m3-a5-msa-index-fp8-main"
+  },
+  {
+   "run": 33360704981,
+   "created": "2026-08-31 13:29:16",
+   "branch": "dependabot/github_actions/actions/setup-python-7.0.0"
+  },
+  {
+   "run": 33360691277,
+   "created": "2026-08-31 13:29:00",
+   "branch": "dependabot/github_actions/actions/labeler-7"
+  },
+  {
+   "run": 33359874354,
+   "created": "2026-08-31 13:15:19",
+   "branch": "hy4_code"
+  },
+  {
+   "run": 33359030510,
+   "created": "2026-08-31 13:00:58",
+   "branch": "feat/main-image-sync-swr"
+  },
+  {
+   "run": 33358972496,
+   "created": "2026-08-31 13:00:04",
+   "branch": "8-6-device-hal-attention"
+  },
+  {
+   "run": 33358684015,
+   "created": "2026-08-31 12:54:27",
+   "branch": "glm5.3-main"
+  },
+  {
+   "run": 33358307961,
+   "created": "2026-08-31 12:47:24",
+   "branch": "fix/mla-preprocess-aclnn-graph"
+  },
+  {
+   "run": 33358220540,
+   "created": "2026-08-31 12:45:54",
+   "branch": "offload_v2"
+  },
+  {
+   "run": 33357069725,
+   "created": "2026-08-31 12:26:10",
+   "branch": "feat/main-image-sync-swr"
+  },
+  {
+   "run": 33356758289,
+   "created": "2026-08-31 12:20:47",
+   "branch": "offload_v2"
+  },
+  {
+   "run": 33356219901,
+   "created": "2026-08-31 12:11:30",
+   "branch": "fix/qwen35-mtp-checkpoint-preflight"
+  },
+  {
+   "run": 33355903565,
+   "created": "2026-08-31 12:05:40",
+   "branch": "main_verify"
+  },
+  {
+   "run": 33355716038,
+   "created": "2026-08-31 12:02:07",
+   "branch": "dspark_ci_main"
+  },
+  {
+   "run": 33355419302,
+   "created": "2026-08-31 11:56:13",
+   "branch": "sfa_dcp_2"
+  },
+  {
+   "run": 33355313046,
+   "created": "2026-08-31 11:54:12",
+   "branch": "reduce_sample"
+  },
+  {
+   "run": 33355230953,
+   "created": "2026-08-31 11:52:38",
+   "branch": "zxy_fix_translate"
+  },
+  {
+   "run": 33355073463,
+   "created": "2026-08-31 11:49:35",
+   "branch": "feat/minimax-m3-a5-msa-index-fp8-main"
+  },
+  {
+   "run": 33354894762,
+   "created": "2026-08-31 11:46:07",
+   "branch": "refactor_layerwise_part1"
+  },
+  {
+   "run": 33354376664,
+   "created": "2026-08-31 11:36:26",
+   "branch": "codex/minimax-m3-eagle3-pp"
+  },
+  {
+   "run": 33354314303,
+   "created": "2026-08-31 11:35:20",
+   "branch": "hjp_818"
+  },
+  {
+   "run": 33354028212,
+   "created": "2026-08-31 11:30:00",
+   "branch": "feat/reduce-redundant-main-proj"
+  },
+  {
+   "run": 33353938492,
+   "created": "2026-08-31 11:28:09",
+   "branch": "hjp_818"
+  },
+  {
+   "run": 33353931962,
+   "created": "2026-08-31 11:28:01",
+   "branch": "refactor_layerwise_part1"
+  },
+  {
+   "run": 33353684766,
+   "created": "2026-08-31 11:23:15",
+   "branch": "perf/avoid-kv-pool-token-copies-main"
+  },
+  {
+   "run": 33353635614,
+   "created": "2026-08-31 11:22:19",
+   "branch": "perf/avoid-kv-pool-token-copies-v026"
+  },
+  {
+   "run": 33353327241,
+   "created": "2026-08-31 11:16:35",
+   "branch": "codex/minimax-m3-eagle3-pp"
+  },
+  {
+   "run": 33352915478,
+   "created": "2026-08-31 11:09:26",
+   "branch": "fix/mc2-profile-skip-compiled-main"
+  },
+  {
+   "run": 33352903648,
+   "created": "2026-08-31 11:09:12",
+   "branch": "feat/main-image-sync-swr"
+  },
+  {
+   "run": 33352813952,
+   "created": "2026-08-31 11:07:37",
+   "branch": "main_dp_padding"
+  },
+  {
+   "run": 33352624953,
+   "created": "2026-08-31 11:04:12",
+   "branch": "codex/minimax-m3-eagle3-pp"
+  },
+  {
+   "run": 33352521426,
+   "created": "2026-08-31 11:02:18",
+   "branch": "refactor_layerwise_part1"
+  },
+  {
+   "run": 33351681916,
+   "created": "2026-08-31 10:45:40",
+   "branch": "codex/sfa-dcp-model-runner-v2"
+  },
+  {
+   "run": 33351269378,
+   "created": "2026-08-31 10:37:39",
+   "branch": "codex/sfa-dcp-model-runner-v2"
+  },
+  {
+   "run": 33351189421,
+   "created": "2026-08-31 10:36:10",
+   "branch": "perf/avoid-kv-pool-token-copies-v026"
+  },
+  {
+   "run": 33351171446,
+   "created": "2026-08-31 10:35:49",
+   "branch": "perf/avoid-kv-pool-token-copies-main"
+  },
+  {
+   "run": 33351160958,
+   "created": "2026-08-31 10:35:37",
+   "branch": "fix/gdn-chunk-ops-cann92"
+  },
+  {
+   "run": 33350857142,
+   "created": "2026-08-31 10:29:59",
+   "branch": "fix/mooncake-hybrid-prefill-pp"
+  },
+  {
+   "run": 33350855595,
+   "created": "2026-08-31 10:29:57",
+   "branch": "feat/gmsq-situ-moe-wire-main"
+  },
+  {
+   "run": 33350571313,
+   "created": "2026-08-31 10:24:25",
+   "branch": "v027-0830-ds-fix"
+  },
+  {
+   "run": 33350428160,
+   "created": "2026-08-31 10:21:36",
+   "branch": "cursor/hccl-sleep-lifecycle-anchor-b927"
+  },
+  {
+   "run": 33350080843,
+   "created": "2026-08-31 10:14:55",
+   "branch": "glm5.3"
+  },
+  {
+   "run": 33350031001,
+   "created": "2026-08-31 10:14:00",
+   "branch": "fix/mooncake-hybrid-prefill-pp"
+  },
+  {
+   "run": 33349986696,
+   "created": "2026-08-31 10:13:11",
+   "branch": "test/qwen3-30b-a2-pr-performance"
+  },
+  {
+   "run": 33349913690,
+   "created": "2026-08-31 10:11:51",
+   "branch": "fa3_e2e_refactor"
+  },
+  {
+   "run": 33349665486,
+   "created": "2026-08-31 10:07:20",
+   "branch": "perf/ascend-v2-slot-mappings"
+  },
+  {
+   "run": 33349166210,
+   "created": "2026-08-31 09:57:46",
+   "branch": "feat/v0.26.0rc-add-fastokens-dependency"
+  },
+  {
+   "run": 33349011849,
+   "created": "2026-08-31 09:54:49",
+   "branch": "feat/main-image-sync-swr"
+  },
+  {
+   "run": 33348957207,
+   "created": "2026-08-31 09:53:43",
+   "branch": "codex/avoid-kv-pool-token-copies-main"
+  },
+  {
+   "run": 33348941994,
+   "created": "2026-08-31 09:53:25",
+   "branch": "codex/avoid-kv-pool-token-copies-v026"
+  },
+  {
+   "run": 33348721705,
+   "created": "2026-08-31 09:48:52",
+   "branch": "main2mian0828"
+  },
+  {
+   "run": 33348702013,
+   "created": "2026-08-31 09:48:26",
+   "branch": "develop_v0.26.0rc"
+  },
+  {
+   "run": 33348500294,
+   "created": "2026-08-31 09:44:27",
+   "branch": "elim-redundant-rearrange"
+  },
+  {
+   "run": 33348273910,
+   "created": "2026-08-31 09:40:02",
+   "branch": "feat/main-image-sync-swr"
+  },
+  {
+   "run": 33348271367,
+   "created": "2026-08-31 09:39:58",
+   "branch": "dspark_ci_main"
+  },
+  {
+   "run": 33348098504,
+   "created": "2026-08-31 09:36:32",
+   "branch": "fix/mc2-profile-skip-compiled-main"
+  },
+  {
+   "run": 33347869771,
+   "created": "2026-08-31 09:32:13",
+   "branch": "offload_v2"
+  },
+  {
+   "run": 33347671986,
+   "created": "2026-08-31 09:28:18",
+   "branch": "zhengsj/revert-chunk-matmul"
+  },
+  {
+   "run": 33347653457,
+   "created": "2026-08-31 09:27:56",
+   "branch": "feat/reduce-redundant-main-proj"
+  },
+  {
+   "run": 33347289397,
+   "created": "2026-08-31 09:20:33",
+   "branch": "weekly-qwen3-0.6B"
+  },
+  {
+   "run": 33346184031,
+   "created": "2026-08-31 08:59:16",
+   "branch": "fix_mtp_prefixcache_310p"
+  },
+  {
+   "run": 33330702356,
+   "created": "2026-08-31 03:22:43",
+   "branch": "sw-dspark-pr"
+  },
+  {
+   "run": 33326659165,
+   "created": "2026-08-31 01:56:52",
+   "branch": "sw-dspark-pr"
+  },
+  {
+   "run": 33325895500,
+   "created": "2026-08-31 01:40:06",
+   "branch": "sw-dspark-pr"
+  },
+  {
+   "run": 33325508838,
+   "created": "2026-08-31 01:31:49",
+   "branch": "feat/mrv2-pcp-mtp-eagle3-v2"
+  },
+  {
+   "run": 33324656354,
+   "created": "2026-08-31 01:13:39",
+   "branch": "codex/minimax-m3-eagle3-pp"
+  },
+  {
+   "run": 33322686446,
+   "created": "2026-08-31 00:31:20",
+   "branch": "codex/minimax-m3-eagle3-pp"
+  },
+  {
+   "run": 33321444171,
+   "created": "2026-08-31 00:05:01",
+   "branch": "fix/mrv2-eagle-draft-ep-config"
+  },
+  {
+   "run": 33320937245,
+   "created": "2026-08-30 23:54:13",
+   "branch": "fuse_mte"
+  },
+  {
+   "run": 33318479132,
+   "created": "2026-08-30 23:01:52",
+   "branch": "perf/compressor-sp-stepb-v0260rc"
+  },
+  {
+   "run": 33318128134,
+   "created": "2026-08-30 22:53:58",
+   "branch": "main"
+  },
+  {
+   "run": 33316831369,
+   "created": "2026-08-30 22:25:36",
+   "branch": "perf/shared-expert-multistream-overlap"
+  },
+  {
+   "run": 33315496274,
+   "created": "2026-08-30 21:56:02",
+   "branch": "feat/v1-nan-logits-detection"
+  },
+  {
+   "run": 33315361766,
+   "created": "2026-08-30 21:52:58",
+   "branch": "perf/shared-expert-multistream-overlap"
+  },
+  {
+   "run": 33314272851,
+   "created": "2026-08-30 21:28:28",
+   "branch": "V2_nightly"
+  },
+  {
+   "run": 33314233881,
+   "created": "2026-08-30 21:27:32",
+   "branch": "feat/glm-5.3-a5-support"
+  },
+  {
+   "run": 33314172185,
+   "created": "2026-08-30 21:26:08",
+   "branch": "main"
+  },
+  {
+   "run": 33313787020,
+   "created": "2026-08-30 21:17:42",
+   "branch": "main"
+  },
+  {
+   "run": 33311240739,
+   "created": "2026-08-30 20:20:58",
+   "branch": "pd"
+  },
+  {
+   "run": 33309452048,
+   "created": "2026-08-30 19:38:48",
+   "branch": "feat/mrv2-pcp-mtp-eagle3-v2"
+  },
+  {
+   "run": 33308744891,
+   "created": "2026-08-30 19:22:03",
+   "branch": "feat/mrv2-pcp-mtp-eagle3-v2"
+  },
+  {
+   "run": 33308673425,
+   "created": "2026-08-30 19:20:20",
+   "branch": "dev_laasap"
+  },
+  {
+   "run": 33308581083,
+   "created": "2026-08-30 19:18:10",
+   "branch": "codex/dsv4-full-qli-v2-v026-pr"
+  },
+  {
+   "run": 33308042522,
+   "created": "2026-08-30 19:05:20",
+   "branch": "feat/mrv2-pcp-mtp-eagle3-v2"
+  },
+  {
+   "run": 33307575703,
+   "created": "2026-08-30 18:53:50",
+   "branch": "V2_nightly"
+  },
+  {
+   "run": 33305801162,
+   "created": "2026-08-30 18:09:51",
+   "branch": "feat/v1-nan-logits-detection"
+  },
+  {
+   "run": 33305211798,
+   "created": "2026-08-30 17:55:16",
+   "branch": "main"
+  },
+  {
+   "run": 33305154522,
+   "created": "2026-08-30 17:53:46",
+   "branch": "codex/fix-dspark-pd-idle-graph-fallback-stack"
+  },
+  {
+   "run": 33304837647,
+   "created": "2026-08-30 17:45:45",
+   "branch": "split/lora-single-adapter-a3-perf"
+  },
+  {
+   "run": 33304817539,
+   "created": "2026-08-30 17:45:19",
+   "branch": "split/lora-single-adapter-a2"
+  },
+  {
+   "run": 33302716804,
+   "created": "2026-08-30 16:54:06",
+   "branch": "feat/fia-v2-sink"
+  },
+  {
+   "run": 33300986001,
+   "created": "2026-08-30 16:11:42",
+   "branch": "gemma4/split_qkv_rmsnorm_rope_vnorm_v2"
+  },
+  {
+   "run": 33299583863,
+   "created": "2026-08-30 15:35:48",
+   "branch": "feat/glm-5.3-a5-support"
+  },
+  {
+   "run": 33299249422,
+   "created": "2026-08-30 15:27:30",
+   "branch": "main"
+  },
+  {
+   "run": 33299097335,
+   "created": "2026-08-30 15:23:37",
+   "branch": "feat/glm-5.3-a5-support"
+  },
+  {
+   "run": 33299082364,
+   "created": "2026-08-30 15:23:15",
+   "branch": "cursor/kimi-dflash-profile-oom-9e1a"
+  },
+  {
+   "run": 33298969660,
+   "created": "2026-08-30 15:20:25",
+   "branch": "feat/fia-v2-sink"
+  },
+  {
+   "run": 33298820325,
+   "created": "2026-08-30 15:16:36",
+   "branch": "feat/glm-5.3-a5-support"
+  },
+  {
+   "run": 33298742814,
+   "created": "2026-08-30 15:14:37",
+   "branch": "cursor/kimi-dflash-profile-oom-9e1a"
+  },
+  {
+   "run": 33298709408,
+   "created": "2026-08-30 15:13:42",
+   "branch": "codex/dsv4-full-qli-v2-v026-pr"
+  },
+  {
+   "run": 33296105371,
+   "created": "2026-08-30 14:05:20",
+   "branch": "main"
+  },
+  {
+   "run": 33295839095,
+   "created": "2026-08-30 13:58:25",
+   "branch": "codex/revert-vllm-51113-mamba-align-split"
+  },
+  {
+   "run": 33295025218,
+   "created": "2026-08-30 13:35:19",
+   "branch": "feat/fia-v2-sink"
+  },
+  {
+   "run": 33294010887,
+   "created": "2026-08-30 13:07:55",
+   "branch": "dsv4-sparse-flash-mla-bf16"
+  },
+  {
+   "run": 33292289354,
+   "created": "2026-08-30 12:20:53",
+   "branch": "codex/causal-conv1d-pr390-main"
+  },
+  {
+   "run": 33292159070,
+   "created": "2026-08-30 12:17:18",
+   "branch": "codex/causal-conv1d-pr390-main"
+  },
+  {
+   "run": 33290270910,
+   "created": "2026-08-30 11:26:36",
+   "branch": "cursor/hccl-sleep-lifecycle-anchor-b927"
+  },
+  {
+   "run": 33289978897,
+   "created": "2026-08-30 11:19:02",
+   "branch": "patch/stop-token-ids-validation-main"
+  },
+  {
+   "run": 33289943322,
+   "created": "2026-08-30 11:18:02",
+   "branch": "refactor_layerwise"
+  },
+  {
+   "run": 33289943316,
+   "created": "2026-08-30 11:18:02",
+   "branch": "refactor_layerwise_B"
+  },
+  {
+   "run": 33289870825,
+   "created": "2026-08-30 11:16:06",
+   "branch": "cursor/hccl-sleep-lifecycle-anchor-b927"
+  },
+  {
+   "run": 33289460672,
+   "created": "2026-08-30 11:05:18",
+   "branch": "patch/stop-token-ids-validation-main"
+  },
+  {
+   "run": 33289440306,
+   "created": "2026-08-30 11:04:45",
+   "branch": "split/lora-single-adapter-a2"
+  },
+  {
+   "run": 33289341752,
+   "created": "2026-08-30 11:02:20",
+   "branch": "fix/ascendstore-restore-use-gva-layerwise"
+  },
+  {
+   "run": 33289112998,
+   "created": "2026-08-30 10:55:58",
+   "branch": "refactor_layerwise"
+  },
+  {
+   "run": 33286929845,
+   "created": "2026-08-30 10:00:01",
+   "branch": "codex/port-pr13763-attn-res-fwd"
+  },
+  {
+   "run": 33286324824,
+   "created": "2026-08-30 09:43:33",
+   "branch": "fix/moe-sp-down-projection-overlap"
+  },
+  {
+   "run": 33284773889,
+   "created": "2026-08-30 09:03:21",
+   "branch": "codex/dspark-aclgraph-k3-20260830"
+  },
+  {
+   "run": 33282973900,
+   "created": "2026-08-30 08:17:45",
+   "branch": "fix/dspark-mamba-phase-fence"
+  },
+  {
+   "run": 33282972327,
+   "created": "2026-08-30 08:17:42",
+   "branch": "fix/dspark-partial-window-anchor"
+  },
+  {
+   "run": 33280069242,
+   "created": "2026-08-30 07:03:39",
+   "branch": "feat/fia-v2-sink"
+  },
+  {
+   "run": 33278645111,
+   "created": "2026-08-30 06:27:44",
+   "branch": "codex/dspark-aclgraph-k3-20260830"
+  },
+  {
+   "run": 33267201454,
+   "created": "2026-08-30 02:02:44",
+   "branch": "main2main_auto_2026-08-29_16-04"
+  },
+  {
+   "run": 33266847541,
+   "created": "2026-08-30 01:54:30",
+   "branch": "fix/moe-sp-down-projection-overlap"
+  },
+  {
+   "run": 33265802899,
+   "created": "2026-08-30 01:30:25",
+   "branch": "fix/moe-sp-down-projection-overlap"
+  },
+  {
+   "run": 33265675251,
+   "created": "2026-08-30 01:27:24",
+   "branch": "feat/mrv2-pcp-mtp-eagle3-v2"
+  },
+  {
+   "run": 33265672198,
+   "created": "2026-08-30 01:27:20",
+   "branch": "fix/mrv2-pcp-full-decode-followup"
+  },
+  {
+   "run": 33265201438,
+   "created": "2026-08-30 01:16:43",
+   "branch": "split/lora-single-adapter-a2"
+  },
+  {
+   "run": 33265185503,
+   "created": "2026-08-30 01:16:24",
+   "branch": "split/lora-single-adapter-a3-perf"
+  },
+  {
+   "run": 33265166895,
+   "created": "2026-08-30 01:15:57",
+   "branch": "dev_laasap"
+  },
+  {
+   "run": 33264824919,
+   "created": "2026-08-30 01:08:03",
+   "branch": "test/310p-sampler-unsupported-params"
+  },
+  {
+   "run": 33264790104,
+   "created": "2026-08-30 01:07:15",
+   "branch": "fix/moe-sp-down-projection-overlap"
+  },
+  {
+   "run": 33264789313,
+   "created": "2026-08-30 01:07:14",
+   "branch": "gemma4/split_qkv_rmsnorm_rope_vnorm_v2"
+  },
+  {
+   "run": 33263520907,
+   "created": "2026-08-30 00:38:20",
+   "branch": "gemma4_mtp_main"
+  },
+  {
+   "run": 33262789718,
+   "created": "2026-08-30 00:22:33",
+   "branch": "fix/310p-device-share-memory-accounting"
+  },
+  {
+   "run": 33262778857,
+   "created": "2026-08-30 00:22:16",
+   "branch": "gemma4_mtp_main"
+  },
+  {
+   "run": 33262482414,
+   "created": "2026-08-30 00:15:55",
+   "branch": "fix/310p-device-share-memory-accounting"
+  },
+  {
+   "run": 33261386531,
+   "created": "2026-08-29 23:51:35",
+   "branch": "codex/dsv4-c4-kv-offload"
+  },
+  {
+   "run": 33261133990,
+   "created": "2026-08-29 23:45:57",
+   "branch": "e2e/main2main-3-runner"
+  },
+  {
+   "run": 33259079459,
+   "created": "2026-08-29 23:00:43",
+   "branch": "test/310p-sampler-unsupported-params"
+  },
+  {
+   "run": 33258947456,
+   "created": "2026-08-29 22:57:36",
+   "branch": "codex/deepseek-v4-trailing-system-11951"
+  },
+  {
+   "run": 33257614134,
+   "created": "2026-08-29 22:26:34",
+   "branch": "glm5.3"
+  },
+  {
+   "run": 33256937853,
+   "created": "2026-08-29 22:11:31",
+   "branch": "main"
+  },
+  {
+   "run": 33256288499,
+   "created": "2026-08-29 21:56:33",
+   "branch": "feat/gmsq-situ-moe-wire-main"
+  },
+  {
+   "run": 33255616446,
+   "created": "2026-08-29 21:40:23",
+   "branch": "codex/experimental-mamba-pd-cache-layout"
+  },
+  {
+   "run": 33255558042,
+   "created": "2026-08-29 21:39:00",
+   "branch": "kimi-k3-reduced-layer-debug"
+  },
+  {
+   "run": 33255292906,
+   "created": "2026-08-29 21:32:53",
+   "branch": "pr/scatter-nd-update-asc"
+  },
+  {
+   "run": 33254807464,
+   "created": "2026-08-29 21:21:18",
+   "branch": "gemma4_mtp_main"
+  },
+  {
+   "run": 33254513534,
+   "created": "2026-08-29 21:14:34",
+   "branch": "feat/gmsq-situ-moe-wire-main"
+  },
+  {
+   "run": 33254377653,
+   "created": "2026-08-29 21:11:22",
+   "branch": "split/lora-single-adapter-a3-perf"
+  },
+  {
+   "run": 33254364967,
+   "created": "2026-08-29 21:11:02",
+   "branch": "split/lora-single-adapter-a2"
+  },
+  {
+   "run": 33254342365,
+   "created": "2026-08-29 21:10:32",
+   "branch": "pr/scatter-nd-update-asc"
+  },
+  {
+   "run": 33253989184,
+   "created": "2026-08-29 21:02:16",
+   "branch": "feat/main-image-sync-swr"
+  },
+  {
+   "run": 33253603337,
+   "created": "2026-08-29 20:52:42",
+   "branch": "feat/main-image-sync-swr"
+  },
+  {
+   "run": 33251923062,
+   "created": "2026-08-29 20:12:19",
+   "branch": "fix/layerwise-mixed-indexer-main"
+  },
+  {
+   "run": 33251689019,
+   "created": "2026-08-29 20:06:34",
+   "branch": "codex/dsv4-full-qli-v2-v026-pr"
+  },
+  {
+   "run": 33251073071,
+   "created": "2026-08-29 19:50:47",
+   "branch": "a2-a3-gdn-phase6-validation"
+  },
+  {
+   "run": 33250689132,
+   "created": "2026-08-29 19:40:47",
+   "branch": "fix/qwen38-a3-graph-mtp"
+  },
+  {
+   "run": 33250186377,
+   "created": "2026-08-29 19:27:57",
+   "branch": "codex/dsv4-full-qli-v2-v026-pr"
+  },
+  {
+   "run": 33250106538,
+   "created": "2026-08-29 19:25:46",
+   "branch": "perf/avoid-mc2-topk-cast-main"
+  },
+  {
+   "run": 33249719970,
+   "created": "2026-08-29 19:15:55",
+   "branch": "codex/dsa-c4-compressor-overlap-main"
+  },
+  {
+   "run": 33249562841,
+   "created": "2026-08-29 19:12:00",
+   "branch": "feat/main-image-sync-swr"
+  },
+  {
+   "run": 33249022720,
+   "created": "2026-08-29 18:58:24",
+   "branch": "fix/ascend-config-ignore-unknown-keys"
+  },
+  {
+   "run": 33248801305,
+   "created": "2026-08-29 18:52:09",
+   "branch": "codex/dsv4-full-qli-v2-v026-pr"
+  },
+  {
+   "run": 33248710728,
+   "created": "2026-08-29 18:49:42",
+   "branch": "feat/main-image-sync-swr"
+  },
+  {
+   "run": 33248525356,
+   "created": "2026-08-29 18:44:46",
+   "branch": "feat/glm-5.3-flash-npu-fixes"
+  },
+  {
+   "run": 33248427537,
+   "created": "2026-08-29 18:42:07",
+   "branch": "codex/slot-map-opt-113"
+  },
+  {
+   "run": 33248292915,
+   "created": "2026-08-29 18:38:22",
+   "branch": "codex/dsv4-full-qli-v2-v026-pr"
+  },
+  {
+   "run": 33248231379,
+   "created": "2026-08-29 18:36:47",
+   "branch": "split/lora-single-adapter-a3-perf"
+  },
+  {
+   "run": 33248197912,
+   "created": "2026-08-29 18:35:56",
+   "branch": "split/lora-single-adapter-a2"
+  },
+  {
+   "run": 33248027099,
+   "created": "2026-08-29 18:31:39",
+   "branch": "feat/glm-5.3-flash-npu-fixes"
+  },
+  {
+   "run": 33247962659,
+   "created": "2026-08-29 18:30:06",
+   "branch": "codex/slot-map-opt-113"
+  },
+  {
+   "run": 33247750330,
+   "created": "2026-08-29 18:24:27",
+   "branch": "codex/dsv4-full-qli-v2-v026-pr"
+  },
+  {
+   "run": 33247720793,
+   "created": "2026-08-29 18:23:43",
+   "branch": "pcp_weight_transfer"
+  },
+  {
+   "run": 33247550183,
+   "created": "2026-08-29 18:19:21",
+   "branch": "feat/glm-5.3-flash-npu-fixes"
+  },
+  {
+   "run": 33247350074,
+   "created": "2026-08-29 18:14:16",
+   "branch": "feat/main-image-sync-swr"
+  },
+  {
+   "run": 33247038894,
+   "created": "2026-08-29 18:06:27",
+   "branch": "docs/glm-env-cleanup"
+  },
+  {
+   "run": 33247006503,
+   "created": "2026-08-29 18:05:41",
+   "branch": "main"
+  },
+  {
+   "run": 33246847707,
+   "created": "2026-08-29 18:01:47",
+   "branch": "main"
+  },
+  {
+   "run": 33246676519,
+   "created": "2026-08-29 17:57:21",
+   "branch": "triton/prepare_deflash_inputs"
+  },
+  {
+   "run": 33246642596,
+   "created": "2026-08-29 17:56:23",
+   "branch": "docs/kimi-k3-v026"
+  },
+  {
+   "run": 33246456237,
+   "created": "2026-08-29 17:51:25",
+   "branch": "perf/avoid-mc2-topk-cast"
+  },
+  {
+   "run": 33246378593,
+   "created": "2026-08-29 17:49:22",
+   "branch": "docs/glm-env-cleanup"
+  },
+  {
+   "run": 33246367701,
+   "created": "2026-08-29 17:49:05",
+   "branch": "feat/main-image-sync-swr"
+  },
+  {
+   "run": 33246043599,
+   "created": "2026-08-29 17:40:29",
+   "branch": "weekly-qwen3-0.6B"
+  },
+  {
+   "run": 33246008726,
+   "created": "2026-08-29 17:39:34",
+   "branch": "feat/main-image-sync-swr"
+  },
+  {
+   "run": 33245940680,
+   "created": "2026-08-29 17:37:47",
+   "branch": "codex/deepseek-v4-trailing-system-11951"
+  },
+  {
+   "run": 33245775703,
+   "created": "2026-08-29 17:33:37",
+   "branch": "feature/ft-framework"
+  },
+  {
+   "run": 33245744243,
+   "created": "2026-08-29 17:32:49",
+   "branch": "fny_fix_ci"
+  },
+  {
+   "run": 33245569893,
+   "created": "2026-08-29 17:28:21",
+   "branch": "main2mian0828"
+  },
+  {
+   "run": 33245463960,
+   "created": "2026-08-29 17:25:41",
+   "branch": "codex/slot-map-opt-113"
+  },
+  {
+   "run": 33245447832,
+   "created": "2026-08-29 17:25:11",
+   "branch": "codex/deepseek-v4-trailing-system-11951"
+  },
+  {
+   "run": 33245366935,
+   "created": "2026-08-29 17:23:09",
+   "branch": "8-6-device-hal-worker"
+  },
+  {
+   "run": 33245351632,
+   "created": "2026-08-29 17:22:46",
+   "branch": "develop_v0.26.0rc"
+  },
+  {
+   "run": 33245243862,
+   "created": "2026-08-29 17:20:07",
+   "branch": "fix/mla-preprocess-aclnn-graph"
+  },
+  {
+   "run": 33245076884,
+   "created": "2026-08-29 17:15:47",
+   "branch": "fix/moe-sp-down-projection-overlap"
+  },
+  {
+   "run": 33245037201,
+   "created": "2026-08-29 17:14:52",
+   "branch": "codex/slot-map-opt-113"
+  },
+  {
+   "run": 33244897712,
+   "created": "2026-08-29 17:11:17",
+   "branch": "feature/qwen3-omni-dspark"
+  },
+  {
+   "run": 33244757690,
+   "created": "2026-08-29 17:07:49",
+   "branch": "triton/prepare_deflash_inputs"
+  },
+  {
+   "run": 33244691049,
+   "created": "2026-08-29 17:06:09",
+   "branch": "reduce_sample"
+  },
+  {
+   "run": 33244688260,
+   "created": "2026-08-29 17:06:05",
+   "branch": "feat/main-image-sync-swr"
+  },
+  {
+   "run": 33244592391,
+   "created": "2026-08-29 17:03:45",
+   "branch": "zhengsj/revert-chunk-matmul"
+  },
+  {
+   "run": 33244567922,
+   "created": "2026-08-29 17:03:08",
+   "branch": "feat/qwen3-moe-plus-plus"
+  },
+  {
+   "run": 33244384700,
+   "created": "2026-08-29 16:58:39",
+   "branch": "main"
+  },
+  {
+   "run": 33244363828,
+   "created": "2026-08-29 16:58:03",
+   "branch": "feature/ft-framework"
+  },
+  {
+   "run": 33244273070,
+   "created": "2026-08-29 16:55:29",
+   "branch": "triton/prepare_deflash_inputs"
+  },
+  {
+   "run": 33244233434,
+   "created": "2026-08-29 16:54:23",
+   "branch": "feat/qwen3-moe-plus-plus"
+  },
+  {
+   "run": 33243978520,
+   "created": "2026-08-29 16:47:34",
+   "branch": "refactor_layerwise_B"
+  },
+  {
+   "run": 33243921389,
+   "created": "2026-08-29 16:46:01",
+   "branch": "codex/dsa-c4-compressor-overlap-v0.26.0"
+  },
+  {
+   "run": 33243663989,
+   "created": "2026-08-29 16:39:17",
+   "branch": "hjp_818"
+  },
+  {
+   "run": 33243465215,
+   "created": "2026-08-29 16:34:10",
+   "branch": "mrv2_310p_827"
+  },
+  {
+   "run": 33243457393,
+   "created": "2026-08-29 16:33:59",
+   "branch": "feat/qwen3-moe-plus-plus"
+  },
+  {
+   "run": 33243431708,
+   "created": "2026-08-29 16:33:20",
+   "branch": "hjp_818"
+  },
+  {
+   "run": 33243260670,
+   "created": "2026-08-29 16:29:17",
+   "branch": "refactor_layerwise_B"
+  },
+  {
+   "run": 33243180584,
+   "created": "2026-08-29 16:27:12",
+   "branch": "mrv2_310p_827"
+  },
+  {
+   "run": 33242992805,
+   "created": "2026-08-29 16:22:27",
+   "branch": "perf/skip-topk-gating"
+  },
+  {
+   "run": 33242949278,
+   "created": "2026-08-29 16:21:20",
+   "branch": "update_doc"
+  },
+  {
+   "run": 33242704205,
+   "created": "2026-08-29 16:15:02",
+   "branch": "codex/dsa-c4-compressor-overlap-main"
+  },
+  {
+   "run": 33242660826,
+   "created": "2026-08-29 16:13:51",
+   "branch": "fny_fix_ci"
+  },
+  {
+   "run": 33242530815,
+   "created": "2026-08-29 16:10:29",
+   "branch": "ut"
+  },
+  {
+   "run": 33242424169,
+   "created": "2026-08-29 16:07:45",
+   "branch": "codex/sfa-dcp-model-runner-v2"
+  },
+  {
+   "run": 33242421586,
+   "created": "2026-08-29 16:07:42",
+   "branch": "pp_eplb"
+  },
+  {
+   "run": 33242345811,
+   "created": "2026-08-29 16:05:43",
+   "branch": "codex/dsa-c4-compressor-overlap-v0.26.0"
+  },
+  {
+   "run": 33242168568,
+   "created": "2026-08-29 16:01:24",
+   "branch": "tq4-main-port"
+  },
+  {
+   "run": 33241997670,
+   "created": "2026-08-29 15:56:54",
+   "branch": "perf/ascend-v2-slot-mappings"
+  },
+  {
+   "run": 33241906344,
+   "created": "2026-08-29 15:54:18",
+   "branch": "fix/batch-invariant-mixed-fia"
+  },
+  {
+   "run": 33241898609,
+   "created": "2026-08-29 15:54:08",
+   "branch": "pp_eplb"
+  },
+  {
+   "run": 33241812217,
+   "created": "2026-08-29 15:51:44",
+   "branch": "codex/main-preserve-topk-weights"
+  },
+  {
+   "run": 33241623503,
+   "created": "2026-08-29 15:46:44",
+   "branch": "triton/grammar_bitmask"
+  },
+  {
+   "run": 33241617190,
+   "created": "2026-08-29 15:46:34",
+   "branch": "dsv4-sparse-flash-mla-bf16"
+  },
+  {
+   "run": 33241581784,
+   "created": "2026-08-29 15:45:40",
+   "branch": "feat/glm-5.3-flash-npu-fixes"
+  },
+  {
+   "run": 33241533295,
+   "created": "2026-08-29 15:44:23",
+   "branch": "k3_multistream"
+  },
+  {
+   "run": 33241384267,
+   "created": "2026-08-29 15:40:19",
+   "branch": "fix/mla-preprocess-aclnn-graph"
+  },
+  {
+   "run": 33241345872,
+   "created": "2026-08-29 15:39:16",
+   "branch": "perf/ascend-v2-slot-mappings"
+  },
+  {
+   "run": 33241128957,
+   "created": "2026-08-29 15:33:43",
+   "branch": "feat/main-image-sync-swr"
+  },
+  {
+   "run": 33241070827,
+   "created": "2026-08-29 15:32:13",
+   "branch": "pr/profiler-client-thread"
+  },
+  {
+   "run": 33241057139,
+   "created": "2026-08-29 15:31:55",
+   "branch": "test/proxy-system-test"
+  },
+  {
+   "run": 33240952641,
+   "created": "2026-08-29 15:29:19",
+   "branch": "feat/main-image-sync-swr"
+  },
+  {
+   "run": 33240870742,
+   "created": "2026-08-29 15:27:08",
+   "branch": "update_doc"
+  },
+  {
+   "run": 33240868934,
+   "created": "2026-08-29 15:27:06",
+   "branch": "glm52_v2_dspark"
+  },
+  {
+   "run": 33240696245,
+   "created": "2026-08-29 15:22:43",
+   "branch": "reduce_sample"
+  },
+  {
+   "run": 33240652169,
+   "created": "2026-08-29 15:21:36",
+   "branch": "fix/moe-sp-down-projection-overlap"
+  },
+  {
+   "run": 33240534981,
+   "created": "2026-08-29 15:18:38",
+   "branch": "hy4_doc"
+  },
+  {
+   "run": 33240534152,
+   "created": "2026-08-29 15:18:37",
+   "branch": "docs/kimi-k3-v026"
+  },
+  {
+   "run": 33240470435,
+   "created": "2026-08-29 15:16:54",
+   "branch": "feat/main-image-sync-swr"
+  },
+  {
+   "run": 33240295652,
+   "created": "2026-08-29 15:12:23",
+   "branch": "fix/ascendstore-restore-use-gva-layerwise"
+  },
+  {
+   "run": 33240264165,
+   "created": "2026-08-29 15:11:40",
+   "branch": "feat/fix-catlass-submodule"
+  },
+  {
+   "run": 33240227300,
+   "created": "2026-08-29 15:10:45",
+   "branch": "scatter_nd_update_0.26"
+  },
+  {
+   "run": 33240189113,
+   "created": "2026-08-29 15:09:50",
+   "branch": "glm52_v2_dspark"
+  },
+  {
+   "run": 33239997930,
+   "created": "2026-08-29 15:05:00",
+   "branch": "hy4_doc"
+  },
+  {
+   "run": 33239890107,
+   "created": "2026-08-29 15:02:22",
+   "branch": "codex/slot-map-opt-113"
+  },
+  {
+   "run": 33239645873,
+   "created": "2026-08-29 14:55:54",
+   "branch": "ut_fix"
+  },
+  {
+   "run": 33239478327,
+   "created": "2026-08-29 14:51:29",
+   "branch": "hy4_doc"
+  },
+  {
+   "run": 33239463223,
+   "created": "2026-08-29 14:51:04",
+   "branch": "feat/xlite-glm-5.2"
+  },
+  {
+   "run": 33239426853,
+   "created": "2026-08-29 14:50:09",
+   "branch": "codex/sfa/dcp/a2a-fused-v0.26.0"
+  },
+  {
+   "run": 33238923231,
+   "created": "2026-08-29 14:37:45",
+   "branch": "fny_dcp_hostbound_main"
+  },
+  {
+   "run": 33238904566,
+   "created": "2026-08-29 14:37:13",
+   "branch": "PullRequest0825"
+  },
+  {
+   "run": 33238774179,
+   "created": "2026-08-29 14:34:02",
+   "branch": "refactor_layerwise"
+  },
+  {
+   "run": 33238651605,
+   "created": "2026-08-29 14:31:06",
+   "branch": "fny_remap_triton_main"
+  },
+  {
+   "run": 33238261151,
+   "created": "2026-08-29 14:21:19",
+   "branch": "feat/fix-catlass-submodule"
+  },
+  {
+   "run": 33238257932,
+   "created": "2026-08-29 14:21:14",
+   "branch": "fny_dcp_hostbound_main"
+  },
+  {
+   "run": 33238233862,
+   "created": "2026-08-29 14:20:35",
+   "branch": "test/proxy-system-test"
+  },
+  {
+   "run": 33238182739,
+   "created": "2026-08-29 14:19:19",
+   "branch": "wxs/mrv2/fix-dspark-graph"
+  },
+  {
+   "run": 33237960906,
+   "created": "2026-08-29 14:13:36",
+   "branch": "fix/mla-preprocess-aclnn-graph"
+  },
+  {
+   "run": 33237923625,
+   "created": "2026-08-29 14:12:37",
+   "branch": "fix/draft-mlapo-model-config-v026"
+  },
+  {
+   "run": 33237922134,
+   "created": "2026-08-29 14:12:34",
+   "branch": "fix/draft-mlapo-model-config-main"
+  },
+  {
+   "run": 33237811695,
+   "created": "2026-08-29 14:09:48",
+   "branch": "feat/glm-5.3-flash-npu-fixes"
+  },
+  {
+   "run": 33237788215,
+   "created": "2026-08-29 14:09:09",
+   "branch": "mrv2_310p_827"
+  },
+  {
+   "run": 33237761579,
+   "created": "2026-08-29 14:08:31",
+   "branch": "feat/fix-catlass-submodule"
+  },
+  {
+   "run": 33237605295,
+   "created": "2026-08-29 14:04:30",
+   "branch": "dsv4-sparse-flash-mla-bf16"
+  },
+  {
+   "run": 33237194898,
+   "created": "2026-08-29 13:53:26",
+   "branch": "feat/glm-5.3-flash-npu-fixes"
+  },
+  {
+   "run": 33237090224,
+   "created": "2026-08-29 13:50:36",
+   "branch": "ds_lora_moe_v25"
+  },
+  {
+   "run": 33236869535,
+   "created": "2026-08-29 13:44:55",
+   "branch": "RayZ/dflash2-fix-hybrid-swa-stride"
+  },
+  {
+   "run": 33236526615,
+   "created": "2026-08-29 13:35:36",
+   "branch": "codex/fix-qwen35-mtp-c8-metadata"
+  },
+  {
+   "run": 33234544216,
+   "created": "2026-08-29 12:44:45",
+   "branch": "codex/sfa-dcp-model-runner-v2"
+  },
+  {
+   "run": 33234391611,
+   "created": "2026-08-29 12:40:38",
+   "branch": "feat/fix-catlass-submodule"
+  },
+  {
+   "run": 33234351324,
+   "created": "2026-08-29 12:39:39",
+   "branch": "pr/mrv2-bincount-atomic-free"
+  },
+  {
+   "run": 33234015341,
+   "created": "2026-08-29 12:31:15",
+   "branch": "pr/mrv2-bincount-atomic-free"
+  },
+  {
+   "run": 33233974513,
+   "created": "2026-08-29 12:30:19",
+   "branch": "fix/reduce-unused-weight-v0.26.0rc"
+  },
+  {
+   "run": 33233962965,
+   "created": "2026-08-29 12:30:05",
+   "branch": "test/proxy-system-test"
+  },
+  {
+   "run": 33233748091,
+   "created": "2026-08-29 12:24:35",
+   "branch": "fix/megamoe-prefill-buffer-capacity-main"
+  },
+  {
+   "run": 33233608251,
+   "created": "2026-08-29 12:21:09",
+   "branch": "zhengsj/revert-chunk-matmul"
+  },
+  {
+   "run": 33233439771,
+   "created": "2026-08-29 12:16:55",
+   "branch": "feat/reduce-redundant-main-proj"
+  },
+  {
+   "run": 33233373248,
+   "created": "2026-08-29 12:15:18",
+   "branch": "feat/fix-catlass-submodule"
+  },
+  {
+   "run": 33233329897,
+   "created": "2026-08-29 12:14:15",
+   "branch": "fix/mla-preprocess-aclnn-graph"
+  },
+  {
+   "run": 33233088417,
+   "created": "2026-08-29 12:08:16",
+   "branch": "wxs/mrv2/fix-dspark-graph"
+  },
+  {
+   "run": 33233057701,
+   "created": "2026-08-29 12:07:28",
+   "branch": "ds_lora_moe_v25"
+  },
+  {
+   "run": 33232924505,
+   "created": "2026-08-29 12:04:13",
+   "branch": "main"
+  },
+  {
+   "run": 33232908624,
+   "created": "2026-08-29 12:03:52",
+   "branch": "pr/mrv2-bincount-atomic-free"
+  },
+  {
+   "run": 33232785305,
+   "created": "2026-08-29 12:00:57",
+   "branch": "pcp_weight_transfer"
+  },
+  {
+   "run": 33232707223,
+   "created": "2026-08-29 11:59:07",
+   "branch": "tq4-main-port"
+  },
+  {
+   "run": 33232614033,
+   "created": "2026-08-29 11:56:30",
+   "branch": "main"
+  },
+  {
+   "run": 33232558994,
+   "created": "2026-08-29 11:55:04",
+   "branch": "fny_remap_triton_main"
+  },
+  {
+   "run": 33232482014,
+   "created": "2026-08-29 11:52:58",
+   "branch": "wxs/mrv2/fix-dspark-graph"
+  },
+  {
+   "run": 33232341516,
+   "created": "2026-08-29 11:49:20",
+   "branch": "main"
+  },
+  {
+   "run": 33232193371,
+   "created": "2026-08-29 11:45:36",
+   "branch": "fix/draft-mlapo-model-config-v026"
+  },
+  {
+   "run": 33232186391,
+   "created": "2026-08-29 11:45:25",
+   "branch": "fix/draft-mlapo-model-config-main"
+  },
+  {
+   "run": 33232036870,
+   "created": "2026-08-29 11:41:32",
+   "branch": "feat/reduce-redundant-main-proj"
+  },
+  {
+   "run": 33232002180,
+   "created": "2026-08-29 11:40:41",
+   "branch": "perf/ascend-v2-slot-mappings"
+  },
+  {
+   "run": 33231992545,
+   "created": "2026-08-29 11:40:28",
+   "branch": "triton/grammar_bitmask"
+  },
+  {
+   "run": 33231920659,
+   "created": "2026-08-29 11:38:45",
+   "branch": "main"
+  },
+  {
+   "run": 33231899909,
+   "created": "2026-08-29 11:38:15",
+   "branch": "mrv2_310p_827"
+  },
+  {
+   "run": 33231685277,
+   "created": "2026-08-29 11:33:08",
+   "branch": "pr/ascend-store-invalid-block-lock"
+  },
+  {
+   "run": 33231487214,
+   "created": "2026-08-29 11:28:37",
+   "branch": "PullRequest0825"
+  },
+  {
+   "run": 33231218024,
+   "created": "2026-08-29 11:22:07",
+   "branch": "dev2608/watch_dog/0825"
+  },
+  {
+   "run": 33231207382,
+   "created": "2026-08-29 11:21:54",
+   "branch": "fny_remap_triton_main"
+  },
+  {
+   "run": 33231009049,
+   "created": "2026-08-29 11:17:14",
+   "branch": "dsv4-sparse-flash-mla-bf16"
+  },
+  {
+   "run": 33230715118,
+   "created": "2026-08-29 11:10:04",
+   "branch": "sfa_graph_pcp"
+  },
+  {
+   "run": 33230562751,
+   "created": "2026-08-29 11:06:16",
+   "branch": "refactor-graph"
+  },
+  {
+   "run": 33230559729,
+   "created": "2026-08-29 11:06:11",
+   "branch": "perf/ascend-v2-slot-mappings"
+  },
+  {
+   "run": 33230292728,
+   "created": "2026-08-29 11:00:08",
+   "branch": "dev2608/watch_dog/0825"
+  },
+  {
+   "run": 33230211762,
+   "created": "2026-08-29 10:57:54",
+   "branch": "8-6-device-hal-worker"
+  },
+  {
+   "run": 33230161125,
+   "created": "2026-08-29 10:56:28",
+   "branch": "codex/sfa/dcp/a2a-fused-v0.26.0"
+  },
+  {
+   "run": 33230115061,
+   "created": "2026-08-29 10:55:15",
+   "branch": "codex/k3-single-merge-repro-20260829"
+  },
+  {
+   "run": 33230060673,
+   "created": "2026-08-29 10:53:48",
+   "branch": "ut_no_npu"
+  },
+  {
+   "run": 33230011379,
+   "created": "2026-08-29 10:52:28",
+   "branch": "dspark_ci_main"
+  },
+  {
+   "run": 33229767313,
+   "created": "2026-08-29 10:46:22",
+   "branch": "feature/ft-framework"
+  },
+  {
+   "run": 33229439657,
+   "created": "2026-08-29 10:38:02",
+   "branch": "main2mian0828"
+  },
+  {
+   "run": 33229081533,
+   "created": "2026-08-29 10:29:30",
+   "branch": "fix/reduce-unused-weight-v0.26.0rc"
+  },
+  {
+   "run": 33228927303,
+   "created": "2026-08-29 10:25:49",
+   "branch": "pp_eplb"
+  },
+  {
+   "run": 33228616469,
+   "created": "2026-08-29 10:18:21",
+   "branch": "perf/ascend-v2-slot-mappings"
+  },
+  {
+   "run": 33228553559,
+   "created": "2026-08-29 10:16:51",
+   "branch": "codex/v0.26.0-preserve-topk-weights"
+  },
+  {
+   "run": 33228220465,
+   "created": "2026-08-29 10:09:02",
+   "branch": "codex/k3-single-merge-repro-20260829"
+  },
+  {
+   "run": 33227996084,
+   "created": "2026-08-29 10:03:50",
+   "branch": "pr/ascend-store-invalid-block-lock"
+  },
+  {
+   "run": 33227906737,
+   "created": "2026-08-29 10:01:47",
+   "branch": "upstream-dbo"
+  },
+  {
+   "run": 33227830497,
+   "created": "2026-08-29 10:00:09",
+   "branch": "8-6-device-hal-worker"
+  },
+  {
+   "run": 33227475037,
+   "created": "2026-08-29 09:51:02",
+   "branch": "update_doc"
+  },
+  {
+   "run": 33227437261,
+   "created": "2026-08-29 09:50:08",
+   "branch": "main2mian0828"
+  },
+  {
+   "run": 33227376034,
+   "created": "2026-08-29 09:48:36",
+   "branch": "fix/layerwise-mixed-indexer-main"
+  },
+  {
+   "run": 33227333363,
+   "created": "2026-08-29 09:47:32",
+   "branch": "codex/k3-single-merge-repro-20260829"
+  },
+  {
+   "run": 33227116382,
+   "created": "2026-08-29 09:42:35",
+   "branch": "refactor-graph"
+  },
+  {
+   "run": 33227104384,
+   "created": "2026-08-29 09:42:17",
+   "branch": "dspark_op"
+  },
+  {
+   "run": 33226460483,
+   "created": "2026-08-29 09:27:29",
+   "branch": "codex/k3-single-merge-repro-20260829"
+  },
+  {
+   "run": 33226324922,
+   "created": "2026-08-29 09:24:32",
+   "branch": "reduce_sample"
+  },
+  {
+   "run": 33225605093,
+   "created": "2026-08-29 09:08:55",
+   "branch": "codex/k3-single-merge-repro-20260829"
+  },
+  {
+   "run": 33225396250,
+   "created": "2026-08-29 09:04:32",
+   "branch": "main"
+  },
+  {
+   "run": 33224944412,
+   "created": "2026-08-29 08:55:12",
+   "branch": "support-iquest-coder-v1-40b-instruct"
+  },
+  {
+   "run": 33221754481,
+   "created": "2026-08-29 07:51:20",
+   "branch": "main"
+  },
+  {
+   "run": 33221018655,
+   "created": "2026-08-29 07:36:58",
+   "branch": "main"
+  },
+  {
+   "run": 33199724523,
+   "created": "2026-08-29 02:32:03",
+   "branch": "fix/moe-sp-down-projection-overlap"
+  },
+  {
+   "run": 33196293083,
+   "created": "2026-08-29 01:47:16",
+   "branch": "fix/310p-penalty-support"
+  },
+  {
+   "run": 33195717725,
+   "created": "2026-08-29 01:39:53",
+   "branch": "RayZ/c8-spec-decode-graph-metadata-20260829"
+  },
+  {
+   "run": 33195513518,
+   "created": "2026-08-29 01:37:09",
+   "branch": "codex/kimi-k3-a3-c8-main"
+  },
+  {
+   "run": 33195339322,
+   "created": "2026-08-29 01:34:54",
+   "branch": "perf/v026rc-ascend-store-python-hotspots"
+  },
+  {
+   "run": 33194708189,
+   "created": "2026-08-29 01:26:45",
+   "branch": "perf/v026rc-ascend-store-python-hotspots"
+  },
+  {
+   "run": 33193558705,
+   "created": "2026-08-29 01:11:58",
+   "branch": "codex/kimi-k3-a3-c8-main"
+  },
+  {
+   "run": 33193292280,
+   "created": "2026-08-29 01:08:29",
+   "branch": "RayZ/c8-spec-decode-graph-metadata-20260829"
+  },
+  {
+   "run": 33192563925,
+   "created": "2026-08-29 00:59:26",
+   "branch": "RayZ/c8-spec-decode-graph-metadata-20260829"
+  },
+  {
+   "run": 33190915932,
+   "created": "2026-08-29 00:38:18",
+   "branch": "dsv4_dspark_a2_doc"
+  },
+  {
+   "run": 33189995628,
+   "created": "2026-08-29 00:26:47",
+   "branch": "codex/kimi-k3-a3-c8-main"
+  },
+  {
+   "run": 33189541867,
+   "created": "2026-08-29 00:21:02",
+   "branch": "perf/v026rc-ascend-store-python-hotspots"
+  },
+  {
+   "run": 33187266522,
+   "created": "2026-08-28 23:52:37",
+   "branch": "codex/gmm-situ-quant-main-port-v2"
+  },
+  {
+   "run": 33187202693,
+   "created": "2026-08-28 23:51:48",
+   "branch": "docs/glm5.3-flash-tutorial"
+  },
+  {
+   "run": 33187046813,
+   "created": "2026-08-28 23:49:51",
+   "branch": "perf/v026rc-scheduler-lookup-client"
+  },
+  {
+   "run": 33187046434,
+   "created": "2026-08-28 23:49:51",
+   "branch": "perf/v026rc-ascend-store-python-hotspots"
+  },
+  {
+   "run": 33184797250,
+   "created": "2026-08-28 23:22:12",
+   "branch": "snapshot_0.26.0_refactor"
+  },
+  {
+   "run": 33182170623,
+   "created": "2026-08-28 22:50:25",
+   "branch": "codex/port-gmm-situ-quant-main"
+  },
+  {
+   "run": 33181396412,
+   "created": "2026-08-28 22:41:02",
+   "branch": "codex/port-gmm-situ-quant-main"
+  },
+  {
+   "run": 33180370279,
+   "created": "2026-08-28 22:29:06",
+   "branch": "codex/port-gmm-situ-quant-main"
+  },
+  {
+   "run": 33179906732,
+   "created": "2026-08-28 22:23:31",
+   "branch": "codex/port-gmm-situ-quant-main"
+  },
+  {
+   "run": 33179353519,
+   "created": "2026-08-28 22:16:38",
+   "branch": "codex/port-gmm-situ-quant-main"
+  },
+  {
+   "run": 33178221302,
+   "created": "2026-08-28 22:02:44",
+   "branch": "codex/port-gmm-situ-quant-main"
+  },
+  {
+   "run": 33175327377,
+   "created": "2026-08-28 21:25:36",
+   "branch": "codex/kimi-k3-a3-c8-main"
+  },
+  {
+   "run": 33174769807,
+   "created": "2026-08-28 21:18:03",
+   "branch": "codex/kimi-k3-a3-c8-main"
+  },
+  {
+   "run": 33173500177,
+   "created": "2026-08-28 21:00:47",
+   "branch": "snapshot_0.26.0_refactor"
+  },
+  {
+   "run": 33173234323,
+   "created": "2026-08-28 20:57:09",
+   "branch": "ds_lora_moe_v25"
+  },
+  {
+   "run": 33172087489,
+   "created": "2026-08-28 20:40:59",
+   "branch": "fix/validate-stop-token-ids-vocab-0.23"
+  },
+  {
+   "run": 33171097894,
+   "created": "2026-08-28 20:26:43",
+   "branch": "docs/glm5.3-flash-tutorial"
+  },
+  {
+   "run": 33170556643,
+   "created": "2026-08-28 20:18:35",
+   "branch": "e2e/main2main-3-runner"
+  },
+  {
+   "run": 33170486947,
+   "created": "2026-08-28 20:17:32",
+   "branch": "refactor-graph"
+  },
+  {
+   "run": 33169537827,
+   "created": "2026-08-28 20:03:28",
+   "branch": "fix/310p-penalty-support"
+  },
+  {
+   "run": 33169196135,
+   "created": "2026-08-28 19:58:30",
+   "branch": "docs/glm5.3-flash-tutorial"
+  },
+  {
+   "run": 33168923326,
+   "created": "2026-08-28 19:54:16",
+   "branch": "codex/v0.26.0-preserve-topk-weights"
+  },
+  {
+   "run": 33168742643,
+   "created": "2026-08-28 19:51:27",
+   "branch": "fix/310p-penalty-support"
+  },
+  {
+   "run": 33167963524,
+   "created": "2026-08-28 19:39:12",
+   "branch": "main"
+  },
+  {
+   "run": 33167929310,
+   "created": "2026-08-28 19:38:39",
+   "branch": "update_doc"
+  },
+  {
+   "run": 33167441478,
+   "created": "2026-08-28 19:30:55",
+   "branch": "codex/port-pr13763-attn-res-fwd"
+  },
+  {
+   "run": 33167409423,
+   "created": "2026-08-28 19:30:26",
+   "branch": "refactor-graph"
+  },
+  {
+   "run": 33166621288,
+   "created": "2026-08-28 19:17:59",
+   "branch": "add-triton-docs1"
+  },
+  {
+   "run": 33164617280,
+   "created": "2026-08-28 18:46:16",
+   "branch": "fix/dspark-seq-lens-host-sync"
+  },
+  {
+   "run": 33163519027,
+   "created": "2026-08-28 18:29:02",
+   "branch": "ut_no_npu"
+  },
+  {
+   "run": 33163147045,
+   "created": "2026-08-28 18:23:04",
+   "branch": "feat/fix-catlass-submodule"
+  },
+  {
+   "run": 33162812735,
+   "created": "2026-08-28 18:17:49",
+   "branch": "dspark_ci_main"
+  },
+  {
+   "run": 33162421911,
+   "created": "2026-08-28 18:11:46",
+   "branch": "perf/ascend-store-async-request-tracking"
+  },
+  {
+   "run": 33161894305,
+   "created": "2026-08-28 18:03:43",
+   "branch": "fix/validate-stop-token-ids-vocab-0.23"
+  },
+  {
+   "run": 33161890678,
+   "created": "2026-08-28 18:03:40",
+   "branch": "main_dp_padding"
+  },
+  {
+   "run": 33161758551,
+   "created": "2026-08-28 18:01:41",
+   "branch": "perf/dspark-markov-head-tp"
+  },
+  {
+   "run": 33161364154,
+   "created": "2026-08-28 17:55:48",
+   "branch": "fix_mamba_block"
+  },
+  {
+   "run": 33161030469,
+   "created": "2026-08-28 17:50:46",
+   "branch": "feat/fix-catlass-submodule"
+  },
+  {
+   "run": 33160967582,
+   "created": "2026-08-28 17:49:52",
+   "branch": "codex/kimi-k3-a3-c8-main"
+  },
+  {
+   "run": 33160746314,
+   "created": "2026-08-28 17:46:33",
+   "branch": "test/liqo-sz-lab-runner"
+  },
+  {
+   "run": 33160581063,
+   "created": "2026-08-28 17:44:09",
+   "branch": "fix/mla-preprocess-aclnn-graph"
+  },
+  {
+   "run": 33160246375,
+   "created": "2026-08-28 17:39:12",
+   "branch": "hjp_818"
+  },
+  {
+   "run": 33160085828,
+   "created": "2026-08-28 17:36:46",
+   "branch": "add-models-endpoint"
+  },
+  {
+   "run": 33159955727,
+   "created": "2026-08-28 17:34:53",
+   "branch": "perf/ascend-v2-slot-mappings"
+  },
+  {
+   "run": 33159814345,
+   "created": "2026-08-28 17:32:49",
+   "branch": "clean_up_platform"
+  },
+  {
+   "run": 33159327295,
+   "created": "2026-08-28 17:25:48",
+   "branch": "fused_compute_slot_mapping"
+  },
+  {
+   "run": 33159173590,
+   "created": "2026-08-28 17:23:35",
+   "branch": "feature/glm52-dsv4-mxfp4-moe"
+  },
+  {
+   "run": 33159071009,
+   "created": "2026-08-28 17:22:07",
+   "branch": "hjp_818"
+  },
+  {
+   "run": 33158760295,
+   "created": "2026-08-28 17:17:33",
+   "branch": "clean_up_platform"
+  },
+  {
+   "run": 33158724458,
+   "created": "2026-08-28 17:17:02",
+   "branch": "main5"
+  },
+  {
+   "run": 33158364371,
+   "created": "2026-08-28 17:11:50",
+   "branch": "add-models-endpoint"
+  },
+  {
+   "run": 33158296507,
+   "created": "2026-08-28 17:10:49",
+   "branch": "8-6-device-hal-runtime"
+  },
+  {
+   "run": 33158260613,
+   "created": "2026-08-28 17:10:17",
+   "branch": "clean_up_platform"
+  },
+  {
+   "run": 33158001204,
+   "created": "2026-08-28 17:06:31",
+   "branch": "main5"
+  },
+  {
+   "run": 33157878108,
+   "created": "2026-08-28 17:04:43",
+   "branch": "codex/sfa-dcp-model-runner-v2"
+  },
+  {
+   "run": 33157739969,
+   "created": "2026-08-28 17:02:38",
+   "branch": "fused-sgmv-lora"
+  },
+  {
+   "run": 33157726502,
+   "created": "2026-08-28 17:02:26",
+   "branch": "feat/fix-catlass-submodule"
+  },
+  {
+   "run": 33157653470,
+   "created": "2026-08-28 17:01:20",
+   "branch": "hjp_818"
+  },
+  {
+   "run": 33157623953,
+   "created": "2026-08-28 17:00:55",
+   "branch": "main"
+  },
+  {
+   "run": 33157510824,
+   "created": "2026-08-28 16:59:19",
+   "branch": "fix/reduce-unused-weight-v0.26.0rc"
+  },
+  {
+   "run": 33157348680,
+   "created": "2026-08-28 16:56:49",
+   "branch": "glm52_v2_dspark"
+  },
+  {
+   "run": 33157281718,
+   "created": "2026-08-28 16:55:47",
+   "branch": "main"
+  },
+  {
+   "run": 33156957887,
+   "created": "2026-08-28 16:50:51",
+   "branch": "fix/reduce-unused-weight"
+  },
+  {
+   "run": 33156912227,
+   "created": "2026-08-28 16:50:11",
+   "branch": "fused-sgmv-lora"
+  },
+  {
+   "run": 33156860991,
+   "created": "2026-08-28 16:49:25",
+   "branch": "main_dp_padding"
+  },
+  {
+   "run": 33156825768,
+   "created": "2026-08-28 16:48:51",
+   "branch": "refactor-quantization"
+  },
+  {
+   "run": 33156820136,
+   "created": "2026-08-28 16:48:46",
+   "branch": "codex/sfa/dcp/a2a-fused-main"
+  },
+  {
+   "run": 33156785964,
+   "created": "2026-08-28 16:48:13",
+   "branch": "tq4-main-port"
+  },
+  {
+   "run": 33156148567,
+   "created": "2026-08-28 16:38:34",
+   "branch": "fia-sink-main"
+  },
+  {
+   "run": 33156122938,
+   "created": "2026-08-28 16:38:09",
+   "branch": "main_dp_padding"
+  },
+  {
+   "run": 33155760625,
+   "created": "2026-08-28 16:32:36",
+   "branch": "scatter_pa_kv_cache_0.26"
+  },
+  {
+   "run": 33155452899,
+   "created": "2026-08-28 16:28:06",
+   "branch": "improve_attention_cal"
+  },
+  {
+   "run": 33155275144,
+   "created": "2026-08-28 16:25:23",
+   "branch": "fix/cann-version-v023"
+  },
+  {
+   "run": 33155180378,
+   "created": "2026-08-28 16:23:58",
+   "branch": "perf/ascend-v2-slot-mappings"
+  },
+  {
+   "run": 33155156464,
+   "created": "2026-08-28 16:23:36",
+   "branch": "main_rm_dispatch_v1"
+  },
+  {
+   "run": 33155127948,
+   "created": "2026-08-28 16:23:10",
+   "branch": "fused-sgmv-lora"
+  },
+  {
+   "run": 33154976666,
+   "created": "2026-08-28 16:20:49",
+   "branch": "main_dp_padding"
+  },
+  {
+   "run": 33154966511,
+   "created": "2026-08-28 16:20:39",
+   "branch": "main5"
+  },
+  {
+   "run": 33154920739,
+   "created": "2026-08-28 16:20:00",
+   "branch": "triton/topk_log_softmax"
+  },
+  {
+   "run": 33154820821,
+   "created": "2026-08-28 16:18:26",
+   "branch": "glm52_v2_dspark"
+  },
+  {
+   "run": 33154536132,
+   "created": "2026-08-28 16:14:07",
+   "branch": "feat/xlite-glm-5.2"
+  },
+  {
+   "run": 33154316349,
+   "created": "2026-08-28 16:10:46",
+   "branch": "fix/layerwise-mixed-indexer-v0.26.0rc"
+  },
+  {
+   "run": 33154137801,
+   "created": "2026-08-28 16:08:07",
+   "branch": "codex/minimax-m3-eagle3-pp"
+  },
+  {
+   "run": 33154062809,
+   "created": "2026-08-28 16:07:02",
+   "branch": "hjp_818"
+  },
+  {
+   "run": 33153785675,
+   "created": "2026-08-28 16:03:01",
+   "branch": "main"
+  },
+  {
+   "run": 33153507204,
+   "created": "2026-08-28 15:58:50",
+   "branch": "codex/main-20260822"
+  },
+  {
+   "run": 33153294034,
+   "created": "2026-08-28 15:55:29",
+   "branch": "main5"
+  },
+  {
+   "run": 33153260698,
+   "created": "2026-08-28 15:54:59",
+   "branch": "e2e/main2main-3-runner"
+  },
+  {
+   "run": 33153093318,
+   "created": "2026-08-28 15:52:21",
+   "branch": "feat/qwen35-partial-block-prefix-cache"
+  },
+  {
+   "run": 33153017348,
+   "created": "2026-08-28 15:51:07",
+   "branch": "codex/k3-mrv2-support-main"
+  },
+  {
+   "run": 33152920206,
+   "created": "2026-08-28 15:49:37",
+   "branch": "update_doc"
+  },
+  {
+   "run": 33152618596,
+   "created": "2026-08-28 15:44:51",
+   "branch": "codex/fix-ascend-store-gva-layerwise-waiter"
+  },
+  {
+   "run": 33152469759,
+   "created": "2026-08-28 15:42:32",
+   "branch": "a00302-14-oproj-tp-mrv2"
+  },
+  {
+   "run": 33152450652,
+   "created": "2026-08-28 15:42:13",
+   "branch": "fix/cann-version-v023"
+  },
+  {
+   "run": 33152428588,
+   "created": "2026-08-28 15:41:53",
+   "branch": "codex/k3-mrv2-support-main"
+  },
+  {
+   "run": 33152078445,
+   "created": "2026-08-28 15:36:15",
+   "branch": "dev2608/watch_dog/0825"
+  },
+  {
+   "run": 33151974639,
+   "created": "2026-08-28 15:34:38",
+   "branch": "e2e/main2main-3-runner"
+  },
+  {
+   "run": 33151673581,
+   "created": "2026-08-28 15:29:57",
+   "branch": "dev2608/watch_dog/0825"
+  },
+  {
+   "run": 33151381030,
+   "created": "2026-08-28 15:25:09",
+   "branch": "tq4-main-port"
+  },
+  {
+   "run": 33151028503,
+   "created": "2026-08-28 15:19:23",
+   "branch": "fix/gdn-chunk-ops-cann92"
+  },
+  {
+   "run": 33151012305,
+   "created": "2026-08-28 15:19:07",
+   "branch": "a00302-14-oproj-tp-mrv2"
+  },
+  {
+   "run": 33150941624,
+   "created": "2026-08-28 15:17:59",
+   "branch": "feat/qwen35-partial-block-prefix-cache"
+  },
+  {
+   "run": 33150864071,
+   "created": "2026-08-28 15:16:39",
+   "branch": "codex/sfa-dcp-model-runner-v2"
+  },
+  {
+   "run": 33150816513,
+   "created": "2026-08-28 15:15:51",
+   "branch": "main2mian0828"
+  },
+  {
+   "run": 33150647868,
+   "created": "2026-08-28 15:13:06",
+   "branch": "fused-sgmv-lora"
+  },
+  {
+   "run": 33150597139,
+   "created": "2026-08-28 15:12:17",
+   "branch": "dev2608/watch_dog/0825"
+  },
+  {
+   "run": 33150583337,
+   "created": "2026-08-28 15:12:03",
+   "branch": "e2e/main2main-3-runner"
+  },
+  {
+   "run": 33150371633,
+   "created": "2026-08-28 15:08:30",
+   "branch": "fny_remap_triton_main"
+  },
+  {
+   "run": 33150365925,
+   "created": "2026-08-28 15:08:24",
+   "branch": "hjp_818"
+  },
+  {
+   "run": 33150058689,
+   "created": "2026-08-28 15:03:20",
+   "branch": "perf/avoid-mc2-topk-cast"
+  },
+  {
+   "run": 33150040136,
+   "created": "2026-08-28 15:03:02",
+   "branch": "feat/qwen35-partial-block-prefix-cache"
+  },
+  {
+   "run": 33149899165,
+   "created": "2026-08-28 15:00:43",
+   "branch": "codex/sfa-dcp-model-runner-v2"
+  },
+  {
+   "run": 33149877803,
+   "created": "2026-08-28 15:00:24",
+   "branch": "e2e/main2main-3-runner"
+  }
+ ],
+ "Nightly-A3": [
+  {
+   "run": 33478289030,
+   "created": "2026-09-01 14:35:52",
+   "branch": "main"
+  },
+  {
+   "run": 33472492154,
+   "created": "2026-09-01 13:09:10",
+   "branch": "main"
+  },
+  {
+   "run": 33410221539,
+   "created": "2026-08-31 23:45:03",
+   "branch": "main"
+  },
+  {
+   "run": 33384013585,
+   "created": "2026-08-31 18:47:42",
+   "branch": "main"
+  },
+  {
+   "run": 33381560557,
+   "created": "2026-08-31 18:15:12",
+   "branch": "main"
+  },
+  {
+   "run": 33380426365,
+   "created": "2026-08-31 18:00:47",
+   "branch": "main"
+  },
+  {
+   "run": 33373423408,
+   "created": "2026-08-31 16:32:58",
+   "branch": "main"
+  },
+  {
+   "run": 33370624303,
+   "created": "2026-08-31 15:56:51",
+   "branch": "main"
+  },
+  {
+   "run": 33369241534,
+   "created": "2026-08-31 15:38:06",
+   "branch": "main"
+  },
+  {
+   "run": 33366254800,
+   "created": "2026-08-31 14:56:58",
+   "branch": "main"
+  },
+  {
+   "run": 33363607338,
+   "created": "2026-08-31 14:17:39",
+   "branch": "main"
+  },
+  {
+   "run": 33363486560,
+   "created": "2026-08-31 14:15:51",
+   "branch": "main"
+  },
+  {
+   "run": 33351789579,
+   "created": "2026-08-31 10:47:49",
+   "branch": "main"
+  },
+  {
+   "run": 33348320108,
+   "created": "2026-08-31 09:40:55",
+   "branch": "main"
+  },
+  {
+   "run": 33320515446,
+   "created": "2026-08-30 23:45:03",
+   "branch": "main"
+  },
+  {
+   "run": 33315922664,
+   "created": "2026-08-30 22:05:41",
+   "branch": "main"
+  },
+  {
+   "run": 33314650946,
+   "created": "2026-08-30 21:36:45",
+   "branch": "main"
+  },
+  {
+   "run": 33314558604,
+   "created": "2026-08-30 21:34:46",
+   "branch": "main"
+  },
+  {
+   "run": 33314528056,
+   "created": "2026-08-30 21:34:07",
+   "branch": "main"
+  },
+  {
+   "run": 33314461856,
+   "created": "2026-08-30 21:32:39",
+   "branch": "main"
+  },
+  {
+   "run": 33313407426,
+   "created": "2026-08-30 21:09:27",
+   "branch": "main"
+  },
+  {
+   "run": 33308274839,
+   "created": "2026-08-30 19:10:48",
+   "branch": "main"
+  },
+  {
+   "run": 33307719046,
+   "created": "2026-08-30 18:57:33",
+   "branch": "main"
+  },
+  {
+   "run": 33305529502,
+   "created": "2026-08-30 18:03:14",
+   "branch": "main"
+  },
+  {
+   "run": 33300777926,
+   "created": "2026-08-30 16:06:35",
+   "branch": "main"
+  },
+  {
+   "run": 33299957099,
+   "created": "2026-08-30 15:45:39",
+   "branch": "main"
+  },
+  {
+   "run": 33257064768,
+   "created": "2026-08-29 22:14:23",
+   "branch": "main"
+  },
+  {
+   "run": 33248505039,
+   "created": "2026-08-29 18:44:14",
+   "branch": "main"
+  },
+  {
+   "run": 33247206512,
+   "created": "2026-08-29 18:10:42",
+   "branch": "main"
+  },
+  {
+   "run": 33236289001,
+   "created": "2026-08-29 13:29:33",
+   "branch": "main"
+  },
+  {
+   "run": 33234716808,
+   "created": "2026-08-29 12:49:08",
+   "branch": "main"
+  },
+  {
+   "run": 33232726316,
+   "created": "2026-08-29 11:59:39",
+   "branch": "main"
+  },
+  {
+   "run": 33232690074,
+   "created": "2026-08-29 11:58:37",
+   "branch": "main"
+  },
+  {
+   "run": 33232114271,
+   "created": "2026-08-29 11:43:33",
+   "branch": "main"
+  },
+  {
+   "run": 33229532415,
+   "created": "2026-08-29 10:40:14",
+   "branch": "main"
+  },
+  {
+   "run": 33225265854,
+   "created": "2026-08-29 09:01:48",
+   "branch": "main"
+  },
+  {
+   "run": 33186668495,
+   "created": "2026-08-28 23:45:04",
+   "branch": "main"
+  },
+  {
+   "run": 33167572495,
+   "created": "2026-08-28 19:33:00",
+   "branch": "main"
+  },
+  {
+   "run": 33167241286,
+   "created": "2026-08-28 19:27:48",
+   "branch": "main"
+  },
+  {
+   "run": 33167168481,
+   "created": "2026-08-28 19:26:38",
+   "branch": "main"
+  },
+  {
+   "run": 33166746346,
+   "created": "2026-08-28 19:20:02",
+   "branch": "main"
+  },
+  {
+   "run": 33157505173,
+   "created": "2026-08-28 16:59:14",
+   "branch": "main"
+  },
+  {
+   "run": 33149681489,
+   "created": "2026-08-28 14:57:03",
+   "branch": "main"
+  }
+ ],
+ "Nightly-A2": [
+  {
+   "run": 33462355983,
+   "created": "2026-09-01 10:23:29",
+   "branch": "main"
+  },
+  {
+   "run": 33410218421,
+   "created": "2026-08-31 23:45:02",
+   "branch": "main"
+  },
+  {
+   "run": 33390592236,
+   "created": "2026-08-31 20:12:18",
+   "branch": "main"
+  },
+  {
+   "run": 33384501917,
+   "created": "2026-08-31 18:54:20",
+   "branch": "main"
+  },
+  {
+   "run": 33384486947,
+   "created": "2026-08-31 18:54:09",
+   "branch": "main"
+  },
+  {
+   "run": 33378664376,
+   "created": "2026-08-31 17:38:20",
+   "branch": "main"
+  },
+  {
+   "run": 33373299215,
+   "created": "2026-08-31 16:31:24",
+   "branch": "main"
+  },
+  {
+   "run": 33356380697,
+   "created": "2026-08-31 12:14:24",
+   "branch": "main"
+  },
+  {
+   "run": 33320514136,
+   "created": "2026-08-30 23:45:02",
+   "branch": "main"
+  },
+  {
+   "run": 33314487632,
+   "created": "2026-08-30 21:33:14",
+   "branch": "main"
+  },
+  {
+   "run": 33314462650,
+   "created": "2026-08-30 21:32:40",
+   "branch": "main"
+  },
+  {
+   "run": 33307720962,
+   "created": "2026-08-30 18:57:36",
+   "branch": "main"
+  },
+  {
+   "run": 33307711299,
+   "created": "2026-08-30 18:57:21",
+   "branch": "main"
+  },
+  {
+   "run": 33300837688,
+   "created": "2026-08-30 16:08:04",
+   "branch": "main"
+  },
+  {
+   "run": 33300811561,
+   "created": "2026-08-30 16:07:26",
+   "branch": "main"
+  },
+  {
+   "run": 33298028350,
+   "created": "2026-08-30 14:55:53",
+   "branch": "main"
+  },
+  {
+   "run": 33296267422,
+   "created": "2026-08-30 14:09:40",
+   "branch": "main"
+  },
+  {
+   "run": 33295121754,
+   "created": "2026-08-30 13:37:55",
+   "branch": "main"
+  },
+  {
+   "run": 33267068921,
+   "created": "2026-08-30 01:59:58",
+   "branch": "main"
+  },
+  {
+   "run": 33238453443,
+   "created": "2026-08-29 14:26:09",
+   "branch": "main"
+  },
+  {
+   "run": 33225019784,
+   "created": "2026-08-29 08:56:49",
+   "branch": "main"
+  },
+  {
+   "run": 33221942849,
+   "created": "2026-08-29 07:55:04",
+   "branch": "main"
+  },
+  {
+   "run": 33221265286,
+   "created": "2026-08-29 07:41:46",
+   "branch": "main"
+  },
+  {
+   "run": 33186664693,
+   "created": "2026-08-28 23:45:02",
+   "branch": "main"
+  },
+  {
+   "run": 33166100068,
+   "created": "2026-08-28 19:09:43",
+   "branch": "main"
+  }
+ ],
+ "Nightly-A3-560T": [
+  {
+   "run": 33354426740,
+   "created": "2026-08-31 11:37:17",
+   "branch": "main"
+  },
+  {
+   "run": 33267192493,
+   "created": "2026-08-30 02:02:32",
+   "branch": "main"
+  },
+  {
+   "run": 33263835851,
+   "created": "2026-08-30 00:45:38",
+   "branch": "main"
+  }
+ ],
+ "Nightly-310P": [
+  {
+   "run": 33410224311,
+   "created": "2026-08-31 23:45:05",
+   "branch": "main"
+  },
+  {
+   "run": 33320517313,
+   "created": "2026-08-30 23:45:05",
+   "branch": "main"
+  },
+  {
+   "run": 33186672032,
+   "created": "2026-08-28 23:45:07",
+   "branch": "main"
+  }
+ ],
+ "Nightly-A5": [
+  {
+   "run": 33353401984,
+   "created": "2026-08-31 11:17:57",
+   "branch": "main"
+  }
+ ],
+ "Weekly-A3": [
+  {
+   "run": 33461002282,
+   "created": "2026-09-01 10:01:55",
+   "branch": "main"
+  },
+  {
+   "run": 33348311673,
+   "created": "2026-08-31 09:40:44",
+   "branch": "main"
+  },
+  {
+   "run": 33247965925,
+   "created": "2026-08-29 18:30:11",
+   "branch": "main"
+  },
+  {
+   "run": 33172354680,
+   "created": "2026-08-28 20:44:49",
+   "branch": "main"
+  }
+ ],
+ "Weekly-310P": [
+  {
+   "run": 33261093553,
+   "created": "2026-08-29 23:45:05",
+   "branch": "main"
+  }
+ ],
+ "Weekly-A2": [
+  {
+   "run": 33261091135,
+   "created": "2026-08-29 23:45:02",
+   "branch": "main"
+  }
+ ],
+ "Schedule All E2E Tests": [
+  {
+   "run": 33468208913,
+   "created": "2026-09-01 12:00:02",
+   "branch": "main"
+  },
+  {
+   "run": 33452975377,
+   "created": "2026-09-01 08:00:03",
+   "branch": "main"
+  },
+  {
+   "run": 33389580621,
+   "created": "2026-08-31 20:00:03",
+   "branch": "main"
+  },
+  {
+   "run": 33375585433,
+   "created": "2026-08-31 17:00:52",
+   "branch": "hjp_818"
+  },
+  {
+   "run": 33365828395,
+   "created": "2026-08-31 14:50:39",
+   "branch": "hjp_818"
+  },
+  {
+   "run": 33355601135,
+   "created": "2026-08-31 12:00:03",
+   "branch": "main"
+  },
+  {
+   "run": 33354314270,
+   "created": "2026-08-31 11:35:20",
+   "branch": "hjp_818"
+  },
+  {
+   "run": 33352320918,
+   "created": "2026-08-31 10:58:22",
+   "branch": "hjp_818"
+  },
+  {
+   "run": 33351359834,
+   "created": "2026-08-31 10:39:28",
+   "branch": "hjp_818"
+  },
+  {
+   "run": 33343256664,
+   "created": "2026-08-31 08:00:02",
+   "branch": "main"
+  },
+  {
+   "run": 33310312095,
+   "created": "2026-08-30 20:00:02",
+   "branch": "main"
+  },
+  {
+   "run": 33300495948,
+   "created": "2026-08-30 16:00:02",
+   "branch": "main"
+  },
+  {
+   "run": 33291497626,
+   "created": "2026-08-30 12:00:02",
+   "branch": "main"
+  },
+  {
+   "run": 33246778210,
+   "created": "2026-08-29 18:00:13",
+   "branch": "hjp_818"
+  },
+  {
+   "run": 33242105495,
+   "created": "2026-08-29 16:00:02",
+   "branch": "main"
+  },
+  {
+   "run": 33232738948,
+   "created": "2026-08-29 12:00:02",
+   "branch": "main"
+  }
+ ],
+ "E2E-upstream": [
+  {
+   "run": 33314303492,
+   "created": "2026-08-30 21:29:12",
+   "branch": "main"
+  }
+ ],
+ "Main2Main": [
+  {
+   "run": 33403470270,
+   "created": "2026-08-31 22:34:55",
+   "branch": "main"
+  }
+ ],
+ "Doc Test": [
+  {
+   "run": 33381590875,
+   "created": "2026-08-31 18:15:37",
+   "branch": "backport/record-stream-v0.23.0"
+  },
+  {
+   "run": 33377186797,
+   "created": "2026-08-31 17:20:37",
+   "branch": "glm5.3-main"
+  },
+  {
+   "run": 33363582162,
+   "created": "2026-08-31 14:17:16",
+   "branch": "main"
+  },
+  {
+   "run": 33359406011,
+   "created": "2026-08-31 13:07:39",
+   "branch": "glm5.3-main"
+  },
+  {
+   "run": 33358743996,
+   "created": "2026-08-31 12:55:30",
+   "branch": "main"
+  },
+  {
+   "run": 33349783199,
+   "created": "2026-08-31 10:09:30",
+   "branch": "rework_doc"
+  },
+  {
+   "run": 33347879200,
+   "created": "2026-08-31 09:32:24",
+   "branch": "main"
+  },
+  {
+   "run": 33299583716,
+   "created": "2026-08-30 15:35:48",
+   "branch": "feat/glm-5.3-a5-support"
+  },
+  {
+   "run": 33251068537,
+   "created": "2026-08-29 19:50:41",
+   "branch": "docs/kimi-k3-v026"
+  },
+  {
+   "run": 33246642483,
+   "created": "2026-08-29 17:56:23",
+   "branch": "docs/kimi-k3-v026"
+  },
+  {
+   "run": 33245089546,
+   "created": "2026-08-29 17:16:07",
+   "branch": "docs/kimi-k3-v026"
+  },
+  {
+   "run": 33227474902,
+   "created": "2026-08-29 09:51:01",
+   "branch": "update_doc"
+  },
+  {
+   "run": 33161314958,
+   "created": "2026-08-28 17:55:03",
+   "branch": "docs/glm5.3-flash-tutorial"
+  },
+  {
+   "run": 33160745904,
+   "created": "2026-08-28 17:46:33",
+   "branch": "test/liqo-sz-lab-runner"
+  },
+  {
+   "run": 33156572094,
+   "created": "2026-08-28 16:45:00",
+   "branch": "feat/glm-5.3-flash-npu-fixes"
+  },
+  {
+   "run": 33152919834,
+   "created": "2026-08-28 15:49:37",
+   "branch": "update_doc"
+  }
+ ]
+}
