@@ -2,5 +2,11 @@
 *.log
 *.xlsx
 
+# 自动生成的 NPU CI 时间戳报告不入库（保留手工精简版 npu_ci_failure_report.md）
+npu_ci_reports/
+
+# Python 字节码缓存
+__pycache__/
+
 # 本地 Claude 配置不入库
 .claude/
