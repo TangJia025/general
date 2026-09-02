@@ -133,6 +133,7 @@ for 每个 workflow f:
 ### 7.1 日志预处理
 
 - `gh api actions/jobs/{job_id}/logs`（二进制）；gzip 头则解压；
+- **丢弃 GitHub Actions 回显的脚本源码行**（`\x1b[36;1m` 青色前缀）——否则正则会命中脚本里写死的报错文案（如 `echo "::error::Failed to fetch PR title..."`）造成误分类，即使该命令实际成功；
 - 只扫**尾部 `tail-lines` 行**（默认 1200）——日志前 80% 是安装/构建噪音，错误集中在尾部；
 - 受 `--samples` 上限约束，够数即停。
 

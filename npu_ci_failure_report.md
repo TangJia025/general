@@ -22,6 +22,24 @@
 
 <!-- @/section:infra-snapshot -->
 
+<!-- @section:infra-failures -->
+
+## 🔧 跨仓基础设施失败原因汇总（infra/mixed）
+
+| 原因 | owner | 仓库 | 次数 | 失败 run/job 链接 |
+|---|---|---|---|---|
+| 超时 | mixed | vllm-ascend | 6 | https://github.com/vllm-project/vllm-ascend/actions/runs/33527643422/job/100013866469 [NPU]、https://github.com/vllm-project/vllm-ascend/actions/runs/33484583910/job/99783222651 [NPU]、https://github.com/vllm-project/vllm-ascend/actions/runs/33472492154/job/99745743330 [NPU] |
+| 超时 | mixed | verl | 6 | https://github.com/verl-project/verl/actions/runs/33535791096/job/99949650735 [NPU]、https://github.com/verl-project/verl/actions/runs/33417769337/job/99572442005 [NPU]、https://github.com/verl-project/verl/actions/runs/33324266266/job/99291522548 [NPU] |
+| 进程被kill(OOM/超内存) | mixed | verl | 5 | https://github.com/verl-project/verl/actions/runs/33512153091/job/99871047050 [NPU]、https://github.com/verl-project/verl/actions/runs/33510593595/job/99865024285 [NPU]、https://github.com/verl-project/verl/actions/runs/33582765081/job/100100375458 [NPU] |
+| GitHub API 调用失败 | infra | vllm-ascend | 3 | https://github.com/vllm-project/vllm-ascend/actions/runs/33585105239/job/100107518913 [gate]、https://github.com/vllm-project/vllm-ascend/actions/runs/33584921423/job/100106973404 [gate]、https://github.com/vllm-project/vllm-ascend/actions/runs/33584889223/job/100106879316 [gate] |
+| 模型/包下载失败(外网) | mixed | vllm-ascend | 1 | https://github.com/vllm-project/vllm-ascend/actions/runs/33410221539/job/99610527631 [NPU] |
+| 进程被kill(OOM/超内存) | mixed | vllm-ascend | 1 | https://github.com/vllm-project/vllm-ascend/actions/runs/33573446877/job/100073973162 [NPU] |
+| 昇腾算子执行错误(ACL) | mixed | verl | 1 | https://github.com/verl-project/verl/actions/runs/33505772150/job/99849329027 [NPU] |
+
+> 数据来源：各仓最近一次运行写入 `--infra-store`；mixed 桶需结合 runner 配置/节点网络二次确认。
+
+<!-- @/section:infra-failures -->
+
 ---
 
 <!-- @section:vllm-project/vllm-ascend -->
