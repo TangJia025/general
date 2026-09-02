@@ -33,6 +33,10 @@ def parse_args():
     ap.add_argument("--tail-lines", type=int, default=1200, help="日志分类扫描的尾部窗口行数（默认1200）")
     ap.add_argument("--sample-cancelled", type=int, default=5, help="每个 workflow 采样 cancelled run 数（默认5）")
     ap.add_argument("--report-dir", default="npu_ci_reports", help="报告输出目录，每次运行生成带时间戳的 md 文件（默认 npu_ci_reports/）")
+    ap.add_argument("--summary-file", default="npu_ci_failure_report.md",
+                    help="精简版报告路径，每次运行自动更新对应仓库章节（默认 npu_ci_failure_report.md）")
+    ap.add_argument("--infra-store", default=os.path.join("npu_ci_reports", "infra_snapshot.json"),
+                    help="跨仓基础设施信号（排队/cancelled 统计）持久化文件，供报告自动聚合跨仓表格（默认 npu_ci_reports/infra_snapshot.json）")
     return ap.parse_args()
 
 ARGS = parse_args()
@@ -46,14 +50,15 @@ NPU_LABEL = ARGS.npu_label_pattern
 
 # ---------- 输出双写：终端 + 带时间戳的报告文件（历史回溯） ----------
 import sys as _sys
+_T0 = datetime.datetime.now()          # 分析开始时间
 REPORT_DIR = ARGS.report_dir
 os.makedirs(REPORT_DIR, exist_ok=True)
-_ts = datetime.datetime.now().strftime("%Y%m%d_%H%M%S")
+_ts = _T0.strftime("%Y%m%d_%H%M%S")
 report_path = os.path.join(REPORT_DIR, f"npu_ci_failure_report_{REPO}_{_ts}.md")
 _report_file = open(report_path, "w", encoding="utf-8")
 _orig_stdout = _sys.stdout
 _report_file.write(f"# NPU CI 失败分析报告\n\n"
-                   f"- 生成时间: {datetime.datetime.now().strftime('%Y-%m-%d %H:%M:%S')}\n"
+                   f"- 分析开始: {_T0.strftime('%Y-%m-%d %H:%M:%S')}\n"
                    f"- 仓库: `{ARGS.repo}`\n"
                    f"- 起始日期: `{SINCE}`\n"
                    f"- 参数: samples={ARGS.samples}, sample_per_wf={ARGS.sample_per_wf}, "
@@ -62,14 +67,34 @@ _report_file.flush()
 class _Tee:
     """同时写终端与报告文件；文件逐行落盘，脚本中断也能保留已输出内容"""
     def write(self, s):
-        _orig_stdout.write(s)
+        if not _orig_stdout.closed:
+            _orig_stdout.write(s)
         _report_file.write(s)
         _report_file.flush()
         return len(s)
     def flush(self):
-        _orig_stdout.flush()
-        _report_file.flush()
+        if not _orig_stdout.closed:
+            _orig_stdout.flush()
+        if not _report_file.closed:
+            _report_file.flush()
 _sys.stdout = _Tee()
+
+# ---------- 跨仓基础设施信号：排队/cancelled 统计持久化（报告自动聚合跨仓表格的数据源，替代手工快照） ----------
+INFRA_STORE = ARGS.infra_store
+os.makedirs(os.path.dirname(INFRA_STORE) or ".", exist_ok=True)
+
+def load_infra_store():
+    if os.path.exists(INFRA_STORE):
+        try:
+            with open(INFRA_STORE, encoding="utf-8") as fh:
+                return json.load(fh)
+        except Exception:
+            pass
+    return {"repos": {}}
+
+def save_infra_store(store):
+    with open(INFRA_STORE, "w", encoding="utf-8") as fh:
+        json.dump(store, fh, ensure_ascii=False, indent=2)
 
 def gh(*args, binary=False):
     r = subprocess.run(["gh", "api", *args], capture_output=True)
@@ -243,6 +268,23 @@ if queue_times:
     print(f"  NPU runner 排队时长: 样本 {len(q)}，中位 {med:.0f}min，最长 {q[-1]/60:.0f}min，"
           f">30min 有 {over30} 个（>30min 提示 runner 池不足，infra 侧）")
 
+# 持久化本仓 infra 统计到快照存储（跨仓表格自动聚合的数据源，替代手工快照）
+infra_store = load_infra_store()
+repo_entry = infra_store.setdefault("repos", {}).setdefault(ARGS.repo, {})
+if queue_times:
+    q = sorted(queue_times)
+    repo_entry["queue"] = {"samples": len(q),
+                           "median_min": round(q[len(q)//2]/60, 1),
+                           "max_min": round(q[-1]/60, 1),
+                           "over_30min": sum(1 for t in q if t > 1800)}
+else:
+    repo_entry["queue"] = {"samples": 0, "median_min": None, "max_min": None, "over_30min": 0}
+repo_entry["cancelled"] = {"samples": len(cancelled_jobs), "never_started": n_never}
+repo_entry["since"] = SINCE
+repo_entry["snapshot_at"] = _T0.isoformat()
+infra_store["snapshot_at"] = _T0.isoformat()
+save_infra_store(infra_store)
+
 # ---------- Step 4: 下载日志 → 根因分类 ----------
 # 基于真实日志校准的精准模式，顺序即优先级；只扫尾部窗口（前 80% 是安装/构建噪音）
 # owner: infra=基础设施(资源/调度/网络) / code=业务方 / mixed=需二次判定
@@ -257,19 +299,25 @@ BUCKETS = [
     (r'RayTaskError|ray\.exceptions|ActorDiedError|Actor.*(?:died|dead)|Driver of actor.*fail', "分布式通信/编排(Ray)", "code"),
     # 下载拆两类：内网镜像仓库(infra 直接责任) vs 外网(huggingface 等，mixed，可加镜像/缓存缓解)
     (r'Failed to download metadata for repo|repomd\.xml|Cannot download|apt-get update.*Failed to fetch|Failed to fetch.*mirror|yum.*Error', "内网镜像/仓库下载失败", "infra"),
+    # 对外 API 调用失败：GitHub API 拉取失败（token/限流属 infra）；放在外网下载前，避免 404/503 细节被后者吞掉
+    (r'Failed to fetch PR title', "GitHub API 调用失败", "infra"),
     (r'HfHubHTTPError|huggingface_hub|Curl error|503.*Service Unavailable|Github.*rate limit|404 Client Error', "模型/包下载失败(外网)", "mixed"),
     (r'timed out|TimeoutError|UV_HTTP_TIMEOUT|timeout.*exceed|timed out waiting', "超时", "mixed"),
     (r'out of memory|OOM error|MemoryError|memory.*not enough|aclrtMalloc failed|alloc.*failed.*memory', "OOM/显存不足", "mixed"),
     (r'No space left|disk full|ENOSPC', "磁盘不足", "infra"),
     (r'ImportError|ModuleNotFoundError|No module named', "依赖/安装(ImportError)", "code"),
     (r'AssertionError|E\s+assert', "断言失败(代码或精度)", "code"),
-    (r'ShellCheck|shellcheck', "静态检查(ShellCheck)", "code"),
+    # 门禁策略失败：pre-commit/ShellCheck 属同一类静态检查；CSRC 变更检查是 CI 策略门禁（业务方）
+    (r'ShellCheck|shellcheck|pre-commit did not succeed', "静态检查(pre-commit/ShellCheck)", "code"),
+    (r'CSRC build workflows changed', "CI 策略检查(CSRC 变更)", "code"),
     (r'AttributeError|TypeError|ValueError|KeyError|IndexError', "Python运行时错误", "code"),
     (r'Either .tests. or .config_file_path. must be provided|must be provided', "测试参数缺失(config未传入)", "code"),
+    # 多节点编排层兜底：GitHub 日志只到 orchestrator 包装层，真错误在 k8s pod 里（owner 置 unknown）
+    (r'failed to run script step', "多节点编排层包装失败(pod内真实错误)", "unknown"),
 ]
 BUCKET_OWNER = {label: owner for _, label, owner in BUCKETS}
 classified = Counter(); detail = []
-bucket_link = {}     # 桶 -> (样例 run 链接, 是否 NPU job)，每桶至少保留一条
+bucket_link = defaultdict(list)   # 桶 -> [(样例 run 链接, 是否 NPU job)]，每桶最多3条
 by_owner = defaultdict(Counter)   # owner -> 桶计数
 logs_done = 0
 for f, run_id, job_id, job_name, is_npu in failed_jobs:
@@ -302,9 +350,8 @@ for f, run_id, job_id, job_name, is_npu in failed_jobs:
     by_owner[owner][bucket] += 1
     tag = "NPU" if is_npu else "gate"
     link = f"https://github.com/{OWNER}/{REPO}/actions/runs/{run_id}/job/{job_id}"
-    # 每桶至少保留一条样例链接；同一桶后续若命中 NPU job 则覆盖 gate 链接（更接近真实 NPU 失败）
-    if bucket not in bucket_link or (is_npu and not bucket_link[bucket][1]):
-        bucket_link[bucket] = (link, is_npu)
+    if len(bucket_link[bucket]) < 3:
+        bucket_link[bucket].append((link, is_npu))
     detail.append((f, job_name[:32], tag, bucket, sig[:70], link, owner))
 print(f"\n=== Step4 已分类日志 {logs_done} 份（[NPU]=NPU job / [gate]=CPU门禁fallback，附证据片段与 run 链接）===")
 for d in detail:
@@ -315,12 +362,14 @@ for d in detail:
 print(f"\n=== Top3 失败原因 ===")
 if logs_done:
     for i, (bucket, cnt) in enumerate(classified.most_common(3), 1):
-        link, npu = bucket_link.get(bucket, ("", False))
+        links = bucket_link.get(bucket, [])
+        link, npu = links[0] if links else ("", False)
         print(f"  #{i} {bucket}: {cnt} 次 ({cnt/logs_done*100:.0f}%)")
         print(f"      样例 run（{'NPU' if npu else 'gate'}）: {link}" if link else "")
     print(f"\n  全部分类:")
     for bucket, cnt in classified.most_common():
-        link, npu = bucket_link.get(bucket, ("", False))
+        links = bucket_link.get(bucket, [])
+        link, npu = links[0] if links else ("", False)
         ow = BUCKET_OWNER.get(bucket, "unknown")
         print(f"    [{ow:6s}] {bucket}: {cnt} 次  [{'NPU' if npu else 'gate'}] {link}")
     print(f"\n  按 owner 汇总（infra=基础设施(资源/调度/网络) / code=业务方 / mixed=需二次判定 / unknown=未分类）:")
@@ -333,6 +382,162 @@ if logs_done:
           f"（NPU job 被 skip），多节点测试的 GitHub 日志只有 orchestrator 层，真错误在 k8s pod 日志里。"
           f"\n  infra/code 为脚本根据日志特征自动判定，mixed 桶需人工结合 runner 配置/节点网络二次确认。")
 
+def _fmt_links(links):
+    """样例链接列表 -> 'url [NPU]、url [gate]'"""
+    return "、".join(f"{l} [{'NPU' if n else 'gate'}]" for l, n in links)
+
+def write_summary():
+    """将本次运行的精简版章节写入 --summary-file。
+    章节结构：meta → NPU CI workflows → 近一周成功率 → 全部失败原因分析(每桶1-3条链接) → 基础设施相关失败 Top3。
+    章节用 HTML 注释标记包裹（<!-- @section:repo --> ... <!-- @/section:repo -->），
+    脚本只替换本仓库那段，文件内其余手工内容保留——跑完各仓库即拼成完整跨仓报告。"""
+    slug = ARGS.repo
+    sec = f"<!-- @section:{slug} -->\n\n"
+    sec += f"## {slug}（{SINCE} ~ {datetime.date.today().isoformat()}）\n\n"
+    sec += f"- 分析时间: {_T0.strftime('%Y-%m-%d %H:%M:%S')} → {_T1.strftime('%H:%M:%S')}（{(_T1 - _T0).total_seconds():.0f}s）\n"
+    sec += f"- 完整原始输出: `{report_path}`\n"
+    sec += f"- 抽样 {n_sampled} 失败 run → {len(failed_jobs)} 失败 job（NPU {len(failed_jobs)-fallback_jobs} / 门禁 fallback {fallback_jobs}）\n"
+    sec += f"- cancelled 采样 {len(cancelled_jobs)} job，未启动/未分配 runner {n_never} 个\n"
+    if queue_times:
+        q = sorted(queue_times)
+        med = q[len(q)//2]/60; mx = q[-1]/60
+        over = sum(1 for t in q if t > 1800)
+        sec += f"- NPU runner 排队: 中位 {med:.0f}min，最长 {mx:.0f}min，>30min 有 {over} 个（>30min 提示 runner 池不足，infra 侧）\n"
+    wf_names = sorted(candidates.keys())
+    sec += f"\n**NPU CI workflows**：`{'`、`'.join(wf_names)}`\n\n"
+    rates = []
+    for f, (_, c) in sorted(wf_stats.items(), key=lambda kv: -kv[1][1].get('failure', 0)):
+        s, fl = c.get('success', 0), c.get('failure', 0)
+        rates.append(f"`{f}` {s/(s+fl)*100:.0f}%" if (s+fl) else f"`{f}` --")
+    sec += f"**近一周成功率**：" + "、".join(rates) + "\n"
+
+    # --- 全部失败原因分析：全桶表（样例 job 链接直接挂进表格列）+ owner 汇总 ---
+    sec += "\n### 全部失败原因分析\n\n"
+    sec += "| 排名 | 原因 | 次数 | 占比 | owner | 样例 job 链接 |\n|---|---|---|---|---|---|\n"
+    if classified:
+        for i, (b, c) in enumerate(classified.most_common(), 1):
+            links = bucket_link.get(b, [])
+            sec += (f"| #{i} | {b} | {c} | {c/logs_done*100:.0f}% | {BUCKET_OWNER.get(b, 'unknown')} | "
+                    f"{_fmt_links(links) if links else '-'} |\n")
+    else:
+        sec += "| - | (无日志样本可分类) | - | - | - | - |\n"
+    sec += "\n**owner 汇总**：" + "，".join(
+        f"{o} {sum(by_owner[o].values())}" for o in ("infra", "code", "mixed", "unknown") if by_owner.get(o)) + "\n"
+
+    # --- 基础设施相关失败 Top3：owner ∈ {infra, mixed}，按次数排名，附链接 ---
+    infra_relevant = [b for b, _ in classified.most_common()
+                      if BUCKET_OWNER.get(b, "unknown") in ("infra", "mixed")]
+    sec += "\n### 基础设施相关失败 Top3\n\n"
+    if infra_relevant:
+        for i, b in enumerate(infra_relevant[:3], 1):
+            links = bucket_link.get(b, [])
+            sec += (f"{i}. **{b}**（{classified[b]} 次，owner={BUCKET_OWNER.get(b)}）："
+                    f"{_fmt_links(links) if links else '(无链接)'}\n")
+        if len(infra_relevant) > 3:
+            sec += f"   其余：{'、'.join(f'{b}({classified[b]}次)' for b in infra_relevant[3:])}\n"
+        sec += "\n> 说明：mixed 桶需结合 runner 配置/节点网络二次确认；调度/排队信号见上方 meta 行。\n"
+    else:
+        sec += "无（本次样本内无基础设施相关失败，均为业务方代码/测试问题）。\n"
+    sec += f"\n<!-- @/section:{slug} -->\n"
+
+    path = ARGS.summary_file
+    sm, em = f"<!-- @section:{slug} -->", f"<!-- @/section:{slug} -->"
+    if os.path.exists(path):
+        with open(path, encoding="utf-8") as fh:
+            content = fh.read()
+        if sm in content:
+            s = content.index(sm)
+            e = content.index(em) + len(em)
+            new = content[:s] + sec.rstrip("\n") + content[e:]
+        else:
+            new = content.rstrip("\n") + "\n\n" + sec.rstrip("\n") + "\n"
+    else:
+        new = ("# NPU CI 失败分析报告（自动精简版）\n\n"
+               f"> 由 `npu_ci_failure_analysis.py` 每次运行自动更新对应仓库章节（章节外内容手工保留），"
+               f"完整原始输出见 `npu_ci_reports/`。\n\n" + sec)
+    with open(path, "w", encoding="utf-8") as fh:
+        fh.write(new)
+    print(f"\n精简版报告已更新: {path}", file=_orig_stdout)
+
+# 精简版报告的固定仓库顺序（章节排列 + 跨仓表格行），新增仓库可追加到末尾
+REPO_ORDER = ["vllm-project/vllm-ascend", "sgl-project/sglang",
+              "triton-lang/triton-ascend", "verl-project/verl"]
+
+def _repo_key(repo):
+    return REPO_ORDER.index(repo) if repo in REPO_ORDER else len(REPO_ORDER)
+
+def update_infra_section():
+    """用 infra 快照存储生成「跨仓基础设施信号」表格，更新精简版报告的 @section:infra-snapshot 标记段。
+    表格按 REPO_ORDER 固定顺序聚合最新快照；>30min 提示 runner 池不足（infra 侧）。"""
+    store = load_infra_store()
+    repos = store.get("repos", {})
+    if not repos:
+        return
+    rows = []
+    for repo in sorted(repos, key=_repo_key):
+        e = repos[repo]
+        q, c = e.get("queue") or {}, e.get("cancelled") or {}
+        n = q.get("samples", 0)
+        med = f"{q['median_min']:.0f}min" if q.get("median_min") is not None else "--"
+        mx = f"{q['max_min']:.0f}min" if q.get("max_min") is not None else "--"
+        over = f"**{q.get('over_30min', 0)} 个**" if q.get("over_30min", 0) else "0 个"
+        never = c.get("never_started") if c else None
+        never_s = f"{never}" if never is not None else "--"
+        rows.append(f"| {repo.split('/')[-1]:16s} | {n:5d} | {med:6s} | {mx:10s} | {over} | {never_s:3s} |")
+    sec = ("## ⚠️ 跨仓基础设施信号（自动聚合）\n\n"
+           "| 仓库 | 排队样本 | 中位 | 最长 | >30min | cancelled 未启动 |\n"
+           "|---|---|---|---|---|---|\n" + "\n".join(rows) +
+           f"\n\n> 数据来源：`{INFRA_STORE}`（各仓最近一次运行写入，快照 {store.get('snapshot_at', '—')[:16]}）。"
+           ">30min 提示 runner 池不足（infra 侧）。")
+    path = ARGS.summary_file
+    sm, em = "<!-- @section:infra-snapshot -->", "<!-- @/section:infra-snapshot -->"
+    if not os.path.exists(path):
+        return
+    with open(path, encoding="utf-8") as fh:
+        content = fh.read()
+    block = f"{sm}\n\n{sec}\n\n{em}"
+    if sm in content:
+        s = content.index(sm)
+        e = content.index(em) + len(em)
+        new = content[:s] + block + content[e:]
+    else:
+        anchor = "<!-- @section:"
+        i = content.index(anchor) if anchor in content else len(content)
+        new = content[:i] + block + "\n\n" + content[i:]
+    with open(path, "w", encoding="utf-8") as fh:
+        fh.write(new)
+    print(f"跨仓基础设施信号表格已更新: {path}", file=_orig_stdout)
+
+def reorder_repo_sections(path):
+    """把精简版报告里的仓库章节按 REPO_ORDER 重排（vllm → sglang → triton → verl）。
+    只重排标记内仓库章节，标记外内容（头部/跨仓表格/方法学）保持原位。"""
+    if not os.path.exists(path):
+        return
+    with open(path, encoding="utf-8") as fh:
+        content = fh.read()
+    pat = re.compile(r"(<!-- @section:([^>\s]+) -->.*?<!-- @/section:\2 -->)", re.S)
+    matches = list(pat.finditer(content))
+    repo_blocks = [m for m in matches if m.group(2) in REPO_ORDER]
+    if len(repo_blocks) < 2:
+        return  # 少于 2 个仓库章节无需重排
+    ordered = sorted(repo_blocks, key=lambda m: _repo_key(m.group(2)))
+    # 确认当前顺序已一致则跳过，避免每次运行都触发写入
+    if [m.group(2) for m in repo_blocks] == [m.group(2) for m in ordered]:
+        return
+    first, last = repo_blocks[0], repo_blocks[-1]
+    body = "\n\n---\n\n".join(m.group(1) for m in ordered)
+    new = content[:first.start()] + body + content[last.end():]
+    with open(path, "w", encoding="utf-8") as fh:
+        fh.write(new)
+    print(f"仓库章节已按固定顺序重排（{' → '.join(r.split('/')[-1] for r in REPO_ORDER)}）: {path}",
+          file=_orig_stdout)
+
+_T1 = datetime.datetime.now()          # 分析结束时间
+_report_file.write(f"\n---\n- 分析结束: {_T1.strftime('%Y-%m-%d %H:%M:%S')}\n"
+                   f"- 耗时: {(_T1 - _T0).total_seconds():.0f}s\n")
 _report_file.flush()
 _report_file.close()
 print(f"\n报告已写入: {report_path}", file=_orig_stdout)
+write_summary()
+update_infra_section()
+reorder_repo_sections(ARGS.summary_file)

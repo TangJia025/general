@@ -1,85 +1,184 @@
-# NPU CI 失败分析报告（2026-08-25 ~ 09-01）
+# NPU CI 失败分析报告
 
 > 方法：静态筛出跑在 NPU 上的 CI workflow → 近一周执行记录 → 抽样失败 run 定位 NPU job → 日志尾部窗口根因分类 → top3。
-> 脚本：`npu_ci_failure_analysis.py`（同目录，三仓通用，支持 `--repo`/`--since`/`--samples`）。
-> 样本：每仓抽样 25~30 份失败日志，百分比为样本内占比。日志只扫尾部 1200 行（避开安装/构建噪音）。
+> 脚本：`npu_ci_failure_analysis.py`（四仓通用，支持 `--repo`/`--since`/`--samples`/`--report-dir`/`--summary-file`/`--infra-store`）。
+> 本文件为自动精简版：**每个仓库的章节由脚本每次运行自动更新**（`<!-- @section:... -->` 标记内内容会被替换），
+> 标记外内容（本头部、方法学）为手工保留；跨仓基础设施信号由脚本从 `--infra-store` 自动聚合。完整原始输出在 `npu_ci_reports/npu_ci_failure_report_<repo>_<ts>.md`（不入库）。
 
 ---
 
-## 1. vllm-project/vllm-ascend
+<!-- @section:infra-snapshot -->
 
-**NPU CI workflows**：`schedule_nightly_test_{a2,a3,a3_560t,a5,310p}.yaml`、`schedule_weekly_test_*`、`schedule_e2e_upstream_test.yaml`、`schedule_main2main.yaml`、`labeled_doctest.yaml`、`pr_test.yaml`（E2E 编排）。NPU runner：`linux-aarch64-{310p,a2,a3,a5}-N`（`linux-amd64-cpu-8-hk` 是纯 CPU）。
+## ⚠️ 跨仓基础设施信号（自动聚合）
 
-**近一周**：40 份日志抽样，共 149 次失败。
+| 仓库 | 排队样本 | 中位 | 最长 | >30min | cancelled 未启动 |
+|---|---|---|---|---|---|
+| vllm-ascend      |  1469 | 6min   | 588min     | **273 个** | 0   |
+| sglang           |    59 | 4min   | 711min     | **26 个** | 0   |
+| triton-ascend    |    21 | 1min   | 613min     | **5 个** | 0   |
+| verl             |    82 | 0min   | 188min     | **16 个** | 0   |
 
-| 排名 | 原因 | 次数 | 占比 | 证据 |
-|---|---|---|---|---|
-| #1 | 断言失败(代码或精度) | 9 | 22% | `AssertionError: some aisbench cases failed` |
-| #2 | 模型/包下载失败(网络) | 9 | 22% | yum `Failed to download metadata for repo 'update'` + huggingface whl |
-| #3 | 自定义算子so缺失(csrc构建) | 8 | 20% | `ImportError: npu_mega_moe.so cannot open shared object file`（a2 单节点，csrc 缓存缺口） |
+> 数据来源：`npu_ci_reports/infra_snapshot.json`（各仓最近一次运行写入，快照 2026-09-02T11:20）。>30min 提示 runner 池不足（infra 侧）。
 
-其他：未分类 5（多节点 orchestrator 层）、Python运行时错误 3、测试参数缺失 3、分布式/HCCL 1、昇腾算子执行错误(ACL) 1、超时 1。
-
----
-
-## 2. triton-lang/triton-ascend
-
-**NPU CI workflows**：`ci.yml`（Integration Tests；内部经 `runner-preparation.yml` 动态矩阵 → `integration-tests-ascend.yml`）。NPU runner：`linux-aarch64-a3-4` 与 **`linux-amd64-a5-4`（a5=昇腾950，跑在 amd64 上）**。
-
-**近一周**：100 runs，成功 45 / 失败 30 / cancelled 25，**成功率 60%**。抽样 8 个失败 run → 22 个失败 job **全部在 NPU runner** 上。
-
-| 排名 | 原因 | 次数 | 占比 | 证据 |
-|---|---|---|---|---|
-| #1 | 编译失败(C++/MLIR) | 18 | 82% | DynamicCVPipeline 库 `SplitMatmulPattern.cpp:740`：`no viable conversion from 'llvm::APFloat' to 'mlir::FloatType'`（MLIR API 版本不兼容，配 `-Werror`） |
-| #2 | Python运行时错误 | 3 | 14% | `AttributeError: module 'triton.language...` |
-| #3 | 断言失败 | 1 | 5% | `AssertionError: Tensor-likes are...` |
-
-> 结论：近周 NPU CI 失败几乎全被同一个编译错误卡住——自定义 DynamicCVPipeline 库与当前 LLVM/MLIR 版本不兼容，属代码侧 bug 而非测试失败。
+<!-- @/section:infra-snapshot -->
 
 ---
 
-## 3. verl-project/verl
+<!-- @section:vllm-project/vllm-ascend -->
 
-**NPU CI workflows**（14 个，全 `aarch64` runner，如 `linux-aarch64-a2b3-8`/`a3-8`）：`e2e_ascend.yml`、`npu_unit_tests.yml`、`vllm_ascend.yml`、`model_ascend.yml`、`nightly_ascend*.yml`、各 `*_ascend.yml`。
+## vllm-project/vllm-ascend（2026-08-26 ~ 2026-09-02）
 
-**近一周**：e2e 系列成功率 43%~67%；`vllm_ascend` 40%（27 失败）；`nightly_ascend_multinode` **0%**（5 战 5 败）。抽样 25 个失败 job 全在 NPU。
+- 分析时间: 2026-09-02 11:20:32 → 11:25:26（295s）
+- 完整原始输出: `npu_ci_reports/npu_ci_failure_report_vllm-ascend_20260902_112032.md`
+- 抽样 64 失败 run → 114 失败 job（NPU 85 / 门禁 fallback 29）
+- cancelled 采样 52 job，未启动/未分配 runner 0 个
+- NPU runner 排队: 中位 7min，最长 588min，>30min 有 273 个（>30min 提示 runner 池不足，infra 侧）
 
-| 排名 | 原因 | 次数 | 占比 | 证据 |
-|---|---|---|---|---|
-| #1 | 进程被kill(OOM/超内存) | 6 | 24% | 训练容器被 SIGKILL：`exit code 137` / `A worker died or was killed` |
-| #2 | 分布式通信/HCCL/Ray | 5 | 20% | `ray.exceptions.RayTaskError(RuntimeError...`、`ActorDiedError: The actor...` |
-| #3 | 超时 | 4 | 16% | multinode RayJob `timed out waiting for RayJob submitter` |
+**NPU CI workflows**：`_e2e_nightly_multi_node.yaml`、`_e2e_nightly_single_node.yaml`、`_e2e_nightly_single_node_560t.yaml`、`_e2e_nightly_single_node_models.yaml`、`_nightly_image_build.yaml`、`_selected_tests.yaml`、`_selected_tests_upstream.yaml`、`labeled_doctest.yaml`、`labeled_download_model_dataset.yaml`、`nightly_image_build.yaml`、`pr_test.yaml`、`schedule_e2e_test.yaml`、`schedule_e2e_upstream_test.yaml`、`schedule_main2main.yaml`、`schedule_nightly_test_a2.yaml`、`schedule_nightly_test_a3.yaml`、`schedule_nightly_test_a3_560t.yaml`、`schedule_nightly_test_a5.yaml`、`schedule_test_coverage.yaml`、`schedule_weekly_test_a2.yaml`、`schedule_weekly_test_a3.yaml`、`schedule_weekly_test_a3_560t.yaml`
 
-其他：依赖/安装(ImportError) 3、断言失败 2、模型下载 2、未分类 2、OOM 1。
+**近一周成功率**：`schedule_nightly_test_a3.yaml` 24%、`schedule_e2e_test.yaml` 4%、`pr_test.yaml` 28%、`schedule_nightly_test_a2.yaml` 30%、`labeled_doctest.yaml` 60%、`schedule_weekly_test_a3.yaml` 10%、`schedule_nightly_test_a3_560t.yaml` 25%、`schedule_test_coverage.yaml` 20%、`schedule_nightly_test_a5.yaml` 0%、`schedule_e2e_upstream_test.yaml` 0%、`schedule_main2main.yaml` 89%、`schedule_weekly_test_a2.yaml` 0%、`labeled_download_model_dataset.yaml` 100%、`nightly_image_build.yaml` --、`schedule_weekly_test_a3_560t.yaml` --
 
-> 结论：e2e 训练场景，失败集中在训练中进程被 OOM kill、Ray actor 死掉、多节点 RayJob 超时。多节点真实错误在 k8s pod 日志里，GitHub 只留 orchestrator 层。
+### 全部失败原因分析
+
+| 排名 | 原因 | 次数 | 占比 | owner | 样例 job 链接 |
+|---|---|---|---|---|---|
+| #1 | 断言失败(代码或精度) | 11 | 28% | code | https://github.com/vllm-project/vllm-ascend/actions/runs/33527643422/job/99924589834 [NPU]、https://github.com/vllm-project/vllm-ascend/actions/runs/33527643422/job/99934998714 [NPU]、https://github.com/vllm-project/vllm-ascend/actions/runs/33527643422/job/99939690124 [NPU] |
+| #2 | 测试参数缺失(config未传入) | 8 | 20% | code | https://github.com/vllm-project/vllm-ascend/actions/runs/33583527260/job/100104105462 [NPU]、https://github.com/vllm-project/vllm-ascend/actions/runs/33583527260/job/100104105503 [NPU]、https://github.com/vllm-project/vllm-ascend/actions/runs/33581482929/job/100098696576 [NPU] |
+| #3 | 超时 | 6 | 15% | mixed | https://github.com/vllm-project/vllm-ascend/actions/runs/33527643422/job/100013866469 [NPU]、https://github.com/vllm-project/vllm-ascend/actions/runs/33484583910/job/99783222651 [NPU]、https://github.com/vllm-project/vllm-ascend/actions/runs/33472492154/job/99745743330 [NPU] |
+| #4 | 静态检查(pre-commit/ShellCheck) | 5 | 12% | code | https://github.com/vllm-project/vllm-ascend/actions/runs/33585366505/job/100110737924 [gate]、https://github.com/vllm-project/vllm-ascend/actions/runs/33585105239/job/100108139161 [gate]、https://github.com/vllm-project/vllm-ascend/actions/runs/33584921423/job/100107622108 [gate] |
+| #5 | 多节点编排层包装失败(pod内真实错误) | 3 | 8% | unknown | https://github.com/vllm-project/vllm-ascend/actions/runs/33509908459/job/99864281694 [NPU]、https://github.com/vllm-project/vllm-ascend/actions/runs/33478289030/job/99763045110 [NPU]、https://github.com/vllm-project/vllm-ascend/actions/runs/33472492154/job/99745740829 [NPU] |
+| #6 | GitHub API 调用失败 | 3 | 8% | infra | https://github.com/vllm-project/vllm-ascend/actions/runs/33585105239/job/100107518913 [gate]、https://github.com/vllm-project/vllm-ascend/actions/runs/33584921423/job/100106973404 [gate]、https://github.com/vllm-project/vllm-ascend/actions/runs/33584889223/job/100106879316 [gate] |
+| #7 | 依赖/安装(ImportError) | 1 | 2% | code | https://github.com/vllm-project/vllm-ascend/actions/runs/33507175750/job/99855707455 [NPU] |
+| #8 | 模型/包下载失败(外网) | 1 | 2% | mixed | https://github.com/vllm-project/vllm-ascend/actions/runs/33410221539/job/99610527631 [NPU] |
+| #9 | 进程被kill(OOM/超内存) | 1 | 2% | mixed | https://github.com/vllm-project/vllm-ascend/actions/runs/33573446877/job/100073973162 [NPU] |
+| #10 | CI 策略检查(CSRC 变更) | 1 | 2% | code | https://github.com/vllm-project/vllm-ascend/actions/runs/33584889223/job/100107561331 [gate] |
+
+**owner 汇总**：infra 3，code 26，mixed 8，unknown 3
+
+
+### 基础设施相关失败 Top3
+
+1. **超时**（6 次，owner=mixed）：https://github.com/vllm-project/vllm-ascend/actions/runs/33527643422/job/100013866469 [NPU]、https://github.com/vllm-project/vllm-ascend/actions/runs/33484583910/job/99783222651 [NPU]、https://github.com/vllm-project/vllm-ascend/actions/runs/33472492154/job/99745743330 [NPU]
+2. **GitHub API 调用失败**（3 次，owner=infra）：https://github.com/vllm-project/vllm-ascend/actions/runs/33585105239/job/100107518913 [gate]、https://github.com/vllm-project/vllm-ascend/actions/runs/33584921423/job/100106973404 [gate]、https://github.com/vllm-project/vllm-ascend/actions/runs/33584889223/job/100106879316 [gate]
+3. **模型/包下载失败(外网)**（1 次，owner=mixed）：https://github.com/vllm-project/vllm-ascend/actions/runs/33410221539/job/99610527631 [NPU]
+   其余：进程被kill(OOM/超内存)(1次)
+
+> 说明：mixed 桶需结合 runner 配置/节点网络二次确认；调度/排队信号见上方 meta 行。
+
+<!-- @/section:vllm-project/vllm-ascend -->
 
 ---
 
-## 4. sgl-project/sglang
+<!-- @section:sgl-project/sglang -->
 
-**NPU CI workflows**：`pr-test-npu.yml`、`nightly-test-npu.yml`（`full-test-npu`/`diffusion-ci-gt-gen-npu` 近周无 run）。
+## sgl-project/sglang（2026-08-26 ~ 2026-09-02）
 
-**近一周**：`pr-test-npu` 100 runs 成功率**仅 18%**（47 失败）；`nightly-test-npu` 成功率 **6%**（31 失败）。
+- 分析时间: 2026-09-02 11:20:33 → 11:22:37（124s）
+- 完整原始输出: `npu_ci_reports/npu_ci_failure_report_sglang_20260902_112033.md`
+- 抽样 16 失败 run → 37 失败 job（NPU 25 / 门禁 fallback 12）
+- cancelled 采样 92 job，未启动/未分配 runner 0 个
+- NPU runner 排队: 中位 4min，最长 711min，>30min 有 26 个（>30min 提示 runner 池不足，infra 侧）
 
-⚠️ **架构特殊**：失败常发生在 CPU 门禁 `pr-gate`（ubuntu-latest），NPU job 全被 skip。抽样 8 个 pr-gate 失败，根因是 **`PR is draft. Blocking CI.`（draft PR 主动阻断，非真实错误）**——解释了 pr-test-npu 的高失败数。
+**NPU CI workflows**：`_npu-pr-test-stage.yml`、`_npu-single-node-test-stage.yml`、`bot-bump-sglang-version.yml`、`diffusion-ci-gt-gen-npu.yml`、`full-test-npu.yml`、`nightly-test-npu-e2e-multi-node.yml`、`nightly-test-npu.yml`、`pr-test-npu.yml`
 
-| 排名 | 原因 | 次数 | 占比 | 证据 |
-|---|---|---|---|---|
-| #1 | 测试框架脚本 bug | 13 | 43% | `TypeError: run_unittest_files() got an unexpected keyword argument 'fork_worker_batch_size'`（`test/run_suite.py:391`） |
-| #2 | 昇腾算子执行错误(ACL) | 3 | 10% | `NPU function error: call aclnnFusedInferenceScore...`、`error code is 507899` |
-| #3 | 依赖/安装 + 模型下载 | 各 1 | — | `No module named 'vllm'` / huggingface_hub 503 |
+**近一周成功率**：`pr-test-npu.yml` 32%、`nightly-test-npu.yml` 7%、`bot-bump-sglang-version.yml` --、`diffusion-ci-gt-gen-npu.yml` --、`full-test-npu.yml` --
 
-其他：未分类 12（含 8 个 draft 阻断的 pr-gate + 4 个 nightly 真实失败）、Python运行时错误 13（即 #1 同批次）。
+### 全部失败原因分析
 
-> 结论：#1 的 13 次失败**全部集中在 08-29 一天**——sglang 改测试框架（`run_suite.py`）时调用签名不一致，当晚所有 nightly NPU job 批量挂掉，属单次坏 commit 引入的系统性失败，不是芯片问题。真实 NPU 硬件失败是 ACL 算子错误（aclnnFusedInferenceScore）与 server 崩溃。
+| 排名 | 原因 | 次数 | 占比 | owner | 样例 job 链接 |
+|---|---|---|---|---|---|
+| #1 | 未分类 | 8 | 100% | unknown | https://github.com/sgl-project/sglang/actions/runs/33586694353/job/100112266874 [gate]、https://github.com/sgl-project/sglang/actions/runs/33586657725/job/100112161481 [gate]、https://github.com/sgl-project/sglang/actions/runs/33586377073/job/100111322015 [gate] |
+
+**owner 汇总**：unknown 8
+
+
+### 基础设施相关失败 Top3
+
+无（本次样本内无基础设施相关失败，均为业务方代码/测试问题）。
+
+<!-- @/section:sgl-project/sglang -->
 
 ---
 
-## 5. 方法学要点 / 三仓踩出的架构坑
+<!-- @section:triton-lang/triton-ascend -->
+
+## triton-lang/triton-ascend（2026-08-26 ~ 2026-09-02）
+
+- 分析时间: 2026-09-02 11:20:32 → 11:21:26（54s）
+- 完整原始输出: `npu_ci_reports/npu_ci_failure_report_triton-ascend_20260902_112032.md`
+- 抽样 8 失败 run → 18 失败 job（NPU 18 / 门禁 fallback 0）
+- cancelled 采样 11 job，未启动/未分配 runner 0 个
+- NPU runner 排队: 中位 1min，最长 613min，>30min 有 5 个（>30min 提示 runner 池不足，infra 侧）
+
+**NPU CI workflows**：`ci.yml`、`integration-tests-ascend.yml`
+
+**近一周成功率**：`ci.yml` 74%
+
+### 全部失败原因分析
+
+| 排名 | 原因 | 次数 | 占比 | owner | 样例 job 链接 |
+|---|---|---|---|---|---|
+| #1 | 断言失败(代码或精度) | 5 | 62% | code | https://github.com/triton-lang/triton-ascend/actions/runs/33581185674/job/100095656852 [NPU]、https://github.com/triton-lang/triton-ascend/actions/runs/33581185674/job/100095656854 [NPU]、https://github.com/triton-lang/triton-ascend/actions/runs/33581185674/job/100095656920 [NPU] |
+| #2 | 编译失败(C++/MLIR) | 2 | 25% | code | https://github.com/triton-lang/triton-ascend/actions/runs/33583245239/job/100101863737 [NPU]、https://github.com/triton-lang/triton-ascend/actions/runs/33583245239/job/100101863789 [NPU] |
+| #3 | Python运行时错误 | 1 | 12% | code | https://github.com/triton-lang/triton-ascend/actions/runs/33578908660/job/100088934439 [NPU] |
+
+**owner 汇总**：code 8
+
+
+### 基础设施相关失败 Top3
+
+无（本次样本内无基础设施相关失败，均为业务方代码/测试问题）。
+
+<!-- @/section:triton-lang/triton-ascend -->
+
+---
+
+<!-- @section:verl-project/verl -->
+
+## verl-project/verl（2026-08-26 ~ 2026-09-02）
+
+- 分析时间: 2026-09-02 11:20:33 → 11:25:06（273s）
+- 完整原始输出: `npu_ci_reports/npu_ci_failure_report_verl_20260902_112033.md`
+- 抽样 98 失败 run → 31 失败 job（NPU 31 / 门禁 fallback 0）
+- cancelled 采样 49 job，未启动/未分配 runner 0 个
+- NPU runner 排队: 中位 0min，最长 189min，>30min 有 16 个（>30min 提示 runner 池不足，infra 侧）
+
+**NPU CI workflows**：`e2e_ascend.yml`、`e2e_ppo_trainer_megatron_sglang_2_ascend.yml`、`e2e_ppo_trainer_megatron_sglang_ascend.yml`、`e2e_ppo_trainer_megatron_vllm_2_ascend.yml`、`e2e_ppo_trainer_veomni_vllm_ascend.yml`、`e2e_sft_llm_ascend.yml`、`model_ascend.yml`、`nightly_ascend.yml`、`nightly_ascend_multinode.yml`、`npu_unit_tests.yml`、`reward_model_sglang_ascend.yml`、`reward_model_vllm_ascend.yml`、`sgl_ascend.yml`、`vllm_ascend.yml`
+
+**近一周成功率**：`vllm_ascend.yml` 20%、`e2e_ppo_trainer_megatron_vllm_2_ascend.yml` 29%、`e2e_ppo_trainer_megatron_sglang_ascend.yml` 55%、`reward_model_vllm_ascend.yml` 60%、`e2e_ppo_trainer_veomni_vllm_ascend.yml` 58%、`e2e_ppo_trainer_megatron_sglang_2_ascend.yml` 62%、`e2e_ascend.yml` 62%、`model_ascend.yml` 67%、`reward_model_sglang_ascend.yml` 69%、`npu_unit_tests.yml` 64%、`e2e_sft_llm_ascend.yml` 69%、`nightly_ascend_multinode.yml` 0%、`nightly_ascend.yml` 78%、`sgl_ascend.yml` --
+
+### 全部失败原因分析
+
+| 排名 | 原因 | 次数 | 占比 | owner | 样例 job 链接 |
+|---|---|---|---|---|---|
+| #1 | 分布式通信/编排(Ray) | 10 | 40% | code | https://github.com/verl-project/verl/actions/runs/33582004912/job/100098041643 [NPU]、https://github.com/verl-project/verl/actions/runs/33523913225/job/99943980872 [NPU]、https://github.com/verl-project/verl/actions/runs/33512152839/job/99871031343 [NPU] |
+| #2 | 超时 | 6 | 24% | mixed | https://github.com/verl-project/verl/actions/runs/33535791096/job/99949650735 [NPU]、https://github.com/verl-project/verl/actions/runs/33417769337/job/99572442005 [NPU]、https://github.com/verl-project/verl/actions/runs/33324266266/job/99291522548 [NPU] |
+| #3 | 进程被kill(OOM/超内存) | 5 | 20% | mixed | https://github.com/verl-project/verl/actions/runs/33512153091/job/99871047050 [NPU]、https://github.com/verl-project/verl/actions/runs/33510593595/job/99865024285 [NPU]、https://github.com/verl-project/verl/actions/runs/33582765081/job/100100375458 [NPU] |
+| #4 | 依赖/安装(ImportError) | 2 | 8% | code | https://github.com/verl-project/verl/actions/runs/33510593594/job/99865024236 [NPU]、https://github.com/verl-project/verl/actions/runs/33506161469/job/99850597233 [NPU] |
+| #5 | 未分类 | 1 | 4% | unknown | https://github.com/verl-project/verl/actions/runs/33484351188/job/99780994258 [NPU] |
+| #6 | 昇腾算子执行错误(ACL) | 1 | 4% | mixed | https://github.com/verl-project/verl/actions/runs/33505772150/job/99849329027 [NPU] |
+
+**owner 汇总**：code 12，mixed 12，unknown 1
+
+
+### 基础设施相关失败 Top3
+
+1. **超时**（6 次，owner=mixed）：https://github.com/verl-project/verl/actions/runs/33535791096/job/99949650735 [NPU]、https://github.com/verl-project/verl/actions/runs/33417769337/job/99572442005 [NPU]、https://github.com/verl-project/verl/actions/runs/33324266266/job/99291522548 [NPU]
+2. **进程被kill(OOM/超内存)**（5 次，owner=mixed）：https://github.com/verl-project/verl/actions/runs/33512153091/job/99871047050 [NPU]、https://github.com/verl-project/verl/actions/runs/33510593595/job/99865024285 [NPU]、https://github.com/verl-project/verl/actions/runs/33582765081/job/100100375458 [NPU]
+3. **昇腾算子执行错误(ACL)**（1 次，owner=mixed）：https://github.com/verl-project/verl/actions/runs/33505772150/job/99849329027 [NPU]
+
+> 说明：mixed 桶需结合 runner 配置/节点网络二次确认；调度/排队信号见上方 meta 行。
+
+<!-- @/section:verl-project/verl -->
+
+---
+
+## 5. 方法学要点 / 架构坑（手工保留）
 
 1. **transitive `uses:` 检测**：triton `ci.yml` 不含任何直接 NPU 特征，靠 `uses: integration-tests-ascend.yml` 传递链判定。
-2. **`cann_image` 单独不能判强**：CPU runner 也能用 CANN 容器（triton `DynamicCVPipeline-ci` 曾误判，已在 CPU-16 上跑）；`dynamic_runner`+`cann_image` 组合才是 NPU 执行模板（如 vllm `_selected_tests.yaml`）。
+2. **`cann_image` 单独不能判强**：CPU runner 也能用 CANN 容器（triton `DynamicCVPipeline-ci` 曾误判）；`dynamic_runner`+`cann_image` 组合才是 NPU 执行模板。
 3. **NPU 标签正则**：`linux-(?:aarch64|amd64)-(?:a\d[\w-]*|310p)-\d`，覆盖 a5/amd64 形态；aarch64 子串匹配会漏掉 triton 的 a5。
 4. **门禁 fallback**：无 NPU 失败 job（NPU job 被 skip）时，降级分析该 run 的失败 job——sglang pr-gate 场景必需。
-5. **桶校准**：新增「编译失败(C++/MLIR)」「进程被kill(137)」；分布式桶收紧为 HCCL/Connection reset/RayTaskError 专属——verl e2e 日志满屏 `[Rank N]` 前缀，裸 `rank.*(fail|error)` 会误匹配。
+5. **owner 维度**：每桶标注 infra/code/mixed，基础设施相关失败一眼可筛；mixed 需结合 runner 配置/节点网络二次确认。
+6. **调度指标**：`run.created_at → job.started_at` 排队时长，>30min 提示 runner 池不足（infra 侧），比翻日志更直接。
+7. **未分类优化方向**：`::error::pre-commit did not succeed` 可归静态检查桶、多节点 `Error: failed to run script step` 可归 orchestrator 桶，可降低 vllm(42%)/sglang(75%) 未分类率。
