@@ -333,7 +333,9 @@ for f, run_id, job_id, job_name, is_npu in failed_jobs:
             pass
     logs_done += 1
     text = log.decode('utf-8', errors='ignore')
-    tail = "\n".join(text.splitlines()[-ARGS.tail_lines:])
+    # 丢弃 GitHub Actions 回显的脚本源码行（\x1b[36;1m 青色前缀），避免正则命中脚本里写死的报错文案造成误分类
+    lines = [l for l in text.splitlines() if '\x1b[36;1m' not in l]
+    tail = "\n".join(lines[-ARGS.tail_lines:])
     text_scan = tail if tail else text
     bucket = "未分类"; sig = ""
     for pat, label, _ in BUCKETS:
@@ -381,6 +383,15 @@ if logs_done:
     print(f"\n  说明: 失败日志为抽样(上限{ARGS.samples}份)，百分比为样本内占比。[gate] 表示该失败在 CPU 门禁 job 上"
           f"（NPU job 被 skip），多节点测试的 GitHub 日志只有 orchestrator 层，真错误在 k8s pod 日志里。"
           f"\n  infra/code 为脚本根据日志特征自动判定，mixed 桶需人工结合 runner 配置/节点网络二次确认。")
+
+# 分类完成后，把本仓基础设施相关失败桶（owner∈{infra,mixed}）写回快照存储，供跨仓汇总表聚合
+repo_entry["infra_failures"] = [
+    {"bucket": b, "count": c, "owner": BUCKET_OWNER.get(b, "unknown"),
+     "links": [{"url": u, "npu": n} for u, n in bucket_link.get(b, [])]}
+    for b, c in classified.most_common()
+    if BUCKET_OWNER.get(b, "unknown") in ("infra", "mixed")
+]
+save_infra_store(infra_store)
 
 def _fmt_links(links):
     """样例链接列表 -> 'url [NPU]、url [gate]'"""
@@ -508,6 +519,43 @@ def update_infra_section():
         fh.write(new)
     print(f"跨仓基础设施信号表格已更新: {path}", file=_orig_stdout)
 
+def update_infra_failure_summary():
+    """从 infra 快照存储聚合「跨仓基础设施失败原因汇总」表，更新精简版报告的 @section:infra-failures 标记段。
+    汇总四仓 owner∈{infra,mixed} 的失败桶：原因 | owner | 仓库 | 次数 | 失败 run/job 链接。
+    首次运行插入到「跨仓基础设施信号」标记段之后；后续运行原位替换。"""
+    store = load_infra_store()
+    repos = store.get("repos", {})
+    rows = []
+    for repo in sorted(repos, key=_repo_key):
+        for e in repos[repo].get("infra_failures", []):
+            links = "、".join(f"{x['url']} [{'NPU' if x['npu'] else 'gate'}]" for x in e.get("links", []))
+            rows.append([repo.split("/")[-1], e["bucket"], e.get("owner", "mixed"), e["count"], links])
+    if not rows:
+        return
+    rows.sort(key=lambda r: -r[3])
+    sec = ("## 🔧 跨仓基础设施失败原因汇总（infra/mixed）\n\n"
+           "| 原因 | owner | 仓库 | 次数 | 失败 run/job 链接 |\n|---|---|---|---|---|\n" +
+           "\n".join(f"| {b} | {o} | {r} | {c} | {l or '-'} |" for r, b, o, c, l in rows) +
+           "\n\n> 数据来源：各仓最近一次运行写入 `--infra-store`；mixed 桶需结合 runner 配置/节点网络二次确认。")
+    path = ARGS.summary_file
+    sm, em = "<!-- @section:infra-failures -->", "<!-- @/section:infra-failures -->"
+    if not os.path.exists(path):
+        return
+    with open(path, encoding="utf-8") as fh:
+        content = fh.read()
+    block = f"{sm}\n\n{sec}\n\n{em}"
+    if sm in content:
+        s = content.index(sm)
+        e = content.index(em) + len(em)
+        new = content[:s] + block + content[e:]
+    else:
+        anchor = "<!-- @/section:infra-snapshot -->"
+        i = content.index(anchor) + len(anchor) if anchor in content else len(content)
+        new = content[:i] + "\n\n" + block + content[i:]
+    with open(path, "w", encoding="utf-8") as fh:
+        fh.write(new)
+    print(f"跨仓基础设施失败原因汇总表已更新: {path}", file=_orig_stdout)
+
 def reorder_repo_sections(path):
     """把精简版报告里的仓库章节按 REPO_ORDER 重排（vllm → sglang → triton → verl）。
     只重排标记内仓库章节，标记外内容（头部/跨仓表格/方法学）保持原位。"""
@@ -540,4 +588,5 @@ _report_file.close()
 print(f"\n报告已写入: {report_path}", file=_orig_stdout)
 write_summary()
 update_infra_section()
+update_infra_failure_summary()
 reorder_repo_sections(ARGS.summary_file)
