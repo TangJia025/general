@@ -33,6 +33,8 @@ def parse_args():
     ap.add_argument("--tail-lines", type=int, default=1200, help="日志分类扫描的尾部窗口行数（默认1200）")
     ap.add_argument("--sample-cancelled", type=int, default=5, help="每个 workflow 采样 cancelled run 数（默认5）")
     ap.add_argument("--report-dir", default="npu_ci_reports", help="报告输出目录，每次运行生成带时间戳的 md 文件（默认 npu_ci_reports/）")
+    ap.add_argument("--summary-file", default="npu_ci_failure_report.md",
+                    help="精简版报告路径，每次运行自动更新对应仓库章节（默认 npu_ci_failure_report.md）")
     return ap.parse_args()
 
 ARGS = parse_args()
@@ -46,14 +48,15 @@ NPU_LABEL = ARGS.npu_label_pattern
 
 # ---------- 输出双写：终端 + 带时间戳的报告文件（历史回溯） ----------
 import sys as _sys
+_T0 = datetime.datetime.now()          # 分析开始时间
 REPORT_DIR = ARGS.report_dir
 os.makedirs(REPORT_DIR, exist_ok=True)
-_ts = datetime.datetime.now().strftime("%Y%m%d_%H%M%S")
+_ts = _T0.strftime("%Y%m%d_%H%M%S")
 report_path = os.path.join(REPORT_DIR, f"npu_ci_failure_report_{REPO}_{_ts}.md")
 _report_file = open(report_path, "w", encoding="utf-8")
 _orig_stdout = _sys.stdout
 _report_file.write(f"# NPU CI 失败分析报告\n\n"
-                   f"- 生成时间: {datetime.datetime.now().strftime('%Y-%m-%d %H:%M:%S')}\n"
+                   f"- 分析开始: {_T0.strftime('%Y-%m-%d %H:%M:%S')}\n"
                    f"- 仓库: `{ARGS.repo}`\n"
                    f"- 起始日期: `{SINCE}`\n"
                    f"- 参数: samples={ARGS.samples}, sample_per_wf={ARGS.sample_per_wf}, "
@@ -62,13 +65,16 @@ _report_file.flush()
 class _Tee:
     """同时写终端与报告文件；文件逐行落盘，脚本中断也能保留已输出内容"""
     def write(self, s):
-        _orig_stdout.write(s)
+        if not _orig_stdout.closed:
+            _orig_stdout.write(s)
         _report_file.write(s)
         _report_file.flush()
         return len(s)
     def flush(self):
-        _orig_stdout.flush()
-        _report_file.flush()
+        if not _orig_stdout.closed:
+            _orig_stdout.flush()
+        if not _report_file.closed:
+            _report_file.flush()
 _sys.stdout = _Tee()
 
 def gh(*args, binary=False):
@@ -333,6 +339,67 @@ if logs_done:
           f"（NPU job 被 skip），多节点测试的 GitHub 日志只有 orchestrator 层，真错误在 k8s pod 日志里。"
           f"\n  infra/code 为脚本根据日志特征自动判定，mixed 桶需人工结合 runner 配置/节点网络二次确认。")
 
+def write_summary():
+    """将本次运行的精简版章节写入 --summary-file。
+    章节用 HTML 注释标记包裹（<!-- @section:repo --> ... <!-- @/section:repo -->），
+    脚本只替换本仓库那段，文件内其余手工内容保留——跑完各仓库即拼成完整跨仓报告。"""
+    slug = ARGS.repo
+    sec = f"<!-- @section:{slug} -->\n\n"
+    sec += f"## {slug}（{SINCE} ~ {datetime.date.today().isoformat()}）\n\n"
+    sec += f"- 分析时间: {_T0.strftime('%Y-%m-%d %H:%M:%S')} → {_T1.strftime('%H:%M:%S')}（{(_T1 - _T0).total_seconds():.0f}s）\n"
+    sec += f"- 完整原始输出: `{report_path}`\n"
+    sec += f"- 抽样 {n_sampled} 失败 run → {len(failed_jobs)} 失败 job（NPU {len(failed_jobs)-fallback_jobs} / 门禁 fallback {fallback_jobs}）\n"
+    sec += f"- cancelled 采样 {len(cancelled_jobs)} job，未启动/未分配 runner {n_never} 个\n"
+    if queue_times:
+        q = sorted(queue_times)
+        med = q[len(q)//2]/60; mx = q[-1]/60
+        over = sum(1 for t in q if t > 1800)
+        sec += f"- NPU runner 排队: 中位 {med:.0f}min，最长 {mx:.0f}min，>30min 有 {over} 个\n"
+    rates = []
+    for f, (_, c) in sorted(wf_stats.items(), key=lambda kv: -kv[1][1].get('failure', 0)):
+        s, fl = c.get('success', 0), c.get('failure', 0)
+        rates.append(f"{f} {s/(s+fl)*100:.0f}%" if (s+fl) else f"{f} --")
+    sec += "- 近一周 workflow 成功率: " + ", ".join(rates)[:400] + "\n"
+    sec += "\n| 排名 | 原因 | 次数 | 占比 | owner |\n|---|---|---|---|---|\n"
+    if classified:
+        for i, (b, c) in enumerate(classified.most_common(3), 1):
+            sec += f"| #{i} | {b} | {c} | {c/logs_done*100:.0f}% | {BUCKET_OWNER.get(b, 'unknown')} |\n"
+        if len(classified) > 3:
+            sec += f"| - | 其余 {len(classified)-3} 类 | {sum(c for _, c in classified.most_common()[3:])} | - | - |\n"
+    else:
+        sec += "| - | (无日志样本可分类) | - | - | - |\n"
+    sec += "\n**owner 汇总**：" + "，".join(
+        f"{o} {sum(by_owner[o].values())}" for o in ("infra", "code", "mixed", "unknown") if by_owner.get(o)) + "\n\n"
+    sec += "样例 run 链接：\n"
+    for b, _ in classified.most_common():
+        link, npu = bucket_link.get(b, ("", False))
+        if link:
+            sec += f"- {b}: {link} [{'NPU' if npu else 'gate'}]\n"
+    sec += f"\n<!-- @/section:{slug} -->\n"
+
+    path = ARGS.summary_file
+    sm, em = f"<!-- @section:{slug} -->", f"<!-- @/section:{slug} -->"
+    if os.path.exists(path):
+        with open(path, encoding="utf-8") as fh:
+            content = fh.read()
+        if sm in content:
+            s = content.index(sm)
+            e = content.index(em) + len(em)
+            new = content[:s] + sec.rstrip("\n") + content[e:]
+        else:
+            new = content.rstrip("\n") + "\n\n" + sec.rstrip("\n") + "\n"
+    else:
+        new = ("# NPU CI 失败分析报告（自动精简版）\n\n"
+               f"> 由 `npu_ci_failure_analysis.py` 每次运行自动更新对应仓库章节（章节外内容手工保留），"
+               f"完整原始输出见 `npu_ci_reports/`。\n\n" + sec)
+    with open(path, "w", encoding="utf-8") as fh:
+        fh.write(new)
+    print(f"\n精简版报告已更新: {path}", file=_orig_stdout)
+
+_T1 = datetime.datetime.now()          # 分析结束时间
+_report_file.write(f"\n---\n- 分析结束: {_T1.strftime('%Y-%m-%d %H:%M:%S')}\n"
+                   f"- 耗时: {(_T1 - _T0).total_seconds():.0f}s\n")
 _report_file.flush()
 _report_file.close()
 print(f"\n报告已写入: {report_path}", file=_orig_stdout)
+write_summary()
