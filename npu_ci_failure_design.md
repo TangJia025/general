@@ -126,6 +126,8 @@ for 每个 workflow f:
 - **cancelled run 采样**：job `conclusion=cancelled`，记录是否从未启动（无 `started_at`）。未启动占比高 → 调度/资源问题。
 - **排队时长**：run 创建时间 → NPU job 实际启动时间的间隔。>30min 提示 runner 池不足（infra 侧）。
 
+**跨仓基础设施信号持久化**：排队/cancelled 统计写入 `--infra-store`（默认 `npu_ci_reports/infra_snapshot.json`，JSON 按仓库分键，每次运行覆盖本仓条目）。精简版报告顶部的「跨仓基础设施信号」表格由 `update_infra_section()` 从 store 自动聚合生成（`<!-- @section:infra-snapshot -->` 标记段，与各仓章节同一套替换机制），跑完四个仓库即自动拼出全量快照，无需手工维护。
+
 ## 7. 日志下载与根因分类
 
 ### 7.1 日志预处理
@@ -147,15 +149,18 @@ for 每个 workflow f:
 | 5 | 分布式通信/网络(HCCL) | `HCCL*error/timeout/failed` / `Connection reset` / `CollectiveError` | infra |
 | 6 | 分布式通信/编排(Ray) | `RayTaskError` / `ActorDiedError` / `Actor *died` | code |
 | 7 | 内网镜像/仓库下载失败 | `Failed to download metadata` / `repomd.xml` / `apt|yum Failed to fetch` | infra |
-| 8 | 模型/包下载失败(外网) | `HfHubHTTPError` / `Curl error` / `503` / `rate limit` / `404` | mixed |
-| 9 | 超时 | `timed out` / `TimeoutError` / `UV_HTTP_TIMEOUT` | mixed |
-| 10 | OOM/显存不足 | `out of memory` / `aclrtMalloc failed` / `alloc.*failed.*memory` | mixed |
-| 11 | 磁盘不足 | `No space left` / `ENOSPC` | infra |
-| 12 | 依赖/安装(ImportError) | `ImportError` / `ModuleNotFoundError` | code |
-| 13 | 断言失败(代码或精度) | `AssertionError` / `E assert` | code |
-| 14 | 静态检查(ShellCheck) | `ShellCheck` | code |
-| 15 | Python运行时错误 | `AttributeError` / `TypeError` / `ValueError` / `KeyError` / `IndexError` | code |
-| 16 | 测试参数缺失(config未传入) | `must be provided` | code |
+| 8 | GitHub API 调用失败 | `Failed to fetch PR title` | infra |
+| 9 | 模型/包下载失败(外网) | `HfHubHTTPError` / `Curl error` / `503` / `rate limit` / `404` | mixed |
+| 10 | 超时 | `timed out` / `TimeoutError` / `UV_HTTP_TIMEOUT` | mixed |
+| 11 | OOM/显存不足 | `out of memory` / `aclrtMalloc failed` / `alloc.*failed.*memory` | mixed |
+| 12 | 磁盘不足 | `No space left` / `ENOSPC` | infra |
+| 13 | 依赖/安装(ImportError) | `ImportError` / `ModuleNotFoundError` | code |
+| 14 | 断言失败(代码或精度) | `AssertionError` / `E assert` | code |
+| 15 | 静态检查(pre-commit/ShellCheck) | `ShellCheck` / `pre-commit did not succeed` | code |
+| 16 | CI 策略检查(CSRC 变更) | `CSRC build workflows changed` | code |
+| 17 | Python运行时错误 | `AttributeError` / `TypeError` / `ValueError` / `KeyError` / `IndexError` | code |
+| 18 | 测试参数缺失(config未传入) | `must be provided` | code |
+| 19 | 多节点编排层包装失败(pod内真实错误) | `failed to run script step` | unknown |
 
 **owner 归属**：
 - `infra` = 基础设施（资源/调度/网络/存储），直接责任；
