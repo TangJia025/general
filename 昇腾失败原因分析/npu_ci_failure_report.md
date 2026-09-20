@@ -200,3 +200,83 @@
 5. **owner 维度**：每桶标注 infra/code/mixed，基础设施相关失败一眼可筛；mixed 需结合 runner 配置/节点网络二次确认。
 6. **调度指标**：`run.created_at → job.started_at` 排队时长，>30min 提示 runner 池不足（infra 侧），比翻日志更直接。
 7. **未分类优化方向**：`::error::pre-commit did not succeed` 可归静态检查桶、多节点 `Error: failed to run script step` 可归 orchestrator 桶，可降低 vllm(42%)/sglang(75%) 未分类率。
+
+<!-- @section:vllm-project/vllm-ascend@a2-a3 -->
+
+## vllm-project/vllm-ascend@a2-a3（2026-09-13 ~ 2026-09-20）
+
+- 分析时间: 2026-09-20 21:44:22 → 21:48:13（230s）
+- 完整原始输出: `/home/tangjia/work/general/昇腾失败原因分析/npu_ci_reports/npu_ci_failure_report_vllm-ascend_a2-a3_20260920_214422.md`
+- 芯片范围: `a2-a3`；抽样 50 失败 run → 175 失败 job（NPU 156 / 门禁 fallback 19）
+- 已定性 40 份 → 去重后根因 26 个（同 run 同根因合并 14 次），假失败 0 份，门禁聚合级联 8 份（后两者均不计入根因分布）
+- cancelled 采样 94 job，未启动/未分配 runner 0 个
+- NPU runner 排队: 中位 6min，最长 342min，>30min 有 480 个（>30min 提示 runner 池不足，infra 侧）
+- 日志扫描: 按失败步骤时间窗切分 30/40 份，其余回退全局尾部窗口
+- 方法: 失败步骤（序号最靠前者）决定归因路径——容器/日志上传类直接判 infra 不读日志，安装/构建类扫时间窗前段，测试类扫时间窗尾部
+
+### 失败步骤分布（序号最靠前的失败步骤）
+
+| 失败步骤 | 失败 job 数 | 归因路径 |
+|---|---|---|
+| Run Pytest (YAML-driven) | 100 | 扫时间窗尾部 |
+| Install vllm-project/vllm-ascend | 12 | 扫时间窗前段 |
+| Run selected tests with device | 11 | 扫时间窗尾部 |
+| Stream logs | 9 | 直接定性 infra（不读日志） |
+| Check all required jobs | 8 | 门禁聚合级联（不计入根因） |
+| Wait for pods ready | 7 | 多节点编排（需集群侧） |
+| Initialize containers | 6 | 直接定性 infra（不读日志） |
+| Run vllm-project/vllm-ascend accuracy test | 5 | 扫时间窗尾部 |
+| Run Installation doctest | 4 | 扫时间窗尾部 |
+| Run pre-commit | 3 | 扫时间窗尾部 |
+| Run mypy | 3 | 扫时间窗尾部 |
+| Run Pytest (py-driven) | 3 | 扫时间窗尾部 |
+| Validate PR title prefix | 2 | 扫时间窗尾部 |
+| Download new models (CLI) | 1 | 扫时间窗尾部 |
+| Install vllm-project/vllm from source | 1 | 扫时间窗前段 |
+
+**NPU CI workflows**：`_e2e_nightly_multi_node.yaml`、`_e2e_nightly_single_node.yaml`、`_e2e_nightly_single_node_560t.yaml`、`_e2e_nightly_single_node_models.yaml`、`_selected_tests.yaml`、`_selected_tests_upstream.yaml`、`labeled_download_model_dataset.yaml`、`pr_test.yaml`、`schedule_doc_getting_started_test.yaml`、`schedule_e2e_upstream_test.yaml`、`schedule_main2main.yaml`、`schedule_nightly_test_a2.yaml`、`schedule_nightly_test_a3.yaml`、`schedule_nightly_test_a3_560t.yaml`、`schedule_test_coverage.yaml`、`schedule_weekly_test_a2.yaml`、`schedule_weekly_test_a3.yaml`、`schedule_weekly_test_a3_560t.yaml`
+
+**近一周成功率**：`pr_test.yaml` 11%、`schedule_nightly_test_a3.yaml` 41%、`schedule_weekly_test_a3.yaml` 21%、`schedule_nightly_test_a2.yaml` 42%、`schedule_nightly_test_a3_560t.yaml` 30%、`schedule_test_coverage.yaml` 0%、`labeled_download_model_dataset.yaml` 95%、`schedule_doc_getting_started_test.yaml` 98%、`schedule_main2main.yaml` 90%、`schedule_weekly_test_a2.yaml` 0%、`schedule_e2e_upstream_test.yaml` --、`schedule_weekly_test_a3_560t.yaml` --
+
+### 全部失败原因分析
+
+| 排名 | 原因 | 次数 | 占比 | owner | 样例 job 链接 |
+|---|---|---|---|---|---|
+| #1 | 步骤直接定性:Stream logs | 6 | 23% | infra | https://github.com/vllm-project/vllm-ascend/actions/runs/35500994587/job/106053346354 [NPU]、https://github.com/vllm-project/vllm-ascend/actions/runs/35487036774/job/106015918416 [NPU]、https://github.com/vllm-project/vllm-ascend/actions/runs/35500614335/job/106052381638 [NPU] |
+| #2 | 多节点pod调度/就绪失败(k8s侧) | 5 | 19% | infra | https://github.com/vllm-project/vllm-ascend/actions/runs/35502633368/job/106057742807 [NPU]、https://github.com/vllm-project/vllm-ascend/actions/runs/35498263884/job/106046578783 [NPU]、https://github.com/vllm-project/vllm-ascend/actions/runs/35498703855/job/106047456903 [NPU] |
+| #3 | 步骤直接定性:Initialize containers | 4 | 15% | infra | https://github.com/vllm-project/vllm-ascend/actions/runs/35494910996/job/106036678516 [NPU]、https://github.com/vllm-project/vllm-ascend/actions/runs/35490693098/job/106025638138 [NPU]、https://github.com/vllm-project/vllm-ascend/actions/runs/35490214424/job/106024417471 [NPU] |
+| #4 | 静态检查(pre-commit/ShellCheck) | 3 | 12% | code | https://github.com/vllm-project/vllm-ascend/actions/runs/35514153731/job/106087136072 [gate]、https://github.com/vllm-project/vllm-ascend/actions/runs/35514041298/job/106086841449 [gate]、https://github.com/vllm-project/vllm-ascend/actions/runs/35513461123/job/106085310955 [gate] |
+| #5 | 静态类型检查失败(mypy) | 3 | 12% | code | https://github.com/vllm-project/vllm-ascend/actions/runs/35513805867/job/106086218720 [gate]、https://github.com/vllm-project/vllm-ascend/actions/runs/35513803386/job/106086212471 [gate]、https://github.com/vllm-project/vllm-ascend/actions/runs/35513800674/job/106086204777 [gate] |
+| #6 | 脚本步骤通用包装失败(需按失败步骤细化) | 2 | 8% | unknown | https://github.com/vllm-project/vllm-ascend/actions/runs/35514050016/job/106086863985 [gate]、https://github.com/vllm-project/vllm-ascend/actions/runs/35513910749/job/106086496496 [gate] |
+| #7 | 断言失败(代码或精度) | 1 | 4% | code | https://github.com/vllm-project/vllm-ascend/actions/runs/35293109969/job/105440985558 [NPU] |
+| #8 | 模型缓存未命中(离线模式 local_files_only) | 1 | 4% | code | https://github.com/vllm-project/vllm-ascend/actions/runs/35496303545/job/106046329358 [NPU] |
+| #9 | 依赖/安装(ImportError) | 1 | 4% | code | https://github.com/vllm-project/vllm-ascend/actions/runs/35452779632/job/105924745650 [NPU] |
+
+**owner 汇总**：infra 15，code 9，unknown 2
+**按失败步骤直接定性（未读日志）**：Stream logs 6，Initialize containers 4
+
+### 基础设施相关失败 Top3
+
+1. **步骤直接定性:Stream logs**（6 次，owner=infra）：https://github.com/vllm-project/vllm-ascend/actions/runs/35500994587/job/106053346354 [NPU]、https://github.com/vllm-project/vllm-ascend/actions/runs/35487036774/job/106015918416 [NPU]、https://github.com/vllm-project/vllm-ascend/actions/runs/35500614335/job/106052381638 [NPU]
+2. **多节点pod调度/就绪失败(k8s侧)**（5 次，owner=infra）：https://github.com/vllm-project/vllm-ascend/actions/runs/35502633368/job/106057742807 [NPU]、https://github.com/vllm-project/vllm-ascend/actions/runs/35498263884/job/106046578783 [NPU]、https://github.com/vllm-project/vllm-ascend/actions/runs/35498703855/job/106047456903 [NPU]
+3. **步骤直接定性:Initialize containers**（4 次，owner=infra）：https://github.com/vllm-project/vllm-ascend/actions/runs/35494910996/job/106036678516 [NPU]、https://github.com/vllm-project/vllm-ascend/actions/runs/35490693098/job/106025638138 [NPU]、https://github.com/vllm-project/vllm-ascend/actions/runs/35490214424/job/106024417471 [NPU]
+
+> 说明：mixed 桶需结合 runner 配置/节点网络二次确认；pod 调度类结论需集群侧佐证。
+
+### 待集群取证（第 2 步）
+
+以下 7 项失败无法由日志单独定性，需用 CI 专用只读 kubeconfig 反查 runner pod 调度状态：
+
+| runner pod 名 | 芯片 | 失败步骤 | 原因 | job 链接 |
+|---|---|---|---|---|
+| `linux-aarch64-a3-800t-0-chlqk-runner-frcdl` | a3 | Wait for pods ready | 多节点集群编排阶段（pod 调度/资源，需集群侧确认） | https://github.com/vllm-project/vllm-ascend/actions/runs/35502633368/job/106057742807 |
+| `linux-aarch64-a3-800t-0-chlqk-runner-xx7hj` | a3 | Wait for pods ready | 多节点集群编排阶段（pod 调度/资源，需集群侧确认） | https://github.com/vllm-project/vllm-ascend/actions/runs/35498263884/job/106046578783 |
+| `linux-aarch64-a3-800t-0-chlqk-runner-kt8zg` | a3 | Wait for pods ready | 多节点集群编排阶段（pod 调度/资源，需集群侧确认） | https://github.com/vllm-project/vllm-ascend/actions/runs/35498263884/job/106046579037 |
+| `linux-aarch64-a3-800t-0-chlqk-runner-gnj2s` | a3 | Wait for pods ready | 多节点集群编排阶段（pod 调度/资源，需集群侧确认） | https://github.com/vllm-project/vllm-ascend/actions/runs/35498703855/job/106047456903 |
+| `linux-aarch64-a3-800t-0-g77hq-runner-xq6zh` | a3 | Wait for pods ready | 多节点集群编排阶段（pod 调度/资源，需集群侧确认） | https://github.com/vllm-project/vllm-ascend/actions/runs/35073258913/job/104721083171 |
+| `linux-aarch64-a3-800t-0-g77hq-runner-2nxh9` | a3 | Wait for pods ready | 多节点集群编排阶段（pod 调度/资源，需集群侧确认） | https://github.com/vllm-project/vllm-ascend/actions/runs/35073258913/job/104728092147 |
+| `linux-aarch64-a3-800t-0-g77hq-runner-5trdb` | a3 | Wait for pods ready | 多节点集群编排阶段（pod 调度/资源，需集群侧确认） | https://github.com/vllm-project/vllm-ascend/actions/runs/35069698302/job/104709607556 |
+
+> 本次未提供 `--cluster-kubeconfig`，集群取证已跳过（不阻塞第 1、3 步）。待昇腾 CI 专用只读 kubeconfig 就位后用上述 runner pod 名反查。
+
+<!-- @/section:vllm-project/vllm-ascend@a2-a3 -->
