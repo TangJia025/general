@@ -8,5 +8,9 @@ npu_ci_reports/
 # Python 字节码缓存
 __pycache__/
 
+# 取证用本地缓存（Cluster.md / issues.json / comments.json / analysis_handoff.json）：
+# 都是可重新拉取的下载物，且体积不小，不入库
+.forensics_cache/
+
 # 本地 Claude 配置不入库
 .claude/

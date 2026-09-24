@@ -105,6 +105,10 @@ def parse_args():
     ap.add_argument("--infra-store", default=os.path.join(BASE_DIR, "npu_ci_reports", "infra_snapshot.json"),
                     help="跨仓基础设施信号（排队/cancelled 统计）持久化文件，供报告自动聚合跨仓表格"
                          "（默认 <脚本目录>/npu_ci_reports/infra_snapshot.json）")
+    ap.add_argument("--emit-json", default=None, metavar="PATH",
+                    help="把本次分析的结构化结果（失败 job 全量记录 + 逐条分类 + 待集群取证队列）"
+                         "导出为 JSON，供第 2 步集群取证/历史归因程序（npu_ci_forensics.py）消费。"
+                         "缺省不导出，行为与旧版完全一致")
     return ap.parse_args()
 
 ARGS = parse_args()
@@ -1038,6 +1042,52 @@ _report_file.flush()
 _report_file.close()
 print(f"\n报告已写入: {report_path}", file=_orig_stdout)
 write_summary()
+
+# ---------- 结构化导出（--emit-json）：第 1 步 → 第 2/4/5 步的交接面 ----------
+# 供 npu_ci_forensics.py 消费。detail 里没有 run_id/job_id（只有 link），
+# 而集群取证必须按 job_id 关联到 runner_name/labels/时间戳，
+# 故在此从 link 反解 job_id 与 failed_jobs 做一次关联，保证导出文件自包含、下游无需再猜。
+if ARGS.emit_json:
+    _jobs_by_id = {j["job_id"]: j for j in failed_jobs}
+
+    def _enrich(item):
+        """把 detail 的一条按 link 里的 job_id 补上集群取证所需的字段"""
+        m = re.search(r'/job/(\d+)', item.get("link") or "")
+        if not m:
+            return dict(item)
+        job = _jobs_by_id.get(int(m.group(1)))
+        if not job:
+            return dict(item)
+        return {**item,
+                "job_id": job["job_id"], "run_id": job["run_id"],
+                "runner_name": job["runner_name"], "labels": job["labels"],
+                "is_npu": job["is_npu"], "chip": job["chip"],
+                "job_started_at": job["started_at"], "job_completed_at": job["completed_at"],
+                "failed_step_started_at": (job["failed_step"] or {}).get("started_at"),
+                "failed_step_completed_at": (job["failed_step"] or {}).get("completed_at")}
+
+    _payload = {
+        "meta": {
+            "repo": f"{OWNER}/{REPO}", "since": SINCE, "chips": ARGS.chips,
+            "section_slug": SECTION_SLUG, "generated_at": datetime.datetime.now().isoformat(),
+            "report_path": report_path, "summary_file": ARGS.summary_file,
+            "samples": ARGS.samples, "dedup_skipped": dedup_skipped,
+        },
+        # 全量失败 job 记录：run_id/job_id/runner_name/labels/失败步骤时间窗
+        "failed_jobs": failed_jobs,
+        # 逐条分类结果（已补 job_id/runner_name/labels/时间窗）
+        "classifications": [_enrich(d) for d in detail],
+        # 待集群取证队列（第 2 步直接消费）
+        "cluster_todo": cluster_todo,
+        # 桶 → owner 真值表：下游做修复建议映射时不必再解析本脚本源码
+        "buckets": [{"label": label, "owner": owner} for _, label, owner in BUCKETS],
+    }
+    with open(ARGS.emit_json, "w", encoding="utf-8") as fh:
+        json.dump(_payload, fh, ensure_ascii=False, indent=2)
+    print(f"结构化结果已导出: {ARGS.emit_json}"
+          f"（{len(failed_jobs)} 个失败 job / {len(detail)} 条分类 / {len(cluster_todo)} 条待取证）",
+          file=_orig_stdout)
+
 # 四仓汇总机制改为可选（--cross-repo）：默认只写本仓本章片范围的章节，
 # 不触碰跨仓表格与章节重排，避免单仓单芯片的一次运行改动跨仓报告
 if ARGS.cross_repo:
