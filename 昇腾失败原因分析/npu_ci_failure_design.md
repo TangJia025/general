@@ -385,14 +385,17 @@ Step4 的分类循环据路由结果分三条出口：
 
 ## 11. 第 2 步（集群取证）· 状态与边界
 
-**当前状态：受阻，等待用户提供昇腾 CI 专用只读 kubeconfig。**
+**当前状态：已接入。** kubeconfig 已由用户提供于 `~/kconf/asci/`（7 个集群可达），
+集群取证、历史归因、根因输出的完整实现见 **[`npu_ci_forensics_design.md`](./npu_ci_forensics_design.md)**，
+入口为 `npu_ci_forensics.py`。本节只保留第 1 步需要知道的连接键与边界。
 
-已就位的接口：
-- `--cluster-kubeconfig <path>` 参数（预留）；
-- `待集群取证` 队列（含 runner pod 名 + 失败步骤）；
-- `runner_name` 字段作为连接键。
+本步骤（第 1 步）为下游提供的接口：
+- `待集群取证` 队列（含 runner 标签、`runner_name`、失败**步骤**及其起止时间）；
+- `runner_name` 字段作为连接键（与 pod 名精确匹配时身份确凿）；
+- 失败步骤的时间窗 —— 第 2 步判断「某个 pod 是否可能承载过本 job」必须用它。
 
 ⚠️ **集群身份边界（用户明确告知，勿踩）**：
 - `~/kconf/infra-hk-test-cluster-002-ascend-backend-robot-kubeconfig`（`ascend-backend`）**不是昇腾 CI 的资源集群**，而是**昇腾社区的微服务部署集群**。**不可用它做 CI 取证**——拿错集群的证据去解释 CI 失败，比没有证据更糟。
 - `~/.kube/config` 内容是字面量 `KUBECONFIG-DATA-FAKE`，不是合法 kubeconfig，默认 `kubectl` 连不上任何集群；必须显式指定 `KUBECONFIG=<路径>`。
-- 昇腾 CI 专用的只读 kubeconfig 由用户后续提供，到位后再接入。
+- runner 标签后缀**不能**用于判集群（Liqo 会把虚拟节点 pod 反射进共享 namespace），
+  集群归属以 `ascend-gha-runners/docs` 的 `Cluster.md` 登记为准。详见新文档 §3.2。
