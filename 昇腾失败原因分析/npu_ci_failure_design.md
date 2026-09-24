@@ -86,9 +86,36 @@ Step1 静态筛出 NPU CI workflow（按 --chips 预过滤）
 2. 这些 run 的 `npu_fail` 为空 → 走 fallback 分支 → **该 run 所有失败 job 都被标 `is_npu=False`**；
 3. 排队时长统计用同一个正则 → `nightly-a3` 池**整池漏统计**（`run.created_at → job.started_at` 的样本量、中位数、>30min 计数全部低估）。
 
-修正：`(?:[\w-]*?-)?` 可选中缀。**实测真实标签集共 24 个形态**（含 `a2b3-{0,1,2,4,8}`、
-`a3-{2,4,8,16}[-cn12-001]`、`a3-800i-{2,4,8,16}`、`a3-800t-0`、`nightly-a3-{2,4,8,16}`）
-必须全部判为 NPU，而 `linux-{aarch64,amd64}-cpu-{2,4,8}[-hk]` 必须全部排除——改动此正则时须回归这 24 个。
+**教训：采样验证不够，真值集必须用权威全量。** 第一次只拿观察到的 24 个标签验证，
+「全部通过」——但权威集里有 102 个。改用
+`ascend-gha-runners/docs` 的 `docs/assets/problem-labels.json`（官方「仓库 → 合法 runner 标签」
+映射表，19 仓 102 个标签）回归后，又暴露两类漏判：
+
+| 漏判形态 | 后果 | 数量 |
+|---|---|---|
+| `linux-aarch64-a2b3-v-half` / `-v-quarter` | **A2 板型的变体，在 A2/A3 范围内** → 误标 `[gate]` | 2 |
+| `linux-aarch64-910b-{1,2,4,8}` | **整族漏判**（`KNOWN_CHIPS` 里没有 910b）→ 整族误标 `[gate]` | 4 |
+
+另外确认了三种此前没考虑到的形态：**arch 有三种**（`aarch64`/`amd64`/`arm64`）、
+**尾部卡数是可选的**（`linux-aarch64-a3`、`a5`、`310p`、`a2b3` 均无卡数后缀）、
+**板型 token 需归一**（`a2b1`/`a2b3`/`a2b4` → `a2`）。
+
+修正（三步一起做，缺一不可）：
+
+1. **单一真值源**：新增 `CHIP_FAMILY_TO_CHIP` 表，**同时**驱动 `NPU_LABEL_PATTERN` 与 `chip_of()`
+   ——两个正则分叉正是本节的病根，同源后不可能再自相矛盾；
+2. `(?:[\w-]*?-)?` 可选中缀（覆盖 `nightly-`），并加 `(?!cpu(?:-|$))` 显式排除 CPU 池；
+3. 芯片族后加 `(?:-|$)` 边界，避免 `a3` 在长名里被部分匹配。
+
+⚠️ **改动此正则必须跑 `tests/test_label_classification.py`**：它以那 102 个标签为真值集，
+断言「全部 NPU 标签命中 + 全部 CPU 标签排除 + 判为 NPU 的必能提取芯片」。
+该测试已反向验证有效（移除 `910b` 会挂 4 项断言）。真值集更新方式见测试文件头。
+
+⚠️ **真值集会滞后于现实，别只看它全绿**：2026-09-24 扫 32 个真实 run 采到 24 个标签，
+其中 `linux-aarch64-a3-800it-16`（`800it` 变体）**不在** `problem-labels.json` 里。
+所以测试除真值集外另有一组「实测但不在真值集」的用例（`OBSERVED_BUT_NOT_IN_FIXTURE`）。
+另：同日用新旧正则对全部 24 个实测标签做对照，**判定完全一致**
+——本次修正对现有 A2/A3 范围是行为保持的，只补上了真值集证明存在、但尚未在采样中出现的漏判形态。
 
 ## 3. 输入与参数
 
@@ -100,7 +127,7 @@ Step1 静态筛出 NPU CI workflow（按 --chips 预过滤）
 | `--sample-per-wf` | 8 | 每个 workflow 抽样失败 run 数 |
 | `--sample-cancelled` | 5 | 每个 workflow 采样 cancelled run 数 |
 | `--workflow-dir` | 临时目录 | 已下载 workflow 文件目录（缓存复用） |
-| `--npu-label-pattern` | `linux-(?:aarch64\|amd64)-(?:[\w-]*?-)?(?:a\d[\w-]*\|310p)-\d` | NPU runner 标签正则。⚠️ 中缀 `(?:[\w-]*?-)?` 不可删——少了它 `nightly-a3` 池会被判成 CPU 门禁，详见 §2.3.1 与 §10 |
+| `--npu-label-pattern` | 由 `CHIP_FAMILY_TO_CHIP` 生成：`linux-(?:aarch64\|amd64\|arm64)-(?!cpu(?:-\|$))(?:[\w-]*?-)?(?:芯片族)(?:-\|$)` | NPU runner 标签正则。⚠️ **不要手工改字面量**——与 `chip_of()` 同源于 `CHIP_FAMILY_TO_CHIP` 才是设计意图；改动后必须跑 `tests/test_label_classification.py`，详见 §2.3.1 |
 | `--chips` | `a2,a3` | 芯片范围（逗号分隔）；**空字符串=不限**。同时过滤 workflow 文件名与 job runner 标签 |
 | `--tail-lines` | 1200 | 步骤时间窗**切不出来时**的回退窗口行数 |
 | `--no-step-window` | 关闭 | 关闭步骤时间窗切分，退回旧的固定尾部窗口方式（用于新旧结果对照） |

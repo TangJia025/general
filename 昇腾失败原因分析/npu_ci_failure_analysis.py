@@ -31,7 +31,8 @@ NPU CI workflow 失败分析工具（三步法取证，当前实现第 1、3 步
   npu_ci_reports/infra_snapshot.json                    跨仓基础设施信号快照（不入库，--cross-repo 时聚合）
 
 适用仓库架构差异（已实测校准）：
-  - vllm-ascend: NPU job 直接跑在 linux-aarch64-{a2,a3,a5,310p}-N runner 上
+  - vllm-ascend: NPU job 直接跑在 linux-aarch64-{a2,a2b*,a3,a5,310p,910b}-* runner 上
+    （芯片族取自权威标签表 problem-labels.json，见 CHIP_FAMILY_TO_CHIP）
   - triton-ascend: NPU job 跑在 linux-aarch64-a3-4 / linux-amd64-a5-4（a5 昇腾950 在 amd64！），
     顶层 ci.yml 不含直接特征，靠 uses: integration-tests-ascend.yml 传递
   - verl: 大量 *_ascend.yml，全 aarch64 runner；docker-build-ascend-* 是 CD 排除
@@ -47,6 +48,32 @@ from collections import Counter, defaultdict
 # 这样在任意 cwd 下运行（仓库根或本目录内）产物路径都一致，不会因 cwd 变化而散落
 BASE_DIR = os.path.dirname(os.path.abspath(__file__))
 
+# ---------- 昇腾芯片族：is_npu 与 chip_of 的唯一真值源 ----------
+# 权威来源 ascend-gha-runners/docs 的 docs/assets/problem-labels.json
+# ——「仓库 → 合法 runner 标签」映射表（19 仓 102 个标签），全量回归见 tests/test_label_classification.py。
+# ⚠️ 这张表同时决定 is_npu（job 是否 NPU job，决定报告里的 [NPU]/[gate] 标注）与 chip_of（--chips 过滤）。
+#    两者先前用**两个独立正则**，实测出现过 [gate] 与 chip=a3 并存的自相矛盾（见设计文档 §2.3.1）。
+#    新增芯片族只改这里。910b 就是实测漏掉的一整族（曾整族被判成 CPU 门禁，同 nightly-a3 那类 bug）。
+# 键 = 标签里 `linux-{arch}-` 之后的芯片族 token；值 = 归一后的芯片名（a2b1/a2b3/a2b4 是 A2 的不同板型）
+CHIP_FAMILY_TO_CHIP = {
+    "a2": "a2", "a2b1": "a2", "a2b3": "a2", "a2b4": "a2",
+    "a3": "a3",
+    "a5": "a5",
+    "310p": "310p",
+    "910b": "910b",
+}
+KNOWN_CHIPS = tuple(sorted(set(CHIP_FAMILY_TO_CHIP.values())))
+
+# arch 实测三种：arm64 当前只出现在 cpu 标签上，一并纳入以免将来漏判
+NPU_ARCH = r"(?:aarch64|amd64|arm64)"
+# 芯片族按长度降序，保证 a2b3 先于 a2 尝试（否则 a2 先匹配、后面接不上边界而整体失配）
+NPU_CHIP_ALT = "|".join(sorted(CHIP_FAMILY_TO_CHIP, key=len, reverse=True))
+# NPU runner 标签判定：
+#   linux-{arch}-(?!cpu…) 先排除 CPU 池（实测 15 个形态：cpu-4-hk / cpu-4-cn12-001 / cpu-4-buildkit-… ）
+#   (?:[\w-]*?-)?         可选中缀，覆盖 linux-aarch64-nightly-a3-16（实测 524 次，第二大池）
+#   (?:芯片族)(?:-|$)      芯片族后必须是分隔符或结尾，避免 a3 在 a3xyz 这类长名里被部分匹配
+NPU_LABEL_PATTERN = rf"linux-{NPU_ARCH}-(?!cpu(?:-|$))(?:[\w-]*?-)?(?:{NPU_CHIP_ALT})(?:-|$)"
+
 def parse_args():
     ap = argparse.ArgumentParser(description=__doc__)
     ap.add_argument("--repo", default="vllm-project/vllm-ascend", help="owner/repo")
@@ -54,14 +81,10 @@ def parse_args():
     ap.add_argument("--samples", type=int, default=40, help="最多分类的失败日志数（默认40）")
     ap.add_argument("--sample-per-wf", type=int, default=8, help="每个 workflow 抽样失败 run 数（默认8）")
     ap.add_argument("--workflow-dir", default=None, help="已下载 workflow 文件目录（复用缓存）；缺省自动下载到临时目录")
-    ap.add_argument("--npu-label-pattern",
-                    # 可选中缀 (?:[\w-]*?-)? 用于覆盖实测存在的 `linux-aarch64-nightly-a3-16` 形态。
-                    # 旧版无此中缀，导致 nightly-a3 池（实测 524 次，第二大池）被判成 CPU 门禁：
-                    # 报告里这些 job 标 [gate]（语义是「NPU job 被 skip」），且整池漏进排队时长统计。
-                    # 中缀限定为「不含 a\d/310p」的惰性片段，实测 linux-*-cpu-{2,4,8}[-hk] 仍正确排除
-                    default=r"linux-(?:aarch64|amd64)-(?:[\w-]*?-)?(?:a\d[\w-]*|310p)-\d",
-                    help="NPU runner 标签正则（job labels 过滤）。覆盖 aarch64 与 a5/amd64 等昇腾芯片形态，"
-                         "并容忍 nightly- 之类的中缀")
+    ap.add_argument("--npu-label-pattern", default=NPU_LABEL_PATTERN,
+                    help="NPU runner 标签正则（job labels 过滤）。缺省由 CHIP_FAMILY_TO_CHIP 生成，"
+                         "覆盖 aarch64/amd64/arm64 三种 arch、全部已知芯片族（含 910b）、"
+                         "nightly- 中缀与无卡数后缀形态；已验证 102 个权威标签全量通过")
     ap.add_argument("--tail-lines", type=int, default=1200, help="日志分类扫描的窗口行数上限（默认1200）")
     ap.add_argument("--sample-cancelled", type=int, default=5, help="每个 workflow 采样 cancelled run 数（默认5）")
     ap.add_argument("--chips", default="a2,a3",
@@ -99,17 +122,15 @@ CHIPS_TAG = "-".join(CHIPS) if CHIPS else "all"
 # 章节 slug 带芯片范围：避免 A2/A3 范围的章节覆盖掉报告里原有的全量仓库章节
 SECTION_SLUG = ARGS.repo if not CHIPS else f"{ARGS.repo}@{CHIPS_TAG}"
 
-# 已知昇腾芯片形态（runner 标签 / workflow 文件名里出现的芯片标识）
-KNOWN_CHIPS = ("a2", "a3", "a5", "310p")
-
 def chip_of(labels):
     """从 runner 标签识别芯片，返回 KNOWN_CHIPS 中的一个；无法识别返回 None。
     注意：这里识别的是「任意」已知芯片（不受 --chips 限制），过滤由调用方按 CHIPS 判定，
-    否则 --chips a2,a3 下永远过滤不掉 a5 的 job。"""
+    否则 --chips a2,a3 下永远过滤不掉 a5 的 job。
+    芯片族表与 NPU_LABEL_PATTERN 同源（CHIP_FAMILY_TO_CHIP），保证 is_npu 与 chip 永不自相矛盾。"""
     for label in labels or []:
-        m = re.search(r'-(a2|a3|a5|310p)[\w-]*-\d', label)
+        m = re.search(rf"-({NPU_CHIP_ALT})(?:-|$)", label)
         if m:
-            return m.group(1)
+            return CHIP_FAMILY_TO_CHIP[m.group(1)]
     return None
 
 # ---------- 输出双写：终端 + 带时间戳的报告文件（历史回溯） ----------
