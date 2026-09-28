@@ -53,6 +53,12 @@ class FakeSession:
     def namespace_pods(self):
         return {"ok": True, "pods": [_pod()]}
 
+    def pod_lists_for_lookup(self):
+        """第 2 步找 pod 时按「登记 namespace → 仓库名派生的 namespace → 全量」逐个尝试，
+        命中即停（见 ClusterSession.pod_lists_for_lookup）。本测试只关心日志门禁，
+        故给一路即命中；namespace 解析本身由 tests/test_namespace_lookup.py 守着。"""
+        yield "vllm-project", self.namespace_pods()
+
     def availability(self, label):
         return {"available": True, "checked": True, "snapshot_only": True,
                 "matched_pods": 1, "runners_online": 1, "listeners": 0,
