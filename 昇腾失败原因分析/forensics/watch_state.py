@@ -41,6 +41,20 @@ TERMINAL_STATES = {STATE_REPORTED, STATE_NOT_A_FAILURE, STATE_GAVE_UP}
 # 留 90s 是给「步骤结束后还有 always() 收尾步骤」的情况一点余量，而不是假装窗口很大。
 SNAPSHOT_GRACE_SECONDS = 90
 
+# 监听范围内关注的触发事件（见 is_in_scope）：定时跑 + 手动重跑，排除 pull_request 一类。
+# ⚠️ 别把它改成「只有 schedule」：实测上游这几个 workflow 文件只声明了 workflow_dispatch
+#    （nightly 由上游调度 workflow 以 dispatch 方式拉起），在范围的 7 个 run 的 event 全是
+#    workflow_dispatch。写成「只有 schedule」= 一个 run 都不看，而且是**静默**停摆。
+IN_SCOPE_EVENTS = frozenset({"schedule", "workflow_dispatch"})
+
+# 「未开始」的 run 状态：僵尸 run 只可能停在这些状态里（见 is_stale_run）。
+NOT_STARTED_STATUSES = frozenset({"queued", "requested", "waiting", "pending"})
+
+# 一个从未开始的 run 超过这么久就判为僵尸：不再计入「有活动」、不再每轮查它的 /jobs。
+# 24h 的依据是 GitHub 侧的正常排队量级（实测目标 workflow 的 job 排队是分钟级；
+# job 超时上限 6h），排队一天还没开始的 run 已不可能再拿到 runner。
+STALE_RUN_HOURS = 24
+
 LEDGER_VERSION = 1
 
 
@@ -69,10 +83,46 @@ def earliest_failed_step(job: dict):
             "started_at": step.get("started_at"), "completed_at": step.get("completed_at")}
 
 
-def is_in_scope(run: dict, path_pattern) -> bool:
-    """run 是否落在监听范围内（按 workflow 文件路径匹配）。"""
+def is_in_scope(run: dict, path_pattern, events=None) -> bool:
+    """run 是否落在监听范围内：workflow 文件路径命中 **且** 触发事件属于关注集合。
+
+    为什么还要看 event：同一个 workflow 文件也会被 pull_request 触发（改 workflow 本身的验证），
+    那类 run 的语义是「验证这次改动」，不是「nightly 测试跑挂了」，却会被 path 正则一并收进来。
+    实测那个 2026-05-15 的僵尸 run 就是 pull_request 触发（head_branch=bugfix/version-suffix-9167），
+    只按 path 的话它会一直在范围内。
+
+    关注集合取 schedule + workflow_dispatch：实测上游这三个 workflow 文件**只声明了
+    workflow_dispatch**，7 个在范围的 run 的 event 全是它 —— 写成「仅 schedule」等于一个都不看。
+    event 字段缺失时按**在范围内**处理 —— 漏看一次真失败的代价，高于多查一次 /jobs。
+    """
     path = run.get("path") or ""
-    return bool(path_pattern.search(path))
+    if not path_pattern.search(path):
+        return False
+    event = run.get("event")
+    if event is None:
+        return True
+    return event in (IN_SCOPE_EVENTS if events is None else events)
+
+
+def is_stale_run(run: dict, now=None, max_age_hours: float = STALE_RUN_HOURS) -> bool:
+    """run 是否是「僵尸」：**从未开始**、且创建时间已超过 max_age_hours。
+
+    实测存在一个 2026-05-15 创建、至今 status=queued 的 run：它让「有活动」恒为真 →
+    监听器永不休眠，每轮白查一次 /jobs（夜间空闲时段从约 46 次/小时抬到约 419 次/小时）；
+    而它永远不会有 job 开始，也就永远不会有失败可分析 —— 纯属净损耗。
+
+    判据只能取「创建时间 + 从未开始」：GitHub 不会把这类 run 标成失败，
+    updated_at 也停在创建那一刻（没有可用的心跳），除年龄外没有别的信号。
+    限定 status 为「未开始」是刻意的保守：真在跑的 run（in_progress）无论多老都要盯着，
+    它的 job 随时可能失败。
+    """
+    if run.get("status") not in NOT_STARTED_STATUSES:
+        return False
+    created_at = parse_timestamp(run.get("created_at"))
+    if created_at is None:
+        return False        # 判不出来就不当僵尸：宁可多查一次，也不能漏盯一个真在跑的 run
+    return (now or datetime.datetime.now(datetime.timezone.utc)) - created_at > \
+        datetime.timedelta(hours=max_age_hours)
 
 
 def snapshot_window(job: dict) -> tuple:
