@@ -399,3 +399,11 @@ Step4 的分类循环据路由结果分三条出口：
 - `~/.kube/config` 内容是字面量 `KUBECONFIG-DATA-FAKE`，不是合法 kubeconfig，默认 `kubectl` 连不上任何集群；必须显式指定 `KUBECONFIG=<路径>`。
 - runner 标签后缀**不能**用于判集群（Liqo 会把虚拟节点 pod 反射进共享 namespace），
   集群归属以 `ascend-gha-runners/docs` 的 `Cluster.md` 登记为准。详见新文档 §3.2。
+- 但反过来也**不能**盲信 `Cluster.md`：登记的全名后缀（`…-cn12-001`）与 pod 名实际后缀
+  （实测 `…-chlqk-runner-*`）可能不一致，按登记全名查空**不能**推出「该标签不存在」。
+  详见新文档 §3.3 / §3.6 与 `tests/test_runner_availability.py`。
+
+> 📍 **监听器（近实时自动运行）**：本步骤所在的五段流水线已由 `npu_ci_watch.py` 常驻驱动 ——
+> 目标 workflow 一失败就抢集群快照（pod 是一次性的），job 结束后自动补日志分类与报告。
+> 为什么必须两阶段、台账怎么防重复与防静默丢弃、systemd 部署，见
+> [npu_ci_forensics_design.md](npu_ci_forensics_design.md) 的 §9 与 [deploy/README.md](deploy/README.md)。

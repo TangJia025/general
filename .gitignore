@@ -12,5 +12,9 @@ __pycache__/
 # 都是可重新拉取的下载物，且体积不小，不入库
 .forensics_cache/
 
+# 监听器的运行态：台账、失败时刻的集群快照、handoff、watch.log。
+# 都是本机运行时产物（快照里还含 pod 名/日志），入库既无意义也会误导别人以为有现成现场
+.forensics_state/
+
 # 本地 Claude 配置不入库
 .claude/
