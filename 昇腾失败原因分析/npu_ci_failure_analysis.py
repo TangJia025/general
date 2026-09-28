@@ -109,6 +109,15 @@ def parse_args():
                     help="把本次分析的结构化结果（失败 job 全量记录 + 逐条分类 + 待集群取证队列）"
                          "导出为 JSON，供第 2 步集群取证/历史归因程序（npu_ci_forensics.py）消费。"
                          "缺省不导出，行为与旧版完全一致")
+    ap.add_argument("--run-id", dest="run_ids", type=int, action="append", default=None,
+                    metavar="RUN_ID",
+                    help="**定向模式**：只分析指定的 run（可重复）。供近实时监听器"
+                         "（npu_ci_watch.py）逐次消费单个失败，跳过 workflow 枚举与近 N 天抽样；"
+                         "同时**不**写精简版报告章节与 infra 快照（否则一次单 job 的分析会覆盖整仓统计）")
+    ap.add_argument("--job-id", dest="job_ids", type=int, action="append", default=None,
+                    metavar="JOB_ID",
+                    help="定向模式的进一步收窄：只分析指定的 job（可重复，须落在 --run-id 给定的 run 内）。"
+                         "用于「同一 run 里稍后又失败了另一个 job」被单独消费的场景")
     return ap.parse_args()
 
 ARGS = parse_args()
@@ -119,6 +128,14 @@ else:
     from datetime import date, timedelta
     SINCE = (date.today() - timedelta(days=7)).isoformat()
 NPU_LABEL = ARGS.npu_label_pattern
+
+# 定向模式（--run-id）：只分析点名的 run/job，不做 workflow 枚举与近 N 天抽样。
+# 为什么需要它：近实时监听器是在「某个步骤刚失败」时触发的，而那时
+#   ① 失败 run 还没结束（抽样发现按 conclusion=='failure' 过滤会整条漏掉）；
+#   ② 每次只该消费这一个失败，不能把 7 天窗口里的历史失败重新分类一遍。
+INCREMENTAL = bool(ARGS.run_ids)
+if ARGS.job_ids and not ARGS.run_ids:
+    raise SystemExit("--job-id 必须与 --run-id 一起使用（job 归属哪个 run 无法自行推断）")
 
 # 芯片范围（空字符串 = 不限芯片，退回旧的全 NPU runner 行为）
 CHIPS = [c.strip().lower() for c in ARGS.chips.split(",") if c.strip()]
@@ -187,6 +204,20 @@ def save_infra_store(store):
     with open(INFRA_STORE, "w", encoding="utf-8") as fh:
         json.dump(store, fh, ensure_ascii=False, indent=2)
 
+def persist_infra_store(store):
+    """把 infra 快照写回磁盘；**定向模式下一律不写**。
+
+    为什么把这个判断收进一个函数：原先有两处 `save_infra_store(store)`（排队/cancelled 统计一处、
+    分类结果 infra_failures 一处），给一处加锁、漏掉另一处就会出事 —— 实测漏掉第二处时，
+    一次单 job 的定向运行在 3 秒内把 infra_snapshot.json 里本仓的聚合数据覆盖成了 1 条。
+    这不是「本次没数据」，而是销毁其它运行采集来的跨仓汇总数据，所以规则必须只有一处。
+    """
+    if INCREMENTAL:
+        print("（定向模式：跳过 infra 快照写回，避免用单 job 结果覆盖整仓聚合）", file=_orig_stdout)
+        return False
+    save_infra_store(store)
+    return True
+
 def gh(*args, binary=False):
     r = subprocess.run(["gh", "api", *args], capture_output=True)
     if r.returncode != 0:
@@ -244,63 +275,71 @@ def scan_features(path):
     uses = re.findall(r'uses:\s*\./\.github/workflows/([\w.-]+\.ya?ml)', txt)
     return feats, uses, txt
 
-WF_DIR = prepare_workflows()
-info = {}            # 文件名 -> (特征, uses)
-for f in sorted(os.listdir(WF_DIR)):
-    if not f.endswith(('.yaml', '.yml')):
-        continue
-    if any(k in f for k in CD_KEYWORDS):
-        continue
-    feats, uses, txt = scan_features(os.path.join(WF_DIR, f))
-    info[f] = (feats, uses)
-
-strong_files = {f for f, (feats, _) in info.items() if is_strong(feats)}
-
-def transitively_uses_npu(f):
-    """f 是否（间接）uses 了某个强 NPU 特征文件（如 triton ci.yml → integration-tests-ascend.yml）"""
-    seen, stack = set(), [f]
-    while stack:
-        cur = stack.pop()
-        if cur in seen:
-            continue
-        seen.add(cur)
-        if cur in strong_files:
-            return True
-        stack.extend(info.get(cur, (set(), []))[1])
-    return False
-
-candidates = {}
-for f, (feats, uses) in info.items():
-    if is_strong(feats):
-        candidates[f] = feats
-    elif 'dynamic_runner' in feats or 'cann_image' in feats:
-        # 只有弱特征 + 文件名带 npu/ascend 才算（裸 dynamic_runner 会污染 AMD/ROCm/release）
-        if re.search(r'npu|ascend', f):
-            candidates[f] = feats
-    elif transitively_uses_npu(f):
-        candidates[f] = feats
-
-# 芯片范围预过滤：文件名若已指明芯片（如 _a2 / _a3_560t / _a5 / _310p），
-# 只在芯片命中 --chips 时保留；文件名不含芯片信息者（如 pr_test）保留，
-# 因为其 job 仍可能跑在目标芯片的 runner 上，由 job 级 chip_of() 兜底判定。
 def workflow_chip(f):
     """从 workflow 文件名识别芯片；不含芯片信息返回 None"""
     m = re.search(r'_(a2|a3|a5|310p)(?:_|\.|-|$)', f)
     return m.group(1) if m else None
 
-if CHIPS:
-    excluded = {f: workflow_chip(f) for f in candidates
-                if workflow_chip(f) and workflow_chip(f) not in CHIPS}
-    for f in excluded:
-        del candidates[f]
-    if excluded:
-        print(f"芯片范围 --chips {CHIPS_TAG}: 排除 {len(excluded)} 个非目标芯片 workflow: "
-              f"{', '.join(sorted(excluded))}")
+if INCREMENTAL:
+    # 定向模式不做 workflow 静态筛选：目标 run/job 已点名，workflow 名直接取 run 的 path 字段。
+    # 不能只是「结果用不上」—— prepare_workflows() 要为每个 workflow 文件发一次 gh api
+    # （约 100 次），而监听器每消费一个失败就要跑一次本脚本，这个代价必须省掉。
+    WF_DIR, info, candidates, strong_files = None, {}, {}, set()
+    print(f"=== Step1 跳过 workflow 静态筛选（定向模式 --run-id；芯片仍按 job 级 chip 判定，"
+          f"范围 {CHIPS_TAG}）===")
+else:
+    WF_DIR = prepare_workflows()
+    info = {}            # 文件名 -> (特征, uses)
+    for f in sorted(os.listdir(WF_DIR)):
+        if not f.endswith(('.yaml', '.yml')):
+            continue
+        if any(k in f for k in CD_KEYWORDS):
+            continue
+        feats, uses, txt = scan_features(os.path.join(WF_DIR, f))
+        info[f] = (feats, uses)
 
-print(f"=== Step1 静态筛出 NPU CI 候选: {len(candidates)} 个（芯片范围 {CHIPS_TAG}）===")
-for f, h in sorted(candidates.items()):
-    wc = workflow_chip(f)
-    print(f"  {f:48s} {','.join(sorted(h)) or 'uses_npu_exec':24s} 芯片={wc or '未标注'}")
+    strong_files = {f for f, (feats, _) in info.items() if is_strong(feats)}
+
+    def transitively_uses_npu(f):
+        """f 是否（间接）uses 了某个强 NPU 特征文件（如 triton ci.yml → integration-tests-ascend.yml）"""
+        seen, stack = set(), [f]
+        while stack:
+            cur = stack.pop()
+            if cur in seen:
+                continue
+            seen.add(cur)
+            if cur in strong_files:
+                return True
+            stack.extend(info.get(cur, (set(), []))[1])
+        return False
+
+    candidates = {}
+    for f, (feats, uses) in info.items():
+        if is_strong(feats):
+            candidates[f] = feats
+        elif 'dynamic_runner' in feats or 'cann_image' in feats:
+            # 只有弱特征 + 文件名带 npu/ascend 才算（裸 dynamic_runner 会污染 AMD/ROCm/release）
+            if re.search(r'npu|ascend', f):
+                candidates[f] = feats
+        elif transitively_uses_npu(f):
+            candidates[f] = feats
+
+    # 芯片范围预过滤：文件名若已指明芯片（如 _a2 / _a3_560t / _a5 / _310p），
+    # 只在芯片命中 --chips 时保留；文件名不含芯片信息者（如 pr_test）保留，
+    # 因为其 job 仍可能跑在目标芯片的 runner 上，由 job 级 chip_of() 兜底判定。
+    if CHIPS:
+        excluded = {f: workflow_chip(f) for f in candidates
+                    if workflow_chip(f) and workflow_chip(f) not in CHIPS}
+        for f in excluded:
+            del candidates[f]
+        if excluded:
+            print(f"芯片范围 --chips {CHIPS_TAG}: 排除 {len(excluded)} 个非目标芯片 workflow: "
+                  f"{', '.join(sorted(excluded))}")
+
+    print(f"=== Step1 静态筛出 NPU CI 候选: {len(candidates)} 个（芯片范围 {CHIPS_TAG}）===")
+    for f, h in sorted(candidates.items()):
+        wc = workflow_chip(f)
+        print(f"  {f:48s} {','.join(sorted(h)) or 'uses_npu_exec':24s} 芯片={wc or '未标注'}")
 
 # ---------- Step 2: 近 N 天 runs 记录 ----------
 def has_standalone_trigger(txt):
@@ -308,27 +347,34 @@ def has_standalone_trigger(txt):
     return bool(re.search(r'^\s*(push|pull_request|pull_request_target|workflow_dispatch|schedule|'
                           r'issue_comment|repository_dispatch|workflow_run|merge_group):', txt, re.M))
 
-print(f"\n=== Step2 近({SINCE}~) 执行记录 ===")
 wf_stats = {}
-for f, feats in candidates.items():
-    if f.startswith('_') or not has_standalone_trigger(open(os.path.join(WF_DIR, f), encoding="utf-8", errors="ignore").read()):
-        continue
-    data = gh(f"repos/{OWNER}/{REPO}/actions/workflows/{f}/runs?per_page=100&created=%3E{SINCE}")
-    try:
-        runs = json.loads(data)['workflow_runs']
-    except Exception:
-        continue
-    c = Counter()
-    for r in runs:
-        if r['status'] == 'completed':
-            c[r['conclusion']] += 1
-    wf_stats[f] = (len(runs), dict(c))
-    tot = len(runs); s = c['success']; fl = c['failure']
-    rate = f"{s/(s+fl)*100:.0f}%" if (s+fl) else "--"
-    print(f"  {f:48s} total={tot:4d} success={s:4d} failure={fl:4d} cancelled={c['cancelled']:4d} 成功率={rate}")
+if INCREMENTAL:
+    print(f"\n=== Step2 定向模式（--run-id {ARGS.run_ids}）：跳过 workflow 枚举与近 N 天执行记录统计 ===")
+else:
+    print(f"\n=== Step2 近({SINCE}~) 执行记录 ===")
+    for f, feats in candidates.items():
+        if f.startswith('_') or not has_standalone_trigger(open(os.path.join(WF_DIR, f), encoding="utf-8", errors="ignore").read()):
+            continue
+        data = gh(f"repos/{OWNER}/{REPO}/actions/workflows/{f}/runs?per_page=100&created=%3E{SINCE}")
+        try:
+            runs = json.loads(data)['workflow_runs']
+        except Exception:
+            continue
+        c = Counter()
+        for r in runs:
+            if r['status'] == 'completed':
+                c[r['conclusion']] += 1
+        wf_stats[f] = (len(runs), dict(c))
+        tot = len(runs); s = c['success']; fl = c['failure']
+        rate = f"{s/(s+fl)*100:.0f}%" if (s+fl) else "--"
+        print(f"  {f:48s} total={tot:4d} success={s:4d} failure={fl:4d} cancelled={c['cancelled']:4d} 成功率={rate}")
 
 # ---------- Step 3: 失败 run → 定位 NPU job + 采集失败步骤/runner pod；另采样 cancelled 与排队时长 ----------
-print(f"\n=== Step3 对失败 run 抽样（按失败量加权），定位失败 job 并采集失败步骤 ===")
+if INCREMENTAL:
+    print(f"\n=== Step3 定向采集（--run-id {ARGS.run_ids}"
+          + (f" --job-id {ARGS.job_ids}" if ARGS.job_ids else "") + "）===")
+else:
+    print(f"\n=== Step3 对失败 run 抽样（按失败量加权），定位失败 job 并采集失败步骤 ===")
 SAMPLE_PER_WF = ARGS.sample_per_wf
 
 def earliest_failed_step(job):
@@ -360,11 +406,65 @@ def build_job_record(workflow, run_id, job, is_npu):
         "completed_at": job.get('completed_at'),
     }
 
+def discover_by_run_ids(run_ids, job_ids):
+    """定向采集：只查点名的 run/job，供近实时监听器逐次消费。
+
+    与抽样发现（Step3 主循环）共用 build_job_record 与芯片/NPU 范围判定，差异只在「从哪来」。
+    两条必须保留的差异：
+      1. **不要求 run/job 已结束**。监听器在「某个步骤刚失败」时就被触发，那时 job 往往还在
+         跑收尾步骤（实测「失败步骤结束 → job 结束」固定 55s），`conclusion` 还是 null。
+         故这里以 `earliest_failed_step(job) 非空` 作为「失败」判据，而不是 conclusion=='failure'。
+      2. **不按 run 是否含 NPU 失败做整体取舍**，逐 job 判 is_npu —— 定向模式下要分析的
+         就是被点名的那一个 job。
+    """
+    records = []
+    skipped_chip = 0
+    for run_id in run_ids:
+        run_text = gh(f"repos/{OWNER}/{REPO}/actions/runs/{run_id}")
+        if not run_text:
+            print(f"  ⚠️ run {run_id} 取不到（已删除/无权访问/网络失败），本次跳过")
+            continue
+        try:
+            run = json.loads(run_text)
+        except Exception as exc:
+            print(f"  ⚠️ run {run_id} 响应解析失败（{exc}），本次跳过")
+            continue
+        # workflow 取 path（如 .github/workflows/schedule_nightly_test_a2.yaml），
+        # 与抽样模式里 failed_jobs[].workflow 的口径保持一致（那边用的是候选文件名）
+        workflow = run.get("path") or run.get("name") or f"run:{run_id}"
+        jobs_text = gh(f"repos/{OWNER}/{REPO}/actions/runs/{run_id}/jobs?per_page=100")
+        if not jobs_text:
+            print(f"  ⚠️ run {run_id} 的 jobs 取不到，本次跳过")
+            continue
+        for job in json.loads(jobs_text).get("jobs") or []:
+            if job_ids and job["id"] not in job_ids:
+                continue
+            if earliest_failed_step(job) is None:
+                # 步骤还没失败（含已结束但成功、被跳过、仍在跑的 job）
+                continue
+            is_npu = any(re.search(NPU_LABEL, label) for label in (job.get('labels') or []))
+            record = build_job_record(workflow, run_id, job, is_npu)
+            if CHIPS and record["chip"] and record["chip"] not in CHIPS:
+                skipped_chip += 1
+                print(f"  - job {job['id']} 芯片 {record['chip']} 不在 --chips {CHIPS_TAG} 内，跳过")
+                continue
+            records.append(record)
+    return records, skipped_chip
+
+
 failed_jobs = []
 cancelled_jobs = []
 queue_times = []      # 秒：run.created_at → NPU job.started_at（runner 排队时长）
 fallback_jobs = 0
 chip_filtered = 0
+if INCREMENTAL:
+    failed_jobs, chip_filtered = discover_by_run_ids(ARGS.run_ids, ARGS.job_ids or [])
+    n_sampled = len(ARGS.run_ids)
+    n_never = 0       # 定向模式不采样 cancelled，下面的 cancelled/排队统计一律不参与
+    print(f"  定向采集到 {len(failed_jobs)} 个「已有失败步骤」的 job"
+          + (f"（另有 {chip_filtered} 个非目标芯片 job 已丢弃）" if chip_filtered else ""))
+    if not failed_jobs:
+        print("  ⚠️ 未采到失败 job：可能是 job 尚未产生失败步骤、或被 --job-id 过滤掉了")
 for f, (_, counts) in sorted(wf_stats.items(), key=lambda kv: -kv[1][1].get('failure', 0)):
     runs = json.loads(gh(f"repos/{OWNER}/{REPO}/actions/workflows/{f}/runs?per_page=100&created=%3E{SINCE}"))['workflow_runs']
     failed = [r for r in runs if r['conclusion'] == 'failure']
@@ -402,10 +502,14 @@ for f, (_, counts) in sorted(wf_stats.items(), key=lambda kv: -kv[1][1].get('fai
             if j['conclusion'] == 'cancelled':
                 cancelled_jobs.append({"workflow": f, "run_id": r['id'], "job_id": j['id'],
                                        "job_name": j['name'], "never_started": not j.get('started_at')})
-n_sampled = sum(min(c.get('failure', 0), SAMPLE_PER_WF) for _, c in wf_stats.values())
+n_never = sum(1 for c in cancelled_jobs if c["never_started"])
 n_npu = sum(1 for r in failed_jobs if r["is_npu"])
-print(f"  共抽样失败 run {n_sampled} 个 → 失败 job {len(failed_jobs)} 个"
-      f"（其中 NPU job {n_npu}，门禁 fallback {len(failed_jobs)-n_npu}）")
+# 定向模式不采样 run、不算排队时长，故「抽样 N 个 run / cancelled / 排队」三行都不打印：
+# 打印出来只会是一串 0，读者会误以为「本次统计过、且都是 0」。
+if not INCREMENTAL:
+    n_sampled = sum(min(c.get('failure', 0), SAMPLE_PER_WF) for _, c in wf_stats.values())
+    print(f"  共抽样失败 run {n_sampled} 个 → 失败 job {len(failed_jobs)} 个"
+          f"（其中 NPU job {n_npu}，门禁 fallback {len(failed_jobs)-n_npu}）")
 if CHIPS:
     chip_dist = Counter(r["chip"] or "未识别(CPU门禁)" for r in failed_jobs)
     print(f"  芯片分布({CHIPS_TAG}): " + "，".join(f"{k} {v}" for k, v in chip_dist.most_common())
@@ -414,17 +518,19 @@ step_dist = Counter((r["failed_step"] or {}).get("name") or "步骤未知" for r
 print(f"  失败步骤分布（序号最靠前的失败步骤，决定归因路径）:")
 for name, cnt in step_dist.most_common():
     print(f"    {cnt:4d}  {name}")
-n_never = sum(1 for c in cancelled_jobs if c["never_started"])
-print(f"  cancelled run 采样 {len(cancelled_jobs)} 个 job，其中从未启动/未分配到 runner {n_never} 个"
-      f"（{n_never and '→ 调度/资源问题' or '→ 多为主动取消/上游中断'}）")
-if queue_times:
-    q = sorted(queue_times)
-    med = q[len(q)//2] / 60
-    over30 = sum(1 for t in queue_times if t > 1800)
-    print(f"  NPU runner 排队时长: 样本 {len(q)}，中位 {med:.0f}min，最长 {q[-1]/60:.0f}min，"
-          f">30min 有 {over30} 个（>30min 提示 runner 池不足，infra 侧）")
+if not INCREMENTAL:
+    print(f"  cancelled run 采样 {len(cancelled_jobs)} 个 job，其中从未启动/未分配到 runner {n_never} 个"
+          f"（{n_never and '→ 调度/资源问题' or '→ 多为主动取消/上游中断'}）")
+    if queue_times:
+        q = sorted(queue_times)
+        med = q[len(q)//2] / 60
+        over30 = sum(1 for t in queue_times if t > 1800)
+        print(f"  NPU runner 排队时长: 样本 {len(q)}，中位 {med:.0f}min，最长 {q[-1]/60:.0f}min，"
+              f">30min 有 {over30} 个（>30min 提示 runner 池不足，infra 侧）")
 
 # 持久化本仓 infra 统计到快照存储（跨仓表格自动聚合的数据源，替代手工快照）
+# ⚠️ 定向模式必须跳过：它不采样 cancelled、不算排队时长，写进去会把本仓的跨仓统计
+# 覆盖成一串 0 —— 那是对其它仓/其它运行采集结果的数据破坏，不是「本次没数据」。
 infra_store = load_infra_store()
 repo_entry = infra_store.setdefault("repos", {}).setdefault(ARGS.repo, {})
 if queue_times:
@@ -439,7 +545,7 @@ repo_entry["cancelled"] = {"samples": len(cancelled_jobs), "never_started": n_ne
 repo_entry["since"] = SINCE
 repo_entry["snapshot_at"] = _T0.isoformat()
 infra_store["snapshot_at"] = _T0.isoformat()
-save_infra_store(infra_store)
+persist_infra_store(infra_store)
 
 # ---------- Step 4: 按失败步骤选择扫描窗口 → 下载日志 → 根因分类 ----------
 # 归因路径：失败步骤决定「是否读日志 / 读哪一段 / 能否直接定性」，日志只在需要时作为证据来源。
@@ -794,13 +900,15 @@ print(f"\n  说明: 失败为抽样(上限{ARGS.samples}份)，百分比为样�
       f"mixed 桶需人工结合 runner 配置/节点网络二次确认，pod 调度类结论需集群侧佐证。")
 
 # 分类完成后，把本仓基础设施相关失败桶（owner∈{infra,mixed}）写回快照存储，供跨仓汇总表聚合
+# ⚠️ 落盘一律走 persist_infra_store()：定向模式下它不写盘。infra_failures 是「整仓一轮分析」的
+#    结论，单 job 运行只会把它覆盖成 1 条（实测会真的落盘），那不是「本次没数据」而是数据销毁。
 repo_entry["infra_failures"] = [
     {"bucket": b, "count": c, "owner": BUCKET_OWNER.get(b, "unknown"),
      "links": [{"url": u, "npu": n} for u, n in bucket_link.get(b, [])]}
     for b, c in classified.most_common()
     if BUCKET_OWNER.get(b, "unknown") in ("infra", "mixed")
 ]
-save_infra_store(infra_store)
+persist_infra_store(infra_store)
 
 def _fmt_links(links):
     """样例链接列表 -> 'url [NPU]、url [gate]'"""
@@ -1041,7 +1149,12 @@ _report_file.write(f"\n---\n- 分析结束: {_T1.strftime('%Y-%m-%d %H:%M:%S')}\
 _report_file.flush()
 _report_file.close()
 print(f"\n报告已写入: {report_path}", file=_orig_stdout)
-write_summary()
+# ⚠️ 定向模式跳过 write_summary()：它会按 `仓库@芯片` 章节**覆盖**写 npu_ci_failure_report.md 里
+# 该仓的整章。单个失败 job 的统计覆盖掉整仓章节，等于把一份汇总报告降级成一次抽样结果。
+if INCREMENTAL:
+    print("（定向模式：跳过精简版报告章节更新，不改动 npu_ci_failure_report.md）", file=_orig_stdout)
+else:
+    write_summary()
 
 # ---------- 结构化导出（--emit-json）：第 1 步 → 第 2/4/5 步的交接面 ----------
 # 供 npu_ci_forensics.py 消费。detail 里没有 run_id/job_id（只有 link），
@@ -1090,10 +1203,13 @@ if ARGS.emit_json:
 
 # 四仓汇总机制改为可选（--cross-repo）：默认只写本仓本章片范围的章节，
 # 不触碰跨仓表格与章节重排，避免单仓单芯片的一次运行改动跨仓报告
-if ARGS.cross_repo:
+if ARGS.cross_repo and not INCREMENTAL:
     update_infra_section()
     update_infra_failure_summary()
     reorder_repo_sections(ARGS.summary_file)
+elif INCREMENTAL and ARGS.cross_repo:
+    print("（定向模式：--cross-repo 被忽略，跨仓汇总只应由全量运行更新，避免单 job 结果污染跨仓表格）",
+          file=_orig_stdout)
 else:
     print(f"（未启用 --cross-repo：跳过跨仓基础设施信号表、跨仓失败原因汇总表、仓库章节重排）",
           file=_orig_stdout)
