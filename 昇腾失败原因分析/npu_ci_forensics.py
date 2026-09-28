@@ -83,6 +83,9 @@ LIMITATIONS = [
     "（如 exitcode:137）或「核心症状词」的复盘充当先例；`valueerror` 这类异常类名不算机制证据。",
     "**不自动裁定责任方**：历史先例只作线索与先例引用。当先例根因提到平台侧动作而日志侧判 code 时，"
     "报告会标为「证据冲突」并要求人工裁定，不会自动改写 owner。",
+    "**部分 case 按规则跳过集群取证**：日志里出现 pytest 的判定行（用例收集结果/退出码）时，"
+    "责任方已落在业务侧且集群侧查不出新信息，工具会**提前退出**第 2 步（报告里写明「按规则跳过」）。"
+    "跳过不是「没查到」——两者在报告里的措辞与计数都分开。",
 ]
 
 
@@ -465,6 +468,31 @@ def resolve_exact_sessions(registry: ClusterRegistry, repo: str, labels: list,
     return usable, "；".join(note_parts)
 
 
+def step3_skip_cluster(case: dict) -> dict:
+    """日志侧已定性为业务侧的 case（`decisive`）：按规则**跳过**集群取证。
+
+    为什么可以不查集群（这是本函数存在的唯一理由）：
+      ① 判据由测试框架自己打印（pytest 的收集结果 / 退出码），责任方已落在业务侧 ——
+         这正是「不必再排查基础设施的哪个环节失败」的依据；
+      ② 失败发生在测试进程**内部**，pod/节点状态即便查到了也只能说明「容器当时活着」，
+         给不出新信息。早先的实现把 `Stream logs` 判成「Runner 与 GitHub 通信问题」，
+         于是真去集群找 pod 是否被驱逐，方向反了（实测历史样本里就有用例真失败被这么处理）。
+
+    ⚠️ 不能简单地「把这类 case 从列表里剔掉」：报告只渲染传进去的 cases，归因分布也由 cases 统计，
+    剔掉等于静默丢信息（业务侧失败就从此不在报告里出现了）。故此处**保留 case、只跳过取证**，
+    并让报告显式写明「按规则跳过」——留白会被读成「查了但没查到」。
+    """
+    return {"cluster_name": None, "kubeconfig_path": None, "filename": None,
+            "namespace": None, "identity": None, "match_kind": None,
+            "pod_evidence": None, "logs": [], "availability": None,
+            "availability_by_cluster": {}, "candidates": [],
+            "not_obtained": [], "candidate_note": None,
+            "queried_labels": [], "queried_namespaces": {},
+            "skipped": True,
+            "skip_reason": (f"日志侧已定性为业务侧（桶【{case.get('bucket')}】，owner=code）："
+                            f"pytest 的判定行已给出责任方，按规则不做集群取证")}
+
+
 def step3_cluster_forensics(case: dict, registry: ClusterRegistry, sessions: dict,
                             args, errors: list, snapshots: dict | None = None) -> dict:
     """第 2 步：为一个失败 job 做集群侧取证。
@@ -659,6 +687,11 @@ def select_cases(payload: dict, max_cases: int) -> list:
             ③ 其余按原顺序
     跳过假失败（非真实失败，取证无意义）。
 
+    ⚠️ 日志侧已定性的 case（`decisive`，见第 1 步的 DECISIVE_BUCKETS）单独处理：
+    **必进报告，但不占 --max-cases 名额**（它们不做集群取证，见 step3_skip_cluster）。
+    名额是留给「不查集群就定不了性」的 case 的，被这类已定性的 case 占掉，
+    就等于少查一个真正需要查的 —— 那是把「提前退出」省下的预算又浪费回去。
+
     ⚠️ 按优先级排完序**不能直接取前 N 个**：实测一次真实运行里 `--max-cases 4` 取到的
     4 个 job 全是同一个桶（都是「Wait for pods ready」），报告看起来做了 4 份取证，
     实际只有 1 份信息。故在同优先级内**按桶轮流取**（round-robin），
@@ -667,10 +700,13 @@ def select_cases(payload: dict, max_cases: int) -> list:
     todo_keys = {(item.get("job_name"), item.get("step")) for item in payload.get("cluster_todo") or []}
     classifications = [item for item in payload.get("classifications") or []
                        if item.get("owner") != "假失败" and not item.get("duplicate")]
+    # 已定性的先摘出来：下面按名额轮转的只是「待取证」的那些
+    decided = [item for item in classifications if item.get("decisive")]
+    pending = [item for item in classifications if not item.get("decisive")]
 
     groups: dict = {}      # 桶 → [(优先级, item), ...]，保持首次出现的顺序
     group_priority: dict = {}
-    for item in classifications:
+    for item in pending:
         key = (item.get("job_name"), item.get("step"))
         if key in todo_keys:
             priority = 0
@@ -696,7 +732,8 @@ def select_cases(payload: dict, max_cases: int) -> list:
                 progressed = True
         if not progressed:      # 所有桶都已取空
             break
-    return picked
+    # 已定性的排在前面：它们是「看一眼就能派活」的业务侧结论，先读先办
+    return decided + picked
 
 
 def main():
@@ -767,14 +804,18 @@ def main():
 
     # ---- 第 3 + 4 + 5 步：逐案取证 ----
     cases = select_cases(payload, args.max_cases)
-    print(f"[第3步] 选取 {len(cases)} 个失败 job 进入集群取证")
+    skipped = [item for item in cases if item.get("decisive")]
+    print(f"[第3步] 选取 {len(cases)} 个失败 job 进入集群取证"
+          f"{f'（其中 {len(skipped)} 个日志侧已定性为业务侧，按规则跳过集群取证）' if skipped else ''}")
     snapshots = load_cluster_snapshots(args.cluster_snapshot)
     sessions: dict = {}
     for item in cases:
         item["_repo"] = repo
     rendered_cases = []
     for item in cases:
-        cluster_result = step3_cluster_forensics(item, registry, sessions, args, errors, snapshots)
+        # 日志侧已定性 → 提前退出：不碰集群（连快照都不用查，判据不需要旁证）
+        cluster_result = (step3_skip_cluster(item) if item.get("decisive")
+                          else step3_cluster_forensics(item, registry, sessions, args, errors, snapshots))
         history = step4_history(item, index)
         case = {
             "workflow": item.get("workflow"), "job_name": item.get("job_name"),
@@ -793,7 +834,8 @@ def main():
         }
         case["verdict"] = synthesize(case)
         rendered_cases.append(case)
-        mark = "🅿️" if cluster_result.get("pod_evidence") else "🔎"
+        mark = ("⏭️ " if cluster_result.get("skipped")
+                else "🅿️" if cluster_result.get("pod_evidence") else "🔎")
         print(f"  {mark} {str(item.get('job_name'))[:40]:40s} → {case['verdict']['owner']:8s} "
               f"| {case['verdict']['confidence'][:24]}")
 
@@ -827,9 +869,15 @@ def main():
     print(f"\n=== 完成（耗时 {elapsed:.0f}s）===")
     print(f"  报告: {report_path}")
     print(f"  结构化结果: {json_path}")
-    pod_hits = sum(1 for case in rendered_cases if case["cluster"].get("pod_evidence"))
-    print(f"  集群侧取得 pod 实证: {pod_hits}/{len(rendered_cases)}；"
+    skipped_cases = [case for case in rendered_cases if case["cluster"].get("skipped")]
+    queried_cases = [case for case in rendered_cases if not case["cluster"].get("skipped")]
+    pod_hits = sum(1 for case in queried_cases if case["cluster"].get("pod_evidence"))
+    print(f"  集群侧取得 pod 实证: {pod_hits}/{len(queried_cases)}；"
           f"其余为标签可用性核查或未取证（pod 多已回收）")
+    if skipped_cases:
+        # 单独一行：跳过不是「没查到」，不能混进上面那个分式的分母（会显得取证成绩变差）
+        print(f"  日志侧已定性为业务侧、按规则跳过集群取证: {len(skipped_cases)} 个"
+              f"（{'、'.join(sorted({c['bucket'] for c in skipped_cases}))}）")
     conflicts = sum(1 for case in rendered_cases if case["verdict"]["conflicts"])
     if conflicts:
         print(f"  ⚠️ {conflicts} 个案例存在证据冲突，需人工裁定（详见报告）")

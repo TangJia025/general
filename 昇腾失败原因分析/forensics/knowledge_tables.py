@@ -271,6 +271,31 @@ BUCKET_KNOWLEDGE = {
                    "**必须**走集群取证，日志侧看不到根因。"],
         "probe": "pod_scheduling",
     },
+    # ---- 日志侧已定性的桶（DECISIVE_BUCKETS）----
+    # 这两条的共同点：pytest 自己打印的判定行已给出责任方，**不需要集群侧旁证**，
+    # 故 probe 一律为 None，且 action 第一句就写明「不要再往下查基础设施」——
+    # 早先的实现把 `Stream logs` 归为「Runner 与 GitHub 通信问题」并去集群找 pod 是否被驱逐，
+    # 方向完全反了（实测历史样本里就有用例真失败被这么处理）。
+    "测试未执行(入口/用例集不存在，脚本与代码错配)": {
+        "leaf": "leaf_user_script", "owner": "code",
+        "action": ["确认方式：日志里 `ERROR: file or directory not found: <路径>` + `collected 0 items` "
+                   "+ `pytest exit code: ret=4` —— 一条用例都没跑，失败在**收集阶段**。",
+                   "根因是**测试脚本与被测代码版本错配**（实测：run.sh 取自 main、被测代码取自 PR 分支，"
+                   "main 刚改了用例入口路径而本分支尚未包含该改动），不是产品缺陷、也不是基础设施问题——"
+                   "容器起了、pytest 正常执行了。",
+                   "修法：让被测分支 rebase 到含该改动的提交；或让 CI 编排保证「脚本与代码同源」"
+                   "（两侧 ref 一致）。**无需**集群侧取证（按规则已跳过）。"],
+        "probe": None,
+    },
+    "测试用例失败(pytest ret=1)": {
+        "leaf": "leaf_user_script", "owner": "code",
+        "action": ["直接看日志里的 pytest 汇总行：`FAILED <文件>::<用例>` 与 `N failed, M passed in ...`，"
+                   "按用例定位业务代码。**无需**集群侧取证：判据来自测试进程自身的退出码，"
+                   "pod/节点状态即便查到也只能说明「容器当时活着」。",
+                   "若同一用例在多次运行中**随机**失败（非稳定复现），才转向资源/环境方向"
+                   "（此时再考虑集群侧或 runner 侧证据），并在本表补充该模式。"],
+        "probe": None,
+    },
 }
 
 # 步骤被直接定性（no_log 路径）时动态生成的桶名前缀 —— 这类桶不在 BUCKETS 里，
@@ -280,10 +305,13 @@ def knowledge_for(bucket_label: str) -> dict:
     if bucket_label in BUCKET_KNOWLEDGE:
         return BUCKET_KNOWLEDGE[bucket_label]
     if bucket_label.startswith("步骤直接定性:"):
+        # ⚠️ 本兜底**不再覆盖** `Stream logs`：它曾被视为「日志回传步骤」而落到 no_log，
+        #    实则多节点 job 里它就是跑测试的那一步，已改走 window_tail 读日志（见 STEP_ROUTES）。
+        #    新增步骤名时务必确认它真的属于「无需读日志即可定性」，否则会把真因挡在日志之外。
         step_name = bucket_label.split(":", 1)[1]
         return {
             "leaf": None, "owner": None,
-            "action": [f"失败步骤「{step_name}」属无需读日志即可定性的步骤（runner 初始化/日志上传类），"
+            "action": [f"失败步骤「{step_name}」属无需读日志即可定性的步骤（runner 初始化/产物上传类），"
                        f"此类步骤失败**位于测试通过之后或之前**，通常是平台侧收尾问题，不代表业务代码有问题。",
                        "集群侧确认 runner pod 是否被驱逐/重启；若测试步骤全绿而仅此步骤失败，测试结论仍有效。"],
             "probe": "pod_container_state",

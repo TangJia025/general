@@ -99,10 +99,14 @@ def synthesize(case: dict) -> dict:
     # --- 集群侧证据 ---
     cluster_owner_votes = []
     pod_verdicts = interpret_pod_evidence(pod_evidence) if pod_evidence else []
+    # 「按规则跳过」必须是一条**独立**的依据，不能落进下面「未解析出候选集群」那一支：
+    # 后者说的是「想查但没查到集群」，与「日志已定性、规则上不必查」是两个相反的意思。
+    if cluster.get("skipped"):
+        basis.append(f"集群侧：**按规则跳过** —— {cluster.get('skip_reason')}")
     # 只有「一个候选集群都没解析出来」才能说「无可用 kubeconfig」。路径 B（pod 已回收、
     # 降级为标签可用性核查）不设 kubeconfig_path，那不是「没用上 kubeconfig」——
     # 早先只判 kubeconfig_path 为空就贴这条，会在明明查过集群的案例上凭空多出一句误导。
-    if case.get("runner_name") and not cluster.get("candidates"):
+    if case.get("runner_name") and not cluster.get("candidates") and not cluster.get("skipped"):
         cluster["not_obtained"] = (cluster.get("not_obtained") or []) + [
             "集群侧未取证：未解析出任何候选集群（标签未登记于 Cluster.md，或无对应 kubeconfig）"]
     if pod_evidence:
@@ -252,6 +256,11 @@ def synthesize(case: dict) -> dict:
         # 找到的 pod 属于另一次运行：既不能提升置信度，也不能当作「pod 状态无异常」的证据
         confidence = "中低（集群侧只找到同 scale-set 另一次运行的 pod，非本 job 现场）"
         needs_human = True
+    elif cluster.get("skipped") and bucket != "未分类":
+        # 判据是测试框架**自己打印**的判定行（不是正则撞上的关键词），比普通日志桶硬一档；
+        # 但不给「高」：没有集群侧实证，且「改 CI 编排还是让分支 rebase」仍需人来定。
+        confidence = "中高（日志侧决定性判据：测试框架自身的判定行；按规则未做集群取证）"
+        needs_human = True
     elif strong_precedent and strong_precedent["evidence_strength"] == "强":
         confidence = "中高（命中同签名的历史先例，但缺集群侧实证）"
         needs_human = False
@@ -341,6 +350,13 @@ def render_case(case: dict, index: int) -> list:
     lines.append("#### 集群侧现场（第 2 步）")
     lines.append("")
     cluster = case.get("cluster") or {}
+    if cluster.get("skipped"):
+        # 「按规则跳过」与「未取证」必须分开写：前者是日志已定性、规则上不必查，
+        # 后者是查了没查到。写成后者的措辞会把一个确定结论读成一次失败的取证。
+        lines.append(f"- 取证集群：**按规则跳过** —— {cluster.get('skip_reason')}")
+        lines.append("- 该 case 的判据来自日志里测试框架自己的输出（pytest 的收集结果/退出码），"
+                     "责任方已落在业务侧；集群侧的 pod/节点状态即便查到，也只能说明「容器当时活着」，"
+                     "给不出新信息——故**不**计入「集群侧取得 pod 实证」的分母")
     if cluster.get("candidate_note"):
         lines.append(f"- 集群归属判定：{cluster['candidate_note']}")
     if cluster.get("queried_labels"):
@@ -366,8 +382,9 @@ def render_case(case: dict, index: int) -> list:
                      f"　**未取得本 job 的 pod 实证**（详见下方未取证说明）")
     elif cluster.get("not_obtained"):
         lines.append("- 取证集群：**未取证**（详见下方未取证说明）")
-    else:
+    elif not cluster.get("skipped"):
         lines.append("- 取证集群：**未取证**（未解析出候选集群，详见上方判定说明）")
+    # 跳过的 case 到此不再输出「未取证」字样（它已在上面写明「按规则跳过」）——两者相反，不可混用
     if cluster.get("snapshot_from"):
         # 证据来源必须写明「什么时候取的」：快照是 job 还在跑时抢下的，
         # 与「事后补查」是两个不同时刻的现场，读者据此判断证据有多硬。
@@ -577,6 +594,13 @@ def render_report(cases: list, meta: dict, registry_plan: list, health: dict,
     lines.append("")
     lines.append(f"- 本次分析失败 job {meta.get('total_jobs', 0)} 个，"
                  f"选取 {len(cases)} 个进入集群取证与历史归因")
+    skipped_cases = [case for case in cases if (case.get("cluster") or {}).get("skipped")]
+    if skipped_cases:
+        # 跳过不是少查了：判据在日志里已经给全了。这句话同时解释了为什么下面的
+        # 「取得 pod 实证」的分母比 cases 少 —— 否则读者会以为有 case 被漏掉
+        lines.append(f"- 其中 {len(skipped_cases)} 个日志侧已定性为业务侧（"
+                     f"{'、'.join(sorted({case.get('bucket') or '未分类' for case in skipped_cases}))}），"
+                     f"**按规则跳过**集群取证（判据来自测试框架自身，集群侧给不出新信息）")
     owners: dict = {}
     needs_human = 0
     for case in cases:
@@ -592,7 +616,8 @@ def render_report(cases: list, meta: dict, registry_plan: list, health: dict,
     foreign_hits = sum(1 for case in cases
                        if (case.get("cluster") or {}).get("time_consistent") is False)
     snapshot_hits = sum(1 for case in cases if (case.get("cluster") or {}).get("snapshot_from"))
-    lines.append(f"- 集群侧取得 pod 实证：{cluster_hits} 个"
+    queried_total = len(cases) - len(skipped_cases)
+    lines.append(f"- 集群侧取得 pod 实证：{cluster_hits}/{queried_total} 个"
                  f"（其余 pod 多已回收，降级为标签可用性核查或未取证）")
     if snapshot_hits:
         # 快照与现场查询的证据强度不同，必须在汇总里分开计数：
