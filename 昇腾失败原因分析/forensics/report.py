@@ -23,6 +23,27 @@ TERMINATION_INTERPRETATION = {
 }
 
 
+def snapshot_pod_still_running(cluster: dict, pod_evidence: dict) -> bool:
+    """本次 pod 证据是否取自「job 尚未结束、容器还在跑」的快照。
+
+    为什么需要这个判断：那种快照下，容器的退出码与终止原因**尚未产生**，表里是空的。
+    若不点明，读者会把空值读成「查过了，没有异常终止」—— 这是与事实相反的结论，
+    而退出码恰恰是集群侧最硬的那件证据（实测「失败步骤结束 → job 结束」只有 55s，
+    等得到退出码时 pod 多已回收，所以这个「空」是常态、必须如实解释）。
+
+    判据不看快照时刻的 job 状态、而看**有没有任何容器给出退出码或终止原因**：
+    只要确实拿到了退出码，就不需要那句提示，无论快照是什么时候取的。
+    """
+    if not cluster.get("snapshot_from"):
+        return False
+    for container in pod_evidence.get("containers") or []:
+        if container.get("exit_code") is not None:
+            return False
+        if container.get("last_terminated_reason") or container.get("last_terminated_exit_code") is not None:
+            return False
+    return True
+
+
 def interpret_pod_evidence(pod_evidence: dict) -> list:
     """把 pod 证据翻译成判断（而非罗列原始字段）。返回 [{"verdict","owner","detail"}]。"""
     verdicts = []
@@ -102,22 +123,52 @@ def synthesize(case: dict) -> dict:
                 basis.append(f"集群侧：{verdict['verdict']} —— {verdict['detail']}")
                 cluster_owner_votes.append(verdict["owner"])
         if not foreign_pod and not pod_verdicts:
-            basis.append(f"集群侧：pod 已找到（phase={pod_evidence.get('phase')}，"
-                         f"节点 `{pod_evidence.get('node')}`），"
-                         f"但容器状态无异常终止记录，未能据此指向责任方")
+            if snapshot_pod_still_running(cluster, pod_evidence):
+                # 快照取自 job 结束前：没有退出码是**时间点**造成的，不是「无异常」。
+                # 说成「无异常终止记录」是反向结论 —— 它会让一个本该存疑的现场显得清白。
+                basis.append(f"集群侧：pod 已找到（phase={pod_evidence.get('phase')}，"
+                             f"节点 `{pod_evidence.get('node')}`），但快照取自 job 结束前、"
+                             f"容器仍在运行 —— 退出码与终止原因**尚未产生**，不能据此判「无异常」")
+                hints_requiring_human.append(
+                    "集群侧拿到的是失败时刻的进程内日志，没有退出码；"
+                    "如需退出码必须在 job 结束的瞬间补查（实测窗口约 55s，随后 pod 即被回收）")
+            else:
+                basis.append(f"集群侧：pod 已找到（phase={pod_evidence.get('phase')}，"
+                             f"节点 `{pod_evidence.get('node')}`），"
+                             f"但容器状态无异常终止记录，未能据此指向责任方")
     elif availability and availability.get("checked"):
         labels_text = "、".join(case.get("labels") or []) or "—"
-        if availability.get("available"):
-            basis.append(f"集群侧：runner 标签 `{labels_text}` 在集群 "
-                         f"`{cluster.get('availability_cluster') or cluster.get('cluster_name')}` 有 "
+        cluster_label = cluster.get("availability_cluster") or cluster.get("cluster_name")
+        variants_text = "、".join(f"`{segment}`×{count}" for segment, count
+                                 in sorted((availability.get("suffix_variants") or {}).items()))
+        if availability.get("available") and availability.get("match_kind") == "标签主干":
+            # 登记后缀与 pod 名实际后缀不一致（实测：登记 cn12-001，实际 chlqk）。
+            # 标签族**确实在线**，所以「标签不存在」「runner 未上线」两个结论都不成立；
+            # 对不上的是注册表本身。这与「有 runner」和「没 runner」都是两回事，必须单独措辞。
+            basis.append(f"集群侧：runner 标签 `{labels_text}` 在集群 `{cluster_label}` **确有** "
+                         f"{availability.get('runners_online')} 个 runner / "
+                         f"{availability.get('listeners')} 个 listener，但 pod 名用的后缀是 "
+                         f"{variants_text or '—'}，与 Cluster.md 登记的后缀 "
+                         f"`{availability.get('registered_suffix') or '—'}` **不一致** —— "
+                         f"即**标签族有效**，对不上的是登记后缀与实际命名（注册表问题），"
+                         f"**不是** runner 未上线")
+            hints_requiring_human.append(
+                f"Cluster.md 为该标签登记的集群后缀（`{availability.get('registered_suffix') or '—'}`）"
+                f"与 pod 名实际后缀（{variants_text or '—'}）不一致；按登记全名匹配会得出"
+                f"「无 runner 在线」的**假阴性**，登记信息需要修正")
+        elif availability.get("available"):
+            basis.append(f"集群侧：runner 标签 `{labels_text}` 在集群 `{cluster_label}` 有 "
                          f"{availability.get('runners_online')} 个 runner / "
                          f"{availability.get('listeners')} 个 listener，标签本身有效")
         else:
             # 「没查到」**不计入 owner 票**：这是查询时刻的快照，证不了失败当时的状态。
             # 只作为提示，并强制人工确认——早先的实现把它当成 infra 的集群侧实证，
             # 会让一个无效的负向结果抬高归因置信度。
+            # 措辞要交代**查过哪些匹配方式**：阴性结论的强度取决于查得多宽，
+            # 只写「未查到」会让读者以为只按登记全名试过一次（那正是假阴性的来源）。
+            scopes = "、".join(availability.get("scopes_checked") or ["全名"])
             basis.append(f"集群侧：在候选集群中**未查到** runner 标签 `{labels_text}` 的任何 pod"
-                         f"（{availability.get('matched_pods', 0)} 个匹配）")
+                         f"（匹配方式：{scopes}，均 0 命中）")
             basis.append("  ⚠️ 仅为查询时刻快照，**不能据此断言**失败当时 runner 掉线；"
                          "官方分类树的「runs-on 标签不存在 / Runner 未上线」需另有失败时刻证据")
             hints_requiring_human.append(
@@ -317,6 +368,12 @@ def render_case(case: dict, index: int) -> list:
         lines.append("- 取证集群：**未取证**（详见下方未取证说明）")
     else:
         lines.append("- 取证集群：**未取证**（未解析出候选集群，详见上方判定说明）")
+    if cluster.get("snapshot_from"):
+        # 证据来源必须写明「什么时候取的」：快照是 job 还在跑时抢下的，
+        # 与「事后补查」是两个不同时刻的现场，读者据此判断证据有多硬。
+        lines.append(f"- 证据来源：**失败时刻的集群快照**（{cluster.get('snapshot_taken_at') or '时刻未记录'}"
+                     f"；{cluster.get('snapshot_note') or '监听器在 job 结束前抢下'}）")
+        lines.append(f"  - 快照文件：`{cluster.get('snapshot_from')}`")
     pod_evidence = cluster.get("pod_evidence")
     if pod_evidence:
         # 兜底防呆：按 find_job_pod 的构造（只返回能承载过本 job 的 pod），走到这里的 pod
@@ -350,6 +407,10 @@ def render_case(case: dict, index: int) -> list:
                              f"| {container.get('exit_code') if container.get('exit_code') is not None else '—'} "
                              f"| {container.get('last_terminated_reason') or '—'} "
                              f"| {container.get('restart_count')} |")
+            if snapshot_pod_still_running(cluster, pod_evidence):
+                lines.append(f"- ⚠️ 取证时本 job **尚未结束**、容器仍在运行，"
+                             f"故表中的退出码/终止原因**尚未产生**（不是「无异常」）。"
+                             f"要拿到退出码必须等 job 结束，而实测那时 pod 多已被回收")
             for verdict in interpret_pod_evidence(pod_evidence):
                 lines.append(f"- 判定：{verdict['verdict']} —— {verdict['detail']}")
             logs = cluster.get("logs") or []
@@ -367,14 +428,27 @@ def render_case(case: dict, index: int) -> list:
     if availability and availability.get("checked"):
         lines.append("")
         lines.append(f"**runner 标签可用性**（集群 `{cluster.get('availability_cluster')}`）：")
-        if availability.get("available"):
+        variants = "、".join(f"`{segment}`×{count}" for segment, count
+                            in sorted((availability.get("suffix_variants") or {}).items()))
+        if availability.get("available") and availability.get("match_kind") == "标签主干":
+            lines.append(f"存在 {availability.get('runners_online')} 个 runner、"
+                         f"{availability.get('listeners')} 个 listener"
+                         f"（namespace: {', '.join(availability.get('namespaces') or [])}）"
+                         f" → 标签族有效，失败**不是**标签不存在导致的")
+            lines.append(f"- ⚠️ 匹配方式为**标签主干**（登记全名 `{availability.get('claimed_label') or '—'}` "
+                         f"0 命中）：实测 pod 后缀 {variants or '—'}，Cluster.md 登记后缀 "
+                         f"`{availability.get('registered_suffix') or '—'}` —— 对不上的是**登记后缀与实际命名**，"
+                         f"**不是** runner 未上线；按登记全名匹配会得出「无 runner」的假阴性")
+        elif availability.get("available"):
             lines.append(f"存在 {availability.get('runners_online')} 个 runner、"
                          f"{availability.get('listeners')} 个 listener"
                          f"（namespace: {', '.join(availability.get('namespaces') or [])}）"
                          f" → 标签有效，失败**不是**标签不存在导致的")
         else:
-            lines.append("未找到任何匹配 pod → 该标签此刻在本集群无 runner/listener。"
-                         "⚠️ 仅为**查询时刻**快照，不能证明失败当时掉线")
+            scopes = "、".join(availability.get("scopes_checked") or ["全名"])
+            lines.append(f"未找到任何匹配 pod（匹配方式：{scopes}，均 0 命中）"
+                         f" → 该标签此刻在本集群无 runner/listener。"
+                         f"⚠️ 仅为**查询时刻**快照，不能证明失败当时掉线")
         # 逐标签明细：job 上报的是展示名，pod 名用的是带集群后缀的全名，
         # 两者都可能被查过；不列出就分不清「哪个写法真的没有」
         per_label = availability.get("per_label") or {}
@@ -517,8 +591,14 @@ def render_report(cases: list, meta: dict, registry_plan: list, health: dict,
                        and (case.get("cluster") or {}).get("time_consistent") is not False)
     foreign_hits = sum(1 for case in cases
                        if (case.get("cluster") or {}).get("time_consistent") is False)
+    snapshot_hits = sum(1 for case in cases if (case.get("cluster") or {}).get("snapshot_from"))
     lines.append(f"- 集群侧取得 pod 实证：{cluster_hits} 个"
                  f"（其余 pod 多已回收，降级为标签可用性核查或未取证）")
+    if snapshot_hits:
+        # 快照与现场查询的证据强度不同，必须在汇总里分开计数：
+        # 快照取自失败时刻（job 还在跑），现场查询是几分钟后的事。
+        lines.append(f"- 其中 {snapshot_hits} 个取自**失败时刻的集群快照**"
+                     f"（监听器在 job 结束前抢下），而非事后现场补查")
     if foreign_hits:
         # 不能把这几个算进「取得了实证」：它们找到的是另一次运行的 pod
         lines.append(f"- 其中 {foreign_hits} 个只找到同 scale-set **另一次运行**的 pod，"

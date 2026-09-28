@@ -59,6 +59,11 @@ LIMITATIONS = [
     "kubeconfig 看到。本工具靠 Cluster.md 的标签登记 + 集群本地 CPU scale-set 标识收敛，并把歧义显式写出。",
     "**标签可用性核查是查询时刻的快照**：查到「无 runner」只能说明此刻没部署，"
     "不能证明失败当时 runner 掉线。官方分类树的「runs-on 标签不存在 / Runner 未上线」需另有失败时刻证据。",
+    "**登记全名与 pod 实际命名可能对不上**：Cluster.md 登记的集群后缀（如 `-cn12-001`）与 pod 名实际用的"
+    "后缀（实测 `…-chlqk-runner-*`、`…-{8位hex}-listener`）不一致，只按登记全名匹配会得出"
+    "「无 runner 在线」的**假阴性**。故核查分两级：全名匹配（强证据）落空后，再按标签主干匹配（弱证据，"
+    "要求名字带 runner/listener 标记），并把实测后缀变体原样列出 —— 此时结论是「标签族有效、登记后缀"
+    "对不上实际命名」，**不是** runner 未上线。",
     "**pod 已回收是常态**：历史失败的 job pod 多数早已回收，第 2 步只能降级为标签可用性核查；"
     "只有仍在运行或刚结束的 job 才能拿到 pod 级实证。",
     "**靠标签定位的 pod 是「推定」而非「确证」**：runner pod 会被复用，且未调度成功的 pod 也存在，"
@@ -101,6 +106,10 @@ def parse_args():
                         help="本地 Cluster.md 路径；缺省则从 ascend-gha-runners/docs 抓取并缓存")
     parser.add_argument("--max-cases", type=int, default=15, help="最多对多少个失败 job 做集群取证")
     parser.add_argument("--no-pod-logs", action="store_true", help="不抓容器日志（只取 pod 状态）")
+    parser.add_argument("--cluster-snapshot", default=None, metavar="PATH",
+                        help="复用监听器（npu_ci_watch.py）在失败时刻抢下的集群快照（文件或目录）。"
+                             "命中快照的 job 直接采用该快照，**不再现场查集群** —— 事后补查到的"
+                             "是另一个时刻的现场（runner pod 一次性的，job 结束即回收）")
     parser.add_argument("--self-check-only", action="store_true",
                         help="只做集群连通性与身份自检后退出")
     # 输出与缓存
@@ -169,19 +178,78 @@ def step2_load_registry(args, cache_dir: str):
     return registry
 
 
+def load_cluster_snapshots(path: str | None) -> dict:
+    """读取监听器在失败时刻抢下的集群快照，返回 {job_id: 快照字典}。
+
+    为什么第 2 步要接受「快照」这种输入，而不是每次都现场查集群：
+      runner pod 是一次性的，job 结束即被回收。实测「失败步骤结束 → job 结束」固定 55s，
+      而 GitHub 的 job 日志在 job 结束前取不到（404 BlobNotFound）—— 即
+      「能取日志的时刻」与「pod 还活着的时刻」几乎不重叠。监听器因此在 job 尚未结束时
+      抢下快照，事后与日志侧结论合并。快照一旦存在就必须直接采信：此刻再查集群看到的
+      是**另一个**现场（同标签的其它 pod），比快照弱得多。
+
+    path 可以是单个 JSON 文件，也可以是一个目录（取其中所有 *.json）。
+    """
+    if not path:
+        return {}
+    candidates = []
+    if os.path.isdir(path):
+        candidates = [os.path.join(path, name) for name in sorted(os.listdir(path))
+                      if name.endswith(".json")]
+    elif os.path.exists(path):
+        candidates = [path]
+    else:
+        raise SystemExit(f"--cluster-snapshot 路径不存在: {path}")
+
+    snapshots, problems = {}, []
+    for file_path in candidates:
+        try:
+            with open(file_path, encoding="utf-8") as fh:
+                payload = json.load(fh)
+        except (OSError, ValueError) as exc:
+            problems.append(f"{os.path.basename(file_path)} 读取失败：{exc}")
+            continue
+        job_id = payload.get("job_id")
+        if not job_id:
+            problems.append(f"{os.path.basename(file_path)} 缺 job_id，无法关联到失败 job")
+            continue
+        payload.setdefault("snapshot_file", file_path)
+        snapshots[int(job_id)] = payload
+    print(f"[第2步] 集群快照：载入 {len(snapshots)} 个"
+          + (f"，{len(problems)} 个不可用（{'；'.join(problems)}）" if problems else ""))
+    return snapshots
+
+
+def apply_cluster_snapshot(cluster_result: dict, snapshot: dict) -> dict:
+    """把快照内容贴进 cluster_result，并留下**来源与时刻**（报告要如实标注）。
+
+    只覆盖第 2 步的取证字段，不动其它键（candidates / not_obtained 等由快照自身携带）。
+    """
+    cluster_result.update(snapshot.get("cluster_result") or {})
+    cluster_result["snapshot_from"] = snapshot.get("snapshot_file")
+    cluster_result["snapshot_taken_at"] = snapshot.get("taken_at")
+    cluster_result["snapshot_job_status"] = snapshot.get("job_status_at_snapshot")
+    cluster_result["snapshot_note"] = snapshot.get("taken_reason")
+    return cluster_result
+
+
 class ClusterSession:
     """单个集群的会话：缓存 pod 列表与连通性，避免对同一集群反复拉取。
 
-    `get pods -A` 是这几个只读操作里最重的一个，而一次分析里同一个集群常被多次问到，
-    故必须缓存。缓存键忽略 namespace，因为 -A 的结果是各 namespace 的超集。
+    `get pods -A` 是这几个只读操作里最重的一个（实测 3.77s，825 个 pod），
+    而一次分析里同一个集群常被多次问到，故必须缓存。缓存键忽略 namespace，
+    因为 -A 的结果是各 namespace 的超集。
     """
 
-    def __init__(self, cluster_name: str, kubeconfig_info, namespace: str | None):
+    def __init__(self, cluster_name: str, kubeconfig_info, namespace: str | None,
+                 repo: str | None = None):
         self.cluster_name = cluster_name
         self.info = kubeconfig_info
         self.namespace = namespace
+        self.repo = repo
         self._connectivity = None
         self._all_pods = None
+        self._namespace_pods: dict = {}
         self._availability: dict = {}
 
     @property
@@ -199,17 +267,69 @@ class ClusterSession:
         return self._all_pods
 
     def namespace_pods(self) -> dict:
-        """优先只取业务 namespace（更轻），失败再退回全量。"""
+        """优先只取业务 namespace（更轻），失败再退回全量。
+
+        ⚠️ 单 namespace 版本，只适用于「已经确定 namespace 正确」的场景。
+        要在集群里**找本 job 的 pod** 请用 pod_lists_for_lookup()：本方法把
+        「namespace 能列举」当成了「namespace 正确」，而这两件事并不等价（见下）。
+        """
         if self.namespace:
-            scoped = cluster_ops.list_pods(self.path, self.namespace)
+            scoped = self.pods_in_namespace(self.namespace)
             if scoped["ok"]:
                 return scoped
         return self.all_pods()
 
-    def availability(self, runner_label: str) -> dict:
-        if runner_label not in self._availability:
-            self._availability[runner_label] = cluster_ops.check_runner_availability(self.path, runner_label)
-        return self._availability[runner_label]
+    def pods_in_namespace(self, namespace: str) -> dict:
+        """带缓存的 namespace 级列举。"""
+        if namespace not in self._namespace_pods:
+            self._namespace_pods[namespace] = cluster_ops.list_pods(self.path, namespace)
+        return self._namespace_pods[namespace]
+
+    def namespace_candidates(self) -> list:
+        """可能承载本 repo runner pod 的 namespace，按优先级排列。
+
+        为什么不能只用 Cluster.md 登记的那一个（实测踩坑，2026-09-28）：
+          Cluster.md 把 `vllm-project/vllm-ascend` 登记到**项目共享** namespace `vllm-project`，
+          该 namespace 能正常列举、里面有 32 个 pod，**但没有本 job 的 NPU runner**；
+          runner pod 实际在按仓库名派生的 `vllm-project-vllm-ascend` 里。
+          于是「列举成功」让调用方以为查过了，实际漏查了真正装着 pod 的那个 namespace，
+          最终报告写成「pod 多已回收」—— 而那个 pod 当时已运行 9 分钟、活得好好的。
+        派生规则由 Cluster.md 自身印证：`vllm-project/vllm-omni → vllm-project-vllm-omni`、
+        `vllm-ascend/vllm-ascend-recipes → vllm-ascend-vllm-ascend-recipes`。
+        """
+        candidates = []
+        if self.namespace:
+            candidates.append(self.namespace)
+        if self.repo:
+            derived = self.repo.replace("/", "-")
+            if derived not in candidates:
+                candidates.append(derived)
+        return candidates
+
+    def pod_lists_for_lookup(self):
+        """惰性产出 (来源说明, list_pods 结果)，供「在集群里找 pod」逐个尝试、命中即停。
+
+        顺序：Cluster.md 登记的 namespace → 仓库名派生的 namespace → `-A` 全量。
+        全量放最后是有代价考虑的：它实测 3.77s（825 个 pod），而 namespace 级只要 0.89s，
+        故只在前面都没命中时才付出这个代价。
+        惰性很重要：命中第一个就不该再发起后面的 kubectl 调用 —— 快照窗口只有几十秒。
+        """
+        for namespace in self.namespace_candidates():
+            yield namespace, self.pods_in_namespace(namespace)
+        yield "全量(-A)", self.all_pods()
+
+    def availability(self, runner_label: str, base_labels=()) -> dict:
+        """标签可用性核查。base_labels = job 上报的展示名，供「登记后缀对不上实际后缀」时兜底。
+
+        为什么要带上展示名：实测 Cluster.md 登记的全名（`…-cn12-001`）与 pod 名实际后缀
+        （`…-chlqk-runner-*`）不一致，只按登记全名匹配会得出与事实相反的「无 runner 在线」。
+        详见 cluster_forensics.check_runner_availability。
+        """
+        key = (runner_label, tuple(base_labels or ()))
+        if key not in self._availability:
+            self._availability[key] = cluster_ops.check_runner_availability(
+                self.path, runner_label, list(base_labels or ()))
+        return self._availability[key]
 
     def health(self) -> dict:
         """健康快照。已有全量 pod 缓存时直接复用，避免为快照再拉一次 `get pods -A`。"""
@@ -220,24 +340,41 @@ class ClusterSession:
         return cluster_ops.cluster_health(self.path, self.namespace)
 
 
+def availability_rank(item: dict) -> int:
+    """可用性结论的证据强度：全名匹配(2) > 标签主干匹配(1) > 无命中(0)。
+
+    用于「多个候选集群各有一份结论时该展示哪一份」——有全名命中的那份才是强证据，
+    不能因为遍历顺序先碰到主干命中就把它当成主结论。
+    """
+    if not item or not item.get("available"):
+        return 0
+    return 2 if item.get("match_kind") == "全名" else 1
+
+
 def _merge_availability(per_label: dict) -> dict:
     """把「同一展示名对应的多个全名」的可用性核查结果合并成一条。
 
     合并规则：**任一全名查到 pod 即算 available**，并把每个全名的命中数都带上——
     合并后的结论必须有据可查，不能只留一个布尔值让人无法回溯。
+
+    合并后取**最强**的匹配方式（全名 > 标签主干）：弱匹配只是兜底，
+    若某个全名是精确命中的，结论就不能被表述成「靠主干才找到的」。
     """
     labels = list(per_label)
     if not labels:
         return {"available": False, "checked": True, "snapshot_only": True,
                 "matched_pods": 0, "runners_online": 0, "listeners": 0,
-                "namespaces": [], "samples": [], "per_label": {}}
+                "namespaces": [], "samples": [], "per_label": {},
+                "match_kind": None, "suffix_variants": {}, "scopes_checked": []}
     per_label_summary = {}
-    samples, namespaces = [], set()
+    samples, namespaces, scopes = [], set(), []
+    suffix_variants: dict = {}
     total_pods = total_runners = total_listeners = 0
     for label in labels:
         item = per_label[label]
         per_label_summary[label] = {
             "available": item.get("available"),
+            "match_kind": item.get("match_kind"),
             "matched_pods": item.get("matched_pods", 0),
             "runners_online": item.get("runners_online", 0),
             "listeners": item.get("listeners", 0),
@@ -249,7 +386,11 @@ def _merge_availability(per_label: dict) -> dict:
         total_listeners += item.get("listeners") or 0
         samples.extend(item.get("samples") or [])
         namespaces.update(item.get("namespaces") or [])
+        scopes.extend(item.get("scopes_checked") or [])
+        for segment, count in (item.get("suffix_variants") or {}).items():
+            suffix_variants[segment] = suffix_variants.get(segment, 0) + count
     available = any(item.get("available") for item in per_label.values())
+    strongest = max(per_label.values(), key=availability_rank)
     return {
         "available": available,
         "checked": all(item.get("checked") for item in per_label.values()),
@@ -262,6 +403,16 @@ def _merge_availability(per_label: dict) -> dict:
         "listeners": total_listeners,
         "namespaces": sorted(namespaces),
         "samples": sorted(samples)[:5],
+        # 最强匹配方式：报告据此分叉「标签有效」与「后缀对不上」两种措辞
+        "match_kind": strongest.get("match_kind") if available else None,
+        # 最强那条结果当时查的是哪个标签（弱匹配时报告要写明「登记全名 X 是 0 命中」）
+        "claimed_label": strongest.get("claimed_label"),
+        "registered_suffix": next((item.get("registered_suffix") for item in per_label.values()
+                                   if item.get("registered_suffix")), None),
+        # 实测后缀变体 → 命中数（仅弱匹配有值），报告原样展示，供读者判断「注册表对不上」
+        "suffix_variants": suffix_variants,
+        # 实际查过的匹配方式并集：阴性结论据此证明「两级都查过」
+        "scopes_checked": sorted(set(scopes)),
         # 逐标签明细：合并结果可能掩盖「哪个全名真的有」，故原样保留
         "per_label": per_label_summary,
         "labels_checked": labels,
@@ -297,7 +448,7 @@ def resolve_exact_sessions(registry: ClusterRegistry, repo: str, labels: list,
             continue
         if cluster_name not in sessions:
             sessions[cluster_name] = ClusterSession(
-                cluster_name, info, registry.namespace_for(repo, cluster_name))
+                cluster_name, info, registry.namespace_for(repo, cluster_name), repo)
         session = sessions[cluster_name]
         if session.connectivity().get("reachable"):
             usable.append((cluster_name, session))
@@ -315,13 +466,18 @@ def resolve_exact_sessions(registry: ClusterRegistry, repo: str, labels: list,
 
 
 def step3_cluster_forensics(case: dict, registry: ClusterRegistry, sessions: dict,
-                            args, errors: list) -> dict:
+                            args, errors: list, snapshots: dict | None = None) -> dict:
     """第 2 步：为一个失败 job 做集群侧取证。
 
+    路径 0（最优先）：监听器已在**失败时刻**抢下快照 → 直接采用，不再现场查集群。
     路径 A：在候选集群中找到 pod → 取容器状态 + 日志（含重启前实例）。
     路径 B：pod 已回收（历史失败的常态）→ 降级为标签可用性核查，逐个候选集群做，
             并明确标注这只是查询时刻快照。
-    两条路都走不通 → 如实记「未取证」。
+    三条路都走不通 → 如实记「未取证」。
+
+    ⚠️ 路径 0 为什么要「直接采用、不叠加现场查询」：快照是 job 还在跑时抢下的真实现场，
+    而现场查询必然是几分钟之后的事 —— 那时 pod 多已回收，查到的顶多是同标签的**别的** pod。
+    把两者叠在一起，等于用一个弱证据去冲淡一个强证据。
 
     ⚠️ 查 pod 一律用**翻译后的全名**：job 在 GitHub 上报的标签常是展示名
     （`linux-aarch64-a3-800t-0`），而 pod 名用的是带集群后缀的全名
@@ -333,7 +489,10 @@ def step3_cluster_forensics(case: dict, registry: ClusterRegistry, sessions: dic
                       "pod_evidence": None, "logs": [], "availability": None,
                       "availability_by_cluster": {}, "candidates": [],
                       "not_obtained": [], "candidate_note": None,
-                      "queried_labels": []}
+                      "queried_labels": [], "queried_namespaces": {}}
+    job_id = case.get("job_id")
+    if snapshots and job_id and int(job_id) in snapshots:
+        return apply_cluster_snapshot(cluster_result, snapshots[int(job_id)])
     labels = case.get("labels") or []
     repo = case.get("_repo") or args.repo
 
@@ -354,26 +513,35 @@ def step3_cluster_forensics(case: dict, registry: ClusterRegistry, sessions: dic
     # ---- 路径 A：逐个候选集群找 pod，命中即用（真正跑过该 job 的集群才会有这个 pod）----
     # find_job_pod 保证**只返回能承载过本 job 的 pod**（未启动/起点晚于失败步骤的候选
     # 在它内部就被剔除了），故这里命中即可用，不需要再判时序。
+    # 每个集群内部再按 namespace 逐个查（见 ClusterSession.pod_lists_for_lookup）：
+    # 登记的 namespace 可能只是项目共享 namespace，真正装着 runner pod 的是仓库名派生的那个。
     hit = None
     for cluster_name, session in candidate_sessions:
-        pods_result = session.namespace_pods()
-        if not pods_result["ok"]:
-            cluster_result["not_obtained"].append(
-                f"集群 {cluster_name} 列举 pod 失败：{pods_result['error'][:160]}")
-            continue
-        found = cluster_ops.find_job_pod(
-            pods_result["pods"], case.get("runner_name"), full_labels_by_cluster[cluster_name],
-            case.get("failed_step_started_at") or case.get("job_started_at"),
-            case.get("failed_step_completed_at") or case.get("job_completed_at"))
-        if found["pod"] is None:
+        failure_notes, informative_notes = [], []
+        for source, pods_result in session.pod_lists_for_lookup():
+            cluster_result["queried_namespaces"].setdefault(cluster_name, []).append(source)
+            if not pods_result["ok"]:
+                failure_notes.append(f"集群 {cluster_name} 列举 pod 失败（{source}）："
+                                     f"{pods_result['error'][:160]}")
+                continue
+            found = cluster_ops.find_job_pod(
+                pods_result["pods"], case.get("runner_name"), full_labels_by_cluster[cluster_name],
+                case.get("failed_step_started_at") or case.get("job_started_at"),
+                case.get("failed_step_completed_at") or case.get("job_completed_at"))
+            if found["pod"] is not None:
+                hit = (cluster_name, session, found)
+                break
             # 「同标签的候选 pod 全在失败步骤之后才启动」这类**有信息量**的否定结论必须留下：
             # 它把「没找到」推进成了「找到了但不是本 job 的」——两者对读者的含义完全不同。
             # 只收 informative 的：否则每个落空集群都会塞进一句「pod 已回收」，纯噪音。
             if found.get("informative") and found.get("reason"):
-                cluster_result["not_obtained"].append(f"集群 {cluster_name}：{found['reason']}")
-            continue
-        hit = (cluster_name, session, found)
-        break
+                informative_notes.append(f"集群 {cluster_name}（{source}）：{found['reason']}")
+        # 查询失败要**始终**留下（它是「某一路视野不可用」的记录）；
+        # 而 informative 的落空说明只在整集群都没命中时才有意义 —— 已经命中时它只是噪音。
+        notes = failure_notes + ([] if hit else informative_notes)
+        cluster_result["not_obtained"].extend(dict.fromkeys(notes))
+        if hit is not None:
+            break
 
     if hit is not None:
         cluster_name, session, found = hit
@@ -419,21 +587,29 @@ def step3_cluster_forensics(case: dict, registry: ClusterRegistry, sessions: dic
         detail = "（同标签的现存 pod 均非本 job 现场，详见上条）"
     else:
         detail = "（历史失败的 pod 多已回收）"
+    # 把真正查过的 namespace 写进结论：否则读者分不清「这个集群真的没有」与「只查了一个 namespace」
+    namespace_text = "、".join(sorted({source for sources in cluster_result["queried_namespaces"].values()
+                                       for source in sources})) or "—"
     cluster_result["not_obtained"].append(
         f"已在候选集群 {cluster_result['candidates']} 中逐个查找"
-        f"（按全名 {cluster_result['queried_labels']} 匹配 pod 名），未取得本 job 的 pod 实证"
-        f"{detail}")
+        f"（按全名 {cluster_result['queried_labels']} 匹配 pod 名；查过的范围：{namespace_text}），"
+        f"未取得本 job 的 pod 实证{detail}")
+    # 上面这条只讲了「找本 job 的 pod」这一件事；它不构成「标签不存在」的结论 ——
+    # 后者要等下面的可用性核查（含标签主干兜底）出结果，报告里两者分开表述。
     for cluster_name, session in candidate_sessions:
         cluster_labels = full_labels_by_cluster.get(cluster_name) or []
         if not cluster_labels:
             continue
-        # 一个展示名可能对应多个全名（如同时登记了 -cn12-001 与 -sh-001），逐个查后合并
-        per_label = {label: session.availability(label) for label in cluster_labels}
+        # 一个展示名可能对应多个全名（如同时登记了 -cn12-001 与 -sh-001），逐个查后合并。
+        # 同时把展示名传进去：登记后缀与实际 pod 后缀不一致时，靠它做主干兜底
+        # （实测 0 个 vs 6 个，见 tests/test_runner_availability.py）。
+        per_label = {label: session.availability(label, labels) for label in cluster_labels}
         merged = _merge_availability(per_label)
         cluster_result["availability_by_cluster"][cluster_name] = merged
-        # 取第一个「确实查到有 runner」的结果作为 availability；全部为否时保留最后一个以展示核查已执行
+        # 取**证据最强**的那份作为 availability（全名命中 > 主干命中 > 无命中）；
+        # 全部为否时保留第一份（rank 都是 0，不会被后来的替换），以展示核查确实执行过。
         if cluster_result["availability"] is None or (
-                merged.get("available") and not cluster_result["availability"].get("available")):
+                availability_rank(merged) > availability_rank(cluster_result["availability"])):
             cluster_result["availability"] = merged
             cluster_result["availability_cluster"] = cluster_name
     return cluster_result
@@ -592,15 +768,19 @@ def main():
     # ---- 第 3 + 4 + 5 步：逐案取证 ----
     cases = select_cases(payload, args.max_cases)
     print(f"[第3步] 选取 {len(cases)} 个失败 job 进入集群取证")
+    snapshots = load_cluster_snapshots(args.cluster_snapshot)
     sessions: dict = {}
     for item in cases:
         item["_repo"] = repo
     rendered_cases = []
     for item in cases:
-        cluster_result = step3_cluster_forensics(item, registry, sessions, args, errors)
+        cluster_result = step3_cluster_forensics(item, registry, sessions, args, errors, snapshots)
         history = step4_history(item, index)
         case = {
             "workflow": item.get("workflow"), "job_name": item.get("job_name"),
+            # job_id/run_id 必须带进 case：集群快照是按 job_id 关联的（见 load_cluster_snapshots），
+            # 早先的 case 字典里没有它们，快照无从匹配 —— 表现为「明明抢到了快照却没用上」。
+            "job_id": item.get("job_id"), "run_id": item.get("run_id"),
             "link": item.get("link"), "bucket": item.get("bucket"), "owner": item.get("owner"),
             "sig": item.get("sig"), "step": item.get("step"), "chip": item.get("chip"),
             "labels": item.get("labels") or [], "runner_name": item.get("runner_name"),

@@ -406,27 +406,29 @@ def pod_logs(kubeconfig_path: str, namespace: str, pod_name: str,
     return {"ok": True, "text": result["stdout"], "error": None}
 
 
-def check_runner_availability(kubeconfig_path: str, runner_label: str) -> dict:
-    """路径 B 的核心：该 runner 标签对应的 scale-set / listener 是否存在于本集群。
+# 弱匹配（标签主干）时名字里必须带的标记：本函数的结论是「runner/listener 是否在线」，
+# 而主干前缀比登记全名宽得多，不加这道门会把同前缀的其它工作负载算成 runner 在线。
+RUNNER_MARKERS = ("runner", "listener")
 
-    用来证实或证伪官方分类树的 `leaf_wait_label`（标签不存在）与
-    `leaf_runner_offline`（runner 未上线）—— 这是历史失败唯一还能做的集群侧判断。
 
-    判据：存在名字以该标签开头的 pod（scale-set listener 或任何 runner pod）。
-    prefix 带结尾 `-`，可避免 `…-800i-2` 误匹配 `…-800i-20` 这类前缀污染。
-    listener 在 arc-systems namespace、runner pod 在业务 namespace，故用 -A 全量看。
+def _pod_hits(pods: list, prefix: str, require_runner_marker: bool = False) -> list:
+    """名字以 prefix 开头的 pod，返回 [(pod 名, namespace)]。
 
-    ⚠️ **时间语义**：这是**查询时刻**的快照，不是失败时刻的快照。
-    查到 available=True 不能证明失败当时 runner 在线；查到 False 也不能证明当时掉线。
-    故结论只能用作「标签是否存在于本集群」的佐证，判断「当时是否掉线」必须另有失败时刻的证据
-    （如 runner 侧日志时间戳、平台监控）。snapshot_only 字段即为此设，报告须据此措辞。
+    prefix 由调用方带上结尾 `-`，可避免 `…-800i-2` 误匹配 `…-800i-20` 这类前缀污染。
     """
-    result = list_pods(kubeconfig_path)
-    if not result["ok"]:
-        return {"available": False, "checked": False, "reason": f"无法列举 pod: {result['error'][:200]}"}
-    prefix = runner_label + "-"
-    hits = [(pod_name_of(pod), pod_namespace_of(pod)) for pod in result["pods"]
-            if pod_name_of(pod).startswith(prefix)]
+    hits = []
+    for pod in pods:
+        name = pod_name_of(pod)
+        if not name.startswith(prefix):
+            continue
+        if require_runner_marker and not any(marker in name for marker in RUNNER_MARKERS):
+            continue
+        hits.append((name, pod_namespace_of(pod)))
+    return hits
+
+
+def _shape(label: str, hits: list, match_kind):
+    """把命中列表整理成核查结果，命中数与旧实现口径一致（全名匹配时行为不变）。"""
     listeners = [name for name, _ in hits if "listener" in name]
     runners = [name for name, _ in hits if "runner" in name]
     return {
@@ -440,7 +442,89 @@ def check_runner_availability(kubeconfig_path: str, runner_label: str) -> dict:
         "listeners": len(listeners),
         "namespaces": sorted({namespace for _, namespace in hits}),
         "samples": sorted(name for name, _ in hits)[:5],
+        "match_kind": match_kind if hits else None,
+        "claimed_label": label,
     }
+
+
+def check_runner_availability(kubeconfig_path: str, runner_label: str, base_labels=()) -> dict:
+    """路径 B 的核心：该 runner 标签对应的 scale-set / listener 是否存在于本集群。
+
+    用来证实或证伪官方分类树的 `leaf_wait_label`（标签不存在）与
+    `leaf_runner_offline`（runner 未上线）—— 这是历史失败唯一还能做的集群侧判断。
+
+    判据：存在名字以该标签开头的 pod（scale-set listener 或任何 runner pod）。
+    listener 在 arc-systems namespace、runner pod 在业务 namespace，故用 -A 全量看。
+
+    ## 两级匹配（2026-09-28 实测后新增）
+
+    实测（`ascend-cn12-001-cluster`，同一时刻，同一份 `-A` pod 列表）：
+        Cluster.md 登记的全名 `linux-aarch64-a3-800t-0-cn12-001` 前缀匹配 → **0 个**
+        标签主干           `linux-aarch64-a3-800t-0-`            → **6 个**
+            （4 个 `…-chlqk-runner-*` + 2 个 `…-{8位hex}-listener`）
+    也就是说该标签族的 runner 当时**正在线**，而只按登记全名匹配的实现会得出
+    「该标签此刻在本集群无 runner/listener」——**与事实相反的假阴性**。
+    根因是 Cluster.md 登记的后缀（`cn12-001`）与 pod 名实际用的后缀（`chlqk`）不一致，
+    属于**注册表对不上实际命名**，不是 runner 掉线；报告若把它写成后者，会把归因
+    推向 `leaf_wait_label` / `leaf_runner_offline`。
+
+    故分两级：
+      1. **全名匹配（强证据）**：以 `runner_label + "-"` 为前缀。命中即停，返回的
+         matched_pods / runners_online / listeners 与旧实现**完全一致**（登记正确时不改变任何口径）。
+      2. **标签主干匹配（弱证据）**：仅在①0 命中时进行，以 `base_labels`（job 上报的展示名）
+         加 `-` 为前缀。前缀变宽必然引入污染，故要求名字里带 runner/listener 标记；
+         且必须把实测后缀变体（suffix_variants）与登记后缀（registered_suffix）一并带出，
+         让读者看到的是「后缀对不上」而不是一个孤零零的布尔值。
+
+    `base_labels` 缺省时不进行第二级（老调用方与既有测试的口径不变）。
+
+    ⚠️ **时间语义**：这是**查询时刻**的快照，不是失败时刻的快照。
+    查到 available=True 不能证明失败当时 runner 在线；查到 False 也不能证明当时掉线。
+    故结论只能用作「标签是否存在于本集群」的佐证，判断「当时是否掉线」必须另有失败时刻的证据
+    （如 runner 侧日志时间戳、平台监控）。snapshot_only 字段即为此设，报告须据此措辞。
+    """
+    bases = [base for base in dict.fromkeys(base_labels or []) if base and base != runner_label]
+    registered_suffix = next((runner_label[len(base) + 1:] for base in bases
+                              if runner_label.startswith(base + "-")), None)
+    # **实际执行过**的匹配方式（不是「可以查哪些」）：阴性结论的可信度取决于查得多宽，
+    # 若写成静态清单，全名一命中就停了却仍记着「查过主干」，那是假留痕。
+    scopes_checked = ["全名"]
+    result = list_pods(kubeconfig_path)
+    if not result["ok"]:
+        return {"available": False, "checked": False,
+                "reason": f"无法列举 pod: {result['error'][:200]}",
+                "claimed_label": runner_label}
+    pods = result["pods"]
+
+    # 第 1 级：登记全名。命中即停 —— 后一级只是给「注册表对不上」兜底，不是常态。
+    hits = _pod_hits(pods, runner_label + "-")
+    match_kind = "全名"
+    suffix_variants: dict = {}
+    if not hits and bases:
+        # 第 2 级：标签主干。逐个主干取并集（一个展示名可能对应多个登记全名）。
+        scopes_checked.append("标签主干")
+        for base in bases:
+            for hit in _pod_hits(pods, base + "-", require_runner_marker=True):
+                if hit not in hits:
+                    hits.append(hit)
+        match_kind = "标签主干"
+        # 每个命中按**最长**匹配主干切后缀，避免两个主干同时命中时把同一段数两遍
+        for name, _ in hits:
+            prefix = max((base + "-" for base in bases if name.startswith(base + "-")),
+                         key=len, default="")
+            segment = name[len(prefix):].split("-")[0] or "?"
+            suffix_variants[segment] = suffix_variants.get(segment, 0) + 1
+
+    outcome = _shape(runner_label, hits, match_kind)
+    outcome.update({
+        # 实际查过的匹配方式：阴性结论必须能证明「两级都查了」，否则无法与「只查了全名」区分
+        "scopes_checked": scopes_checked,
+        "base_labels": bases,
+        "registered_suffix": registered_suffix,
+        # 仅弱匹配有值：实测后缀变体 → 命中数
+        "suffix_variants": suffix_variants,
+    })
+    return outcome
 
 
 def summarize_pods(pods: list) -> dict:
