@@ -66,6 +66,42 @@ def test_path_pattern_scope():
     assert not ws.is_in_scope({}, pattern), "缺 path 不能算命中（否则等于监听全仓）"
 
 
+def test_scope_requires_scheduled_event():
+    """range 还要看触发事件：同一个文件被 pull_request 触发的 run 不属于监听范围。
+
+    实测（2026-09-28 逐条查 API）：范围内 7 个真 run 的 event **全是 workflow_dispatch**，
+    那只 2026-05-15 的僵尸 run 是 pull_request。所以这条断言守的是双向的错：
+    收多了（PR 触发的验证 run 混进来）和收太少（写成「仅 schedule」→ 7 个全被排除，静默停摆）。
+    """
+    pattern = re.compile(DEFAULT_PATH_PATTERN)
+    nightly = ".github/workflows/schedule_nightly_test_a2.yaml"
+    assert ws.is_in_scope({"path": nightly, "event": "workflow_dispatch"}, pattern), \
+        "上游 nightly 是 dispatch 拉起的（文件里只声明了 workflow_dispatch），绝不能排除"
+    assert ws.is_in_scope({"path": nightly, "event": "schedule"}, pattern)
+    assert not ws.is_in_scope({"path": nightly, "event": "pull_request"}, pattern)
+    assert not ws.is_in_scope({"path": nightly, "event": "push"}, pattern)
+    assert ws.is_in_scope({"path": nightly}, pattern), \
+        "event 字段缺失要按「在范围内」处理：漏看真失败比多查一次 jobs 更贵"
+
+
+def test_stale_run_is_never_started_and_too_old():
+    """僵尸 run 的判据：从未开始 **且** 创建已超 24h；真在跑的 run 无论多老都要盯着。
+
+    为什么必须有这条：僵尸让 active 恒为真 → 服务永不休眠（实测夜间空闲档从约 46 次/小时
+    被抬到约 419 次/小时），而它永远不会有 job 开始，也就永远不会有失败可分析。
+    """
+    assert ws.is_stale_run({"status": "queued", "created_at": _iso(days=-1, hours=-1)}, NOW)
+    assert ws.is_stale_run({"status": "waiting", "created_at": _iso(days=-120)}, NOW)
+    assert not ws.is_stale_run({"status": "queued", "created_at": _iso(hours=-23)}, NOW), \
+        "刚创建 23h 的 run 还不该判僵尸（阈值 24h）"
+    assert not ws.is_stale_run({"status": "in_progress", "created_at": _iso(days=-3)}, NOW), \
+        "已开始跑的 run 无论多老都要盯着 —— 它的 job 随时可能失败"
+    assert not ws.is_stale_run({"status": "completed", "created_at": _iso(days=-3)}, NOW)
+    assert not ws.is_stale_run({"status": "queued"}, NOW), \
+        "created_at 缺失时不当僵尸：宁可多查一次，不能漏盯一个真在跑的 run"
+    assert not ws.is_stale_run({}, NOW)
+
+
 def test_earliest_failed_step_takes_lowest_number():
     """级联失败取序号最靠前的那个步骤：后续步骤是被它带崩的，不是根因。"""
     step = ws.earliest_failed_step(make_job())
@@ -326,6 +362,84 @@ def test_watcher_writes_through_to_ledger_and_dry_run_does_not():
         dry.ledger.save()                      # --once --dry-run 的收尾路径也不该写
         assert not pathlib.Path(tmp).exists() or not list(pathlib.Path(tmp).iterdir()), \
             f"dry-run 竟然落了盘：{list(pathlib.Path(tmp).iterdir()) if pathlib.Path(tmp).exists() else []}"
+
+
+def _fake_gh_api(runs):
+    """替换 npu_ci_watch.gh_api 的假实现（不联网），返回 (还原函数, 调用记录)。
+
+    覆盖 run_once 用到的四个端点：分页的最近 run、status=in_progress、status=queued、run 的 jobs。
+    """
+    original = npu_ci_watch.gh_api
+    calls: list = []
+
+    def fake(endpoint, timeout=None):
+        calls.append(endpoint)
+        if "/jobs?" in endpoint:
+            return {"jobs": []}, None
+        if "status=in_progress" in endpoint:
+            return {"workflow_runs": [run for run in runs if run["status"] == "in_progress"]}, None
+        if "status=queued" in endpoint:
+            return {"workflow_runs": [run for run in runs if run["status"] == "queued"]}, None
+        return {"workflow_runs": runs}, None
+
+    npu_ci_watch.gh_api = fake
+    return lambda: setattr(npu_ci_watch, "gh_api", original), calls
+
+
+# 实测的僵尸 run：2026-05-15 创建、至今 queued、updated_at 与创建时间相同（没有任何心跳）
+ZOMBIE_RUN = {"id": 25906980065, "path": ".github/workflows/schedule_weekly_test_a3.yaml",
+              "event": "schedule", "status": "queued",
+              "created_at": _iso(days=-136), "updated_at": _iso(days=-136)}
+LIVE_RUN = {"id": 36418103916, "path": ".github/workflows/schedule_nightly_test_a3.yaml",
+            "event": "schedule", "status": "in_progress",
+            "created_at": _iso(minutes=-40), "updated_at": _iso(minutes=-1)}
+
+
+def test_zombie_run_does_not_keep_service_awake():
+    """只要视野里有僵尸 run，服务就必须能退回空闲档，且不再每轮白查一次 /jobs。
+
+    实测数字：这个 run 在范围里常驻使 active 恒为真 → 夜间空闲时段从约 46 次/小时
+    被抬到约 419 次/小时，多出来的调用全是给一只永远不会有 job 开始的 run 查 jobs。
+    """
+    with tempfile.TemporaryDirectory() as tmp:
+        watcher = _watcher(tmp)
+        restore, calls = _fake_gh_api([ZOMBIE_RUN])
+        try:
+            assert watcher.run_once() is False, "僵尸 run 被算成了「有活动」—— 服务将永不休眠"
+        finally:
+            restore()
+        assert not any(str(ZOMBIE_RUN["id"]) in endpoint for endpoint in calls), \
+            f"僵尸 run 不该被查 jobs（每轮一次、永远查不出东西）：{calls}"
+
+    with tempfile.TemporaryDirectory() as tmp:
+        watcher = _watcher(tmp)
+        restore, calls = _fake_gh_api([ZOMBIE_RUN, LIVE_RUN])
+        try:
+            assert watcher.run_once() is True, "真在跑的 run 必须仍然被算作有活动"
+        finally:
+            restore()
+        queried = [endpoint for endpoint in calls if "/jobs?" in endpoint]
+        assert queried == [f"repos/vllm-project/vllm-ascend/actions/runs/{LIVE_RUN['id']}"
+                           f"/jobs?per_page=100"], f"应只查真在跑的 run 的 jobs，实查：{queried}"
+
+
+def test_zombie_run_is_logged_once_not_every_round():
+    """僵尸每轮都在视野里，但日志只能记一次 —— 否则 30s 一轮能把它刷成一天 2880 行。"""
+    with tempfile.TemporaryDirectory() as tmp:
+        watcher = _watcher(tmp)
+        restore, _ = _fake_gh_api([ZOMBIE_RUN])
+        try:
+            for _ in range(3):
+                watcher.run_once()
+                watcher.ledger.save()
+        finally:
+            restore()
+        text = pathlib.Path(tmp, "watch.log").read_text(encoding="utf-8")
+        assert text.count("🧟") == 1, f"僵尸 run 应只记一次，实际记了 {text.count('🧟')} 次"
+        assert "25906980065" in text, "僵尸 run 被判定的那次必须留痕（否则无从解释它为何不再被查）"
+        # 游标随台账落盘：进程重启后不能把同一只僵尸再报一遍
+        assert "25906980065" in (ws.Ledger(str(pathlib.Path(tmp, "ledger.json")))
+                                 .cursor("stale_runs", {}) or {})
 
 
 def main():

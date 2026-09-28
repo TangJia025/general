@@ -49,6 +49,8 @@ PIPELINE_SCRIPT = os.path.join(BASE_DIR, "npu_ci_forensics.py")
 # 默认监听范围：nightly / weekly 的 a2、a3 系列测试 workflow。
 # 按 run 的 path（.github/workflows/xxx.yaml）匹配 —— 用 path 而不是 name，因为 name 可被改，
 # 而 path 正是 npu_ci_failure_analysis.py 里 failed_jobs[].workflow 的口径，两边能对上。
+# 触发事件另有限定（ws.is_in_scope：schedule + workflow_dispatch）——
+# 同一个文件被 pull_request 触发的 run 语义不同，不该收进来。
 DEFAULT_PATH_PATTERN = r"schedule_(nightly|weekly)_test_a[23]"
 
 # 阶段 B 的「待办」状态：这些状态的 job 还需要跑日志分类/出报告
@@ -290,6 +292,30 @@ class Watcher:
             job_status=job.get("status"), job_conclusion=job.get("conclusion"),
             seen_at=datetime.datetime.now().astimezone().isoformat(timespec="seconds"))
 
+    def note_stale_runs(self, stale_runs: list, now=None):
+        """把僵尸 run 记进日志与台账游标 —— **每个 run_id 只记一次**。
+
+        为什么要有「只记一次」：僵尸 run 的特征就是永远保持同一个 status，若每轮都打一行，
+        日志会被它刷成一片（30s 一轮 = 一天 2880 行），真正的新发现反而看不见。
+        游标用 run_id 而不是计数：游标随台账持久化，进程重启后不会把同一只僵尸再报一遍。
+        """
+        if not stale_runs:
+            return
+        recorded = self.ledger.cursor("stale_runs", {}) or {}
+        changed = False
+        for run in stale_runs:
+            run_id = str(run.get("id"))
+            if run_id in recorded:
+                continue
+            recorded[run_id] = (now or datetime.datetime.now(datetime.timezone.utc)) \
+                .isoformat(timespec="seconds")
+            changed = True
+            self.log(f"🧟 run {run_id}（{run.get('path')}，event={run.get('event')}）"
+                     f"创建于 {run.get('created_at')} 却仍是 {run.get('status')}，"
+                     f"已超 {ws.STALE_RUN_HOURS}h 未开始 —— 判为僵尸：不计入活动、不再查它的 jobs")
+        if changed:
+            self.ledger.set_cursor("stale_runs", recorded)
+
     # ---------- 阶段 A：抢集群快照 ----------
 
     def take_snapshot(self, job: dict) -> tuple:
@@ -474,13 +500,25 @@ class Watcher:
             # 三路查询全灭（通常是 gh 未登录或断网）→ 本轮什么都没看到，交给上层退避
             raise RuntimeError("；".join(problems))
 
-        in_scope = [run for run in runs
-                    if self.pattern is None or ws.is_in_scope(run, self.pattern)]
+        in_scope_all = [run for run in runs
+                        if self.pattern is None or ws.is_in_scope(run, self.pattern)]
+        # 僵尸 run 单独拎出来（见 ws.is_stale_run）：它们既不算「有活动」，也不再每轮查 /jobs。
+        # 但**台账里已有的 job 仍要往下走**，否则「这个 run 被跳过了」会把没分析完的失败一起吞掉。
+        now = datetime.datetime.now(datetime.timezone.utc)
+        in_scope, stale_runs = [], []
+        for run in in_scope_all:
+            (stale_runs if ws.is_stale_run(run, now) else in_scope).append(run)
+        self.note_stale_runs(stale_runs, now)
         self.current_run_status = {run["id"]: run.get("status") for run in in_scope}
-        self.log(f"本轮：仓库 {len(runs)} 个 run，落在监听范围内 {len(in_scope)} 个"
+        stale_note = (f"（其中 {len(stale_runs)} 个是 > {ws.STALE_RUN_HOURS}h 未开始的僵尸 run，"
+                      f"已跳过：不计活动、不查 jobs）" if stale_runs else "")
+        self.log(f"本轮：仓库 {len(runs)} 个 run，落在监听范围内 {len(in_scope_all)} 个{stale_note}"
                  + ("（⚠️ 降级：有查询失败，本轮不推进「已扫描」记账）" if degraded else ""))
 
         candidates: list = []
+        for run in stale_runs:
+            candidates.extend(self.candidates_from_ledger(run["id"]))
+
         for run in in_scope:
             run_id = run["id"]
             scanned = self.ledger.cursor("scanned_runs", {}) or {}
