@@ -387,8 +387,12 @@ def step3_cluster_forensics(case: dict, registry: ClusterRegistry, sessions: dic
                                "window_note": found.get("window_note")})
         evidence = cluster_ops.pod_evidence(found["pod"])
         cluster_result["pod_evidence"] = evidence
-        # 时序不符的 pod 属于另一次运行，取它的日志既无用又会误导（报告层也不展示）
-        if args.no_pod_logs or cluster_result.get("time_consistent") is False:
+        # 取日志的两个前提缺一不可：① 用户没关掉（--no-pod-logs）；② 该 pod 时序自洽。
+        # 时序不符的 pod 属于另一次运行，取它的日志既无用又会误导（报告层也不展示）。
+        # ⚠️ 这个条件曾写成 `if args.no_pod_logs or ... is False:`（少了 not），后果是**恰好相反**：
+        # 加了 --no-pod-logs 反而去抓日志，正常路径反而不抓 —— 即集群取证在正常路径下从来没取过
+        # 容器日志，而给外来 pod 抓了日志。回归断言见 tests/test_pod_log_gating.py。
+        if not args.no_pod_logs and cluster_result.get("time_consistent") is not False:
             namespace = evidence.get("namespace") or session.namespace
             for container in evidence.get("containers") or []:
                 name = container.get("container")
