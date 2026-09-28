@@ -5,6 +5,12 @@
 job 结束后补日志分类与报告。设计理由（两阶段为何不可合并）见
 [npu_ci_forensics_design.md](../npu_ci_forensics_design.md) 的「监听器」章节。
 
+监听范围 = **workflow 文件路径**（`schedule_(nightly|weekly)_test_a[23]`）+ **触发事件**
+（`schedule`、`workflow_dispatch`）双限定。注意上游这几个文件只声明了 `workflow_dispatch`
+（nightly 由上游调度 workflow 拉起），所以**不要**把事件进一步收成「仅 schedule」——
+实测那会让 7 个在跑的 run 全被排除，而且不报错。另：从未开始且创建超 24h 的 run 判为僵尸，
+不再计入活动、也不再每轮查它的 jobs（日志里出现 `🧟` 即属此列，每个 run 只报一次）。
+
 ## 1. 前置条件
 
 | 依赖 | 要求 | 自查 |
@@ -89,6 +95,8 @@ systemctl --user disable --now npu-ci-watch # 停并取消开机自启
 | `journalctl` 看不到输出 | 只在手动跑时正常 | 确认 unit 里有 `PYTHONUNBUFFERED=1` |
 | 报告里「集群侧取得 pod 实证 0/N」 | 正常：历史失败的 pod 早已回收，降级为标签可用性核查 | 无需处理；只有 `snapshot_ok` 的快照才能给出 pod 级实证 |
 | 某个 job 反复失败后变 `gave_up` | 连续 3 次（`--max-attempts`）分析出错，已留痕不再重试 | 看该记录的 `last_error` 字段，修好后把 state 改回 `seen` |
+| 日志首次出现 `🧟 run … 判为僵尸` | 正常：某个 run 创建超 24h 仍从未开始，已跳过（不计活动、不查 jobs） | 无需处理；每个 run_id 只报一次，游标在 `ledger.json` 的 `cursors.stale_runs` |
+| 「落在监听范围内」突然变 0 且不报错 | 检查上游 trigger：若文件改成 `schedule` 之外的新事件（如 `push`），会被事件白名单挡掉 | 看 `forensics/watch_state.py` 的 `IN_SCOPE_EVENTS`，按需增补并补断言 |
 
 ## 7. 卸载
 
