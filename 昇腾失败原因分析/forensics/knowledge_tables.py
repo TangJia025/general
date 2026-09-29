@@ -62,13 +62,37 @@ BUCKET_KNOWLEDGE = {
                                    "pod 直接 Failed 终态，表现为等待就绪失败"},
         ],
     },
-    "分布式通信/网络(HCCL/Store)": {
+    # 以下两桶原为一个合并桶「分布式通信/网络(HCCL/Store)」，按机制拆开（见 npu_ci_failure_analysis.py 的
+    # BUCKETS 注释）：合并时两桶共用 leaf_hccl_port_bound，导致每次 Store 会合超时都被写成
+    # 「官方口径对齐：HCCL 通信端口被占用」。
+    "HCCL 集合通信失败": {
         "leaf": "leaf_hccl_port_bound", "owner": "infra",
         "action": ["先区分「端口被占用」与「网络不通」：报错含 bind/address already in use 属前者。",
                    "端口被占用：同节点上批任务共用固定 HCCL 端口，属平台侧隔离不足；确认是否有并发任务共用节点。",
-                   "若是 Connection reset / broken pipe / Store 超时：查节点间网络与集合通信超时配置。",
+                   "若只有 Connection reset / broken pipe：查节点间网络与集合通信超时配置"
+                   "（`HCCL_EXEC_TIMEOUT` / `HCCL_CONNECT_TIMEOUT` 是否与该用例规模匹配）。",
                    "反例警惕：error code 507035 曾被误判为平台硬件问题，实为业务方算子问题——"
                    "有 507xxx 不等于平台责任，务必先落 507 具体码值再定性。"],
+        "probe": "pod_node",
+    },
+    # 官方 19 个叶子里**没有**「会合超时」这一类，故 leaf 留空：硬套 leaf_running_hang
+    # （任务长时间卡住／引擎进程挂起）会把「对端 rank 根本没加入」误述成「引擎挂了」——
+    # 机制相反（前者是进程没起来，后者是起来了卡住）。宁可不对齐官方口径，也不再生成一句错的。
+    "Store 会合超时(TCPStore，对端 rank 未加入)": {
+        "leaf": None, "owner": "infra",
+        "action": ["先算差额：`Timed out after N seconds waiting for clients. X/Y clients joined.` 里"
+                   "Y-X 就是没加入的 rank 数；N 是会合超时阈值（实测 1801s ≈ 配置的 1800s）。",
+                   "再定位缺席的 rank 在**哪台机器**：多节点 job 里每个 rank 属于哪个 node 由拓扑决定"
+                   "（实测 DP 场景：node0 跑 DP0–DP3、node1 跑 DP4–DP7）。"
+                   "⚠️ job log 只覆盖 node0，对端节点的日志在 `<分支>-<yaml stem>-ascend-logs` 产物里"
+                   "（`collected-logs/node1/var/log/*_logs.txt`），必须取产物才能看到缺席方那一侧。",
+                   "客户端侧（对端节点）的典型形态是 `DistNetworkError: Failed to recv, got 0 bytes."
+                   " Connection was likely closed.` —— 这是**结果**不是原因：服务端等满超时先退出，"
+                   "客户端再去连就只连到已关闭的连接。不要把连接被拒读成网络故障。",
+                   "最后查那台节点的**启动延迟**：pod 调度慢、镜像拉取慢、上一轮任务未释放资源，"
+                   "都会让对端 rank 迟到而错过会合窗口；属平台侧资源调度问题。",
+                   "修法方向：平台侧缩短对端节点的调度/启动时间，或在用例侧提高会合超时阈值"
+                   "（后者只是掩盖，不能代替查延迟）。"],
         "probe": "pod_node",
     },
     "模型缓存未命中(离线模式 local_files_only)": {
@@ -178,7 +202,9 @@ BUCKET_KNOWLEDGE = {
         "action": ["区分「任务真卡住」与「任务正常但超阈值」：看日志停更位置。",
                    "集群侧确认 pod 是否仍在 Running、CPU/内存是否有活动。",
                    "若为引擎进程挂起：常见于 NPU 通信挂起，需采集 py-spy 栈（见 issue #187 定位手段）。",
-                   "**注意与「HCCL 通信端口被占用」互斥**：端口占用会表现为通信卡死，别只判超时。"],
+                   "**注意与「HCCL 集合通信失败」「Store 会合超时(TCPStore，对端 rank 未加入)」互斥**："
+                   "前者的端口占用会表现为通信卡死，后者是进程没凑齐就等满超时。"
+                   "该两桶排在【超时】之前，故真属那两类的日志不会落到本桶——落到本桶的才是「无更具体判据的超时」。"],
         "probe": "pod_container_state",
         "related_issues": [
             {"number": 187, "why": "同现象：任务长时间卡死。该 issue 给出了定位手段"

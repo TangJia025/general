@@ -563,11 +563,26 @@ BUCKETS = [
     (r'phase=Pending|pod failed to come online|Readiness probe failed|'
      r'Insufficient\s+(?:npu|cpu|memory)|0/\d+ nodes are available|nodes are available.*didn.t match',
      "多节点pod调度/就绪失败(k8s侧)", "infra"),
-    # 分布式通信/网络：必须先于 ACL 桶——否则 `hcclComm_, error code is 7` 会被 `error code is \d+` 吞进 ACL 桶，
-    # owner 从 infra 错配成 mixed。同理 DistStoreError 超时是网络/分布式，先于通用超时桶
-    (r'HCCL\w*(?:error|timeout|failed)|hcclComm[^\n]{0,80}error|DistStoreError|'
-     r'StoreError[^\n]{0,40}[Tt]imed out|Connection reset|broken pipe|CollectiveError',
-     "分布式通信/网络(HCCL/Store)", "infra"),
+    # 分布式通信/网络拆成两桶（原为一个合并桶「分布式通信/网络(HCCL/Store)」）：
+    # 两桶**都必须先于 ACL 桶**——否则 `hcclComm_, error code is 7` 会被 `error code is \d+` 吞进 ACL 桶，
+    # owner 从 infra 错配成 mixed。同理两者都先于通用超时桶。
+    # 拆的理由（实测 job 109264350421，run 36518916532）：合并桶把两种**不同机制**合成一个标签，
+    # 再在知识表里配上官方叶子 `leaf_hccl_port_bound`（HCCL 通信端口被占用），于是每一次 Store 会合超时
+    # 都会生成一句**错的**「官方口径对齐：HCCL 通信端口被占用」——而该 case 日志里既无 HCCL 错误码、
+    # 也无 bind / address already in use，真因是对端节点迟到导致 TCPStore 会合超时。
+    # 桶名是报告「根因」一行的原文：粒度错了，读者拿到的机制就是错的。
+    # ① HCCL 集合通信失败 = 通信**已建立**后的集合通信出错/超时。
+    (r'HCCL\w*(?:error|timeout|failed)|hcclComm[^\n]{0,80}error|CollectiveError',
+     "HCCL 集合通信失败", "infra"),
+    # ② Store 会合超时 = 进程**还没凑齐**（与①相反）。判据取服务端与客户端两侧的实测原文：
+    #      node0（服务端）：`DistStoreError: Timed out after 1801 seconds waiting for clients. 7/8 clients joined.`
+    #      node1（客户端）：`TCPStore.cpp:138 [c10d] recvValueWithTimeout failed … Failed to recv, got 0 bytes.`
+    #                       `torch.distributed.DistNetworkError: Failed to recv, got 0 bytes.`
+    #    ⚠️ 刻意**不**收裸 `TCPStore\.cpp`：它在良性告警里也会出现，而本桶排在 OOM/进程被 kill 桶**之前**，
+    #       误命中会把 mixed 的日志错配成 infra。只收带「失败」语义的串。
+    (r'DistStoreError|StoreError[^\n]{0,40}[Tt]imed out|DistNetworkError|'
+     r'recvValueWithTimeout failed|waiting for clients|Connection reset|broken pipe',
+     "Store 会合超时(TCPStore，对端 rank 未加入)", "infra"),
     # 模型缓存未命中（离线模式）：必须排在昇腾错误码桶之前。
     # 实测 job 106046329358：modelscope snapshot_download 在 local_files_only 且缓存为空时 raise ValueError，
     # 昇腾框架紧接着打印 ERR99999 兜底（Device:-1, RankID:-1），旧版因此把用户侧配置问题误判成 infra 硬件故障。
