@@ -38,7 +38,7 @@ Step1 静态筛出 NPU CI workflow（按 --chips 预过滤）
   → Step2 近 N 天各 workflow 执行记录（成功率 + 排队时长）
     → Step3 抽样失败 run → 定位失败 job（含 CPU 门禁 fallback）
          并采集：最早失败步骤 / runner pod 名 / 芯片
-      → Step4 按「失败步骤」决定扫描窗口与归因路径 → 下载日志 → 根因分类（29 桶 + owner）
+      → Step4 按「失败步骤」决定扫描窗口与归因路径 → 下载日志 → 根因分类（31 桶 + owner）
         → Step5 Top3 汇总 + 失败步骤分布 + 假失败 + 待集群取证
 ```
 
@@ -58,10 +58,20 @@ Step1 静态筛出 NPU CI workflow（按 --chips 预过滤）
 |---|---|---|---|
 | `Check * required jobs` | `aggregate` | — | **门禁聚合步骤**：语义是「别的 job 挂了所以我也挂」，必然是级联。不计入根因分布，也不消耗样本预算 |
 | `Set up job` / `Initialize containers` | `no_log` | infra | runner 容器初始化失败，日志无信息量，无需下载 |
-| `Stream logs` / `Upload *logs*` / `Upload failed` / `Upload *artifact*` | `no_log` | infra | 日志回传/PVC 失败，是**症状**不是根因（pod 已死才有这步失败） |
+| `Upload *logs*` / `Upload failed` / `Upload *artifact*` | `no_log` | infra | 产物回传/PVC 失败，是**症状**不是根因（pod 已死才有这步失败） |
 | `Wait for pods ready` / `Launch cluster` / `Clear resources` / `Decode kubeconfig` / `Fetch * from PVC` | `pod` | 待定 | k8s 侧问题，GitHub 日志只有 orchestrator 层 → 进 `待集群取证` |
 | `Install*` / `Build*` / `Set up *` / `Config mirrors` / `Restore * cache` | `window_head` | 待定 | 错误在步骤输出**开头**，扫尾部会漏 |
+| `Stream logs` | `window_tail` | 待定 | **多节点 job 跑测试的那一步**（harness 在此跑 pytest 并流式输出），真因在日志里——`no_log` 会把它整个挡在日志之外 |
 | 其余（默认） | `window_tail` | 待定 | 测试/执行类，错误在尾部 |
+
+> ⚠️ `Stream logs` 曾被并进上面那条 `no_log`（当成「日志回传步骤」→ 一律判 infra，**不读日志**）。
+> 实测证伪（2026-09-28）：多节点 job 的测试执行步骤名就是 `Stream logs`，
+> 其日志里明确写着 `FAILED tests/…::test_external_dp` + `1 failed in 3631.38s` +
+> `pytest exit code: ret=1`（用例真失败）；另一批是 `ERROR: file or directory not found: …` +
+> `collected 0 items` + `pytest exit code: ret=4`（入口不存在，脚本与代码版本错配）。
+> 旧口径把这两类都记成「Runner 与 GitHub 通信问题」，再让第 2 步去集群找 pod 是否被驱逐 ——
+> 方向完全反了（该桶占历史语料 19%，是第二大桶）。**步骤名像「收尾」不等于它是收尾**：
+> 判定依据只能是它实际执行了什么，而不是它叫什么。
 
 - `no_log`：短路为 infra，**跳过日志下载**（省 API 调用，且避免从无信息量日志里瞎猜）；
 - `pod`：不下载日志，直接写入 `待集群取证` 队列（附 runner pod 名）；
@@ -239,7 +249,7 @@ for 每个 workflow f:
 
 ### 7.2 分类桶体系
 
-顺序即优先级，首个命中即归类。共 **29 桶**，`owner` 用于责任归属：
+顺序即优先级，首个命中即归类。共 **31 桶**，`owner` 用于责任归属：
 
 | # | 桶（根因） | 关键信号（简化正则） | owner |
 |---|---|---|---|
@@ -270,8 +280,10 @@ for 每个 workflow f:
 | 25 | Python运行时错误 | `AttributeError` / `TypeError` / `ValueError` / `KeyError` / `IndexError` | code |
 | 26 | 测试参数缺失(config未传入) | `must be provided` | code |
 | 27 | 昇腾框架异常兜底(ERR99999，非硬件信号) | `ERR99999`（无设备绑定时的兜底，排真实根因桶之后） | unknown |
-| 28 | 步骤被强制终止(exit 255，非根因) | `exit code 255` / `command terminated with exit code 255` | infra |
-| 29 | 脚本步骤通用包装失败(需按失败步骤细化) | `failed to run script step` | unknown |
+| 28 | 测试未执行(入口/用例集不存在，脚本与代码错配) | `pytest exit code: ret=4\|5` / `file or directory not found` / `collected 0 items` | code（`decisive`） |
+| 29 | 测试用例失败(pytest ret=1) | `pytest exit code: ret=1` | code（`decisive`） |
+| 30 | 步骤被强制终止(exit 255，非根因) | `exit code 255` / `command terminated with exit code 255` | infra |
+| 31 | 脚本步骤通用包装失败(需按失败步骤细化) | `failed to run script step` | unknown |
 
 **排序不是随意的——以下顺序都是踩坑后校准的，改动需回归验证**：
 
@@ -282,12 +294,16 @@ for 每个 workflow f:
 - **桶 9 带负向前瞻**排除 `7739 bytes of body are still expected`——这是网络下载不全，旧版被 `error:.*expected` 误判成编译失败并把 owner 从 mixed 错配成 code；
 - **桶 12 带两处负向前瞻**（`RayTaskError(?!\(Assertion)` 和 `ray\.exceptions(?![^\n]{0,60}Assertion)`）——`ray.exceptions.RayTaskError(AssertionError)` 本质是断言失败，应落到桶 20。⚠️ 两处缺一不可：断言写在**括号里**，只挡点号形式会漏网（已实测踩坑）；
 - **桶 15 需收紧**：裸 `huggingface_hub` 会命中正常进度行 `Downloading huggingface_hub-1.30.0-py3-none-any.whl`，故必须限定为 `.errors` 或后随 `Error|Timeout|Failed|Connection`；
-- **桶 24 必须早于桶 25/28**：`RuntimeError: engine core died` 是**级联症状**（引擎子进程被更早的错误打死，真因在其上游日志）。若不单列，它会落到桶 28 被标成 owner=infra——等于给一个我们并不掌握的责任方下结论；
-- **桶 28 排在真实根因桶之后**：exit 255 是 K8s 强杀，本身不是根因，只有确实无其他信号时才归到这里（它之后只剩桶 29 这个「脚本步骤通用包装」兜底桶）；
-- **桶 29 命名已更正**：`failed to run script step` 是 GitHub 对「任意脚本步骤失败」的通用包装，**并非多节点专属**（实测 sglang/triton 的 CPU 门禁 job 也被它命中），旧桶名「多节点编排层包装失败」属误命名；
+- **桶 28/29（pytest 判定行）插在桶 27 之后、桶 30/31 之前**（2026-09-28 新增，三处顺序都要对）：
+  它们必须晚于硬件/网络/OOM 等真根因桶（否则「OOM 导致用例失败」会被写成业务侧用例失败），
+  又必须早于 `exit 255` 与 `failed to run script step` 这两个通用包装桶（否则真判定被外层包装覆盖成
+  unknown/infra，即改前的实际行为）。语义与「提前退出」的联动见 §7.4；
+- **桶 24 必须早于桶 25/30**：`RuntimeError: engine core died` 是**级联症状**（引擎子进程被更早的错误打死，真因在其上游日志）。若不单列，它会落到桶 30 被标成 owner=infra——等于给一个我们并不掌握的责任方下结论；
+- **桶 30 排在真实根因桶之后**：exit 255 是 K8s 强杀，本身不是根因，只有确实无其他信号时才归到这里（它之后只剩桶 31 这个「脚本步骤通用包装」兜底桶）；
+- **桶 31 命名已更正**：`failed to run script step` 是 GitHub 对「任意脚本步骤失败」的通用包装，**并非多节点专属**（实测 sglang/triton 的 CPU 门禁 job 也被它命中），旧桶名「多节点编排层包装失败」属误命名；
 - **桶 22 是补漏**：mypy 的真实错误形态（实测 job `106079239560`）是
   `pool_scheduler.py:175: error: "KVPoolScheduler" has no attribute "mamba_group_ids"  [attr-defined]`
-  + `Found 1 error in 1 file (checked 615 source files)`。旧版没有任何桶匹配它 → 落到桶 29 被标 `unknown`。
+  + `Found 1 error in 1 file (checked 615 source files)`。旧版没有任何桶匹配它 → 落到桶 31 被标 `unknown`。
   实测 6/40 份样本（15%）因此被误归 unknown。**注意与同一 run 的 `cpu-ut` job 的关系**：同一个属性缺失
   会让 UT 崩成 `AttributeError`（桶 25），也就是**同一根因落进两个桶**——这正是按 `(run, 桶)` 去重之外，
   仍需要人工留意「同 run 跨桶同源」的原因（当前未自动合并，见 §10）。
@@ -314,7 +330,34 @@ Step4 的分类循环据路由结果分三条出口：
 | `aggregate` | 不下载日志、不归桶 | 仅计数，**不计入根因分布**，也不消耗 `--samples` 预算 |
 | `no_log` | 不下载日志，直接按表的 owner 定性 | 计入根因，标注「无需日志」 |
 | `pod` | 不下载日志 | 写入 `待集群取证` 队列（附 runner pod 名 + 失败步骤） |
-| `window_head`/`window_tail` | 下载日志 + 时间窗切片 + 29 桶扫描 | 计入根因；全部未命中 → 也进 `待集群取证` |
+| `window_head`/`window_tail` | 下载日志 + 时间窗切片 + 31 桶扫描 | 计入根因；全部未命中 → 也进 `待集群取证` |
+
+**第四种出口：日志侧已定性为业务侧 → 提前退出（`decisive`，2026-09-28 新增）**
+
+读日志的路径上还有一次**提前退出**：若日志里出现**测试框架自己打印的判定行**，且结论指向业务侧，
+则该失败**不进** `待集群取证`、第 2 步也不再为它查集群。判据（`is_decisive()`）两条满足其一：
+
+| 判据 | 桶 | owner | 实测形态 |
+|---|---|---|---|
+| 桶本身在 `DECISIVE_BUCKETS` 里 | 【测试未执行(入口/用例集不存在，脚本与代码错配)】 | code | `ERROR: file or directory not found: …` + `collected 0 items` + `pytest exit code: ret=4` |
+| 同上 | 【测试用例失败(pytest ret=1)】 | code | `1 failed, 14 warnings in 3631.38s` + `pytest exit code: ret=1` |
+| 桶判 `code` **且**日志有 `pytest exit code: ret=\d+` | 任意 code 桶（如【断言失败】【Python运行时错误】） | code | 尾部带断言 traceback 的常见形态 |
+
+三个必须一起记住的点：
+
+1. **顺序即优先级**：这两条 pytest 桶必须排在硬件/网络/OOM 等真根因桶**之后**（否则「OOM 导致用例失败」会被写成业务侧用例失败），
+   又必须排在 `exit code 255`、`failed to run script step` 等**通用包装桶之前**（否则真判定被外层包装覆盖成 unknown/infra）。
+2. **第三条判据不能省**：最常见的 ret=1 形态尾部带断言 traceback，会先命中更靠前的【断言失败】桶
+   （owner 同为 code，但不在 `DECISIVE_BUCKETS` 里）。只按桶名判会漏掉整整一类，它们照样会占掉取证名额。
+3. **只在桶判 code 时才算已定性**：桶判 `mixed`/`infra`（OOM、HCCL、节点调度…）即便日志里有 ret=1 也**不**跳过
+   —— 那时责任方尚未落在业务侧，集群侧证据仍可能是关键，不能把硬件问题读成业务问题。
+
+下游三处联动（缺一不可，`tests/test_pytest_verdict.py` 逐条守着）：
+`cluster_todo` 不收它们 · `select_cases` 让它们**必进报告但不占 `--max-cases` 名额**（名额是留给「不查集群就定不了性」的）·
+报告里写「**按规则跳过**」而**不是**「未取证」（后者是「查了没查到」，语义相反）。
+
+为什么不能简单地把它们从 case 列表里剔掉：报告只渲染传进去的 case，归因分布也由 case 统计 ——
+剔掉等于让业务侧失败从此在报告里消失（静默丢信息），而不是「少花一次集群查询」。
 
 **去重口径（关键）**：计数键是 `(run_id, 桶)`，同一 run 内的同一根因只计一次。
 
@@ -381,7 +424,7 @@ Step4 的分类循环据路由结果分三条出口：
 - **多节点日志缺失（结构性）**：多节点测试的 GitHub 日志只有 orchestrator 层，真实错误在 k8s pod 日志——这正是必须走第 2 步的原因，不是本工具能修的；
 - **cancelled 语义**：cancelled 且从未启动 → 调度/资源问题；否则多为主动取消/上游中断；
 - **未分类兜底**：依赖 `(FAILED|Error|error:)` 正则，可能把非根因的普通报错行当证据。这类样本现在也会进 `待集群取证`，不再硬给一个桶；
-- **桶体系是经验校准的产物**：29 桶的**顺序**承载了大量踩坑结论（见 §7.2 的校准说明），新增桶时必须回归验证既有样例，不能只测新样例。
+- **桶体系是经验校准的产物**：31 桶的**顺序**承载了大量踩坑结论（见 §7.2 的校准说明），新增桶时必须回归验证既有样例，不能只测新样例。
 
 ## 11. 第 2 步（集群取证）· 状态与边界
 
