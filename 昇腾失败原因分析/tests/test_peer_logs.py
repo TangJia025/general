@@ -46,7 +46,7 @@ SOURCE = BASE_DIR / "npu_ci_failure_analysis.py"
 sys.path.insert(0, str(BASE_DIR))
 
 from forensics import peer_logs as peer_ops                       # noqa: E402
-from forensics.report import peer_basis_lines, synthesize         # noqa: E402
+from forensics.report import peer_basis_lines, render_case, synthesize   # noqa: E402
 
 # npu_ci_failure_analysis.py 是**全模块级执行**的脚本（import 即联网跑整轮分析），无法安全 import
 # —— 与 tests/test_pytest_verdict.py 同一手法，用 AST 只抽取被测节点。
@@ -121,6 +121,25 @@ NODE1_STORE_CLIENT = (
     "torch.distributed.DistNetworkError: Failed to recv, got 0 bytes. Connection was likely closed.\n")
 HCCL_COLLECTIVE_ERROR = "hcclComm_, error code is 7, opType is AllReduce\n"
 BENIGN_TCPSTORE = "TCPStore server listening on 0.0.0.0:47921 with 8 workers\n"
+
+# ---- 桶 3（HCCL 集合通信失败）的**误命中**原文：两行都不是报错，是 INFO ----
+# 出处：实测 job 109330881116（node0）与同 run 的 node1 日志，两节点都是这两行。
+# 该 job 真实失败是性能回归，176/176 个 HCCL 命中全是这类环境变量/提示行（见设计文档校准节）。
+HCCL_ENV_DUMP = ("FNAME=eth0 HCCL_BUFFSIZE=1024 HCCL_CONNECT_TIMEOUT=120 "
+                 "HCCL_EXEC_TIMEOUT=204 HCCL_INTRA_ROCE_ENABLE=0\n")
+HCCL_BENIGN_INFO = ("INFO 09-29 05:37:59 [platform.py:940] The timeout interval of the HCCL operator "
+                    "is 1836s. Timeout in seconds for execute_model RPC calls in multiprocessing "
+                    "must be greater than 1836s, Set VLLM_EXECUTE_MODEL_TIMEOUT_SECONDS=3000\n")
+
+# ---- 桶 3 必须**继续**命中的真实报错形态（修误命中不得把真信号一起修掉）----
+HCCL_REAL_SHAPES = (
+    "hcclComm_, error code is 7, opType is AllReduce\n",
+    "hcclCommInitRootInfoConfig: error code is 4(INTERNAL)\n",
+    "HCCL communication failed\n",
+    "HCCL timeout\n",            # 空格分隔：旧正则漏判的形态，本次顺带修掉
+    "HCCL execute timeout\n",
+    "[ERROR] HCCL: execute timeout\n",
+)
 PYTEST_VERDICT = "1 failed in 3631.38s\npytest exit code: ret=1\n"
 
 STORE_BUCKET = "Store 会合超时(TCPStore，对端 rank 未加入)"
@@ -193,6 +212,24 @@ def artifact_record(name, artifact_id=1, size=43727):
 
 JOB_NAME = next(name for name in REAL_JOB_NAMES if "GLM-5.1-W8A8C8-A3_128k_90_50" in name)
 ARTIFACT_NAME = "main-GLM-5.1-W8A8C8-A3_128k_90_50-ascend-logs"
+
+# 报告措辞测试共用的 case：靠对端兜底定性的那一类（node0 时间窗未分类）。
+# 字段与真实 handoff 同构，供 peer_basis_lines / synthesize / render_case 三处共用。
+PEER_CASE = {
+    "job_name": "double-node (main, GLM-5.1-W8A8C8-A3_128k_90_50.yaml)",
+    "workflow": "Ascend Nightly", "link": "https://example.invalid/job/1",
+    "step": "Stream logs", "chip": "a3", "labels": ["ascend-a3"],
+    "bucket": "Store 会合超时(TCPStore，对端 rank 未加入)", "owner": "infra",
+    "sig_source": "对端节点日志",
+    "peer": {"ok": True, "empty": False, "artifact": ARTIFACT_NAME, "peers": ["node1"],
+             "node_lines": {"node1": 839}, "kept_lines": {"node1": 400},
+             "bucket": "Store 会合超时(TCPStore，对端 rank 未加入)",
+             "sig": "recvValueWithTimeout failed", "adopted": True},
+    "cluster": {"pod_evidence": {"pod": "p", "phase": "Failed", "node": "n",
+                                "containers": [{"container": "c",
+                                                "last_terminated_reason": "Error"}]}},
+    "history": [],
+}
 
 
 def make_rec(job_name=JOB_NAME, run_id=36518916532):
@@ -467,6 +504,27 @@ def test_benign_tcpstore_line_is_not_matched():
     assert label != STORE_BUCKET, "良性 `TCPStore server listening` 不得命中会合超时桶"
 
 
+def test_hccl_bucket_ignores_env_var_names_and_benign_info():
+    """桶 3 的信号必须要求 `HCCL` **独立成词**：`HCCL_CONNECT_TIMEOUT=120` 是变量名不是报错，
+    `HCCL operator is 1836s` 是一行提示。实测该误命中会把一个性能回归 job 判成「集合通信失败 /
+    infra / 高度吻合历史先例 #275」，而那条先例的 230.65 分完全来自桶名本身（环境变量文本抽不出签名）。"""
+    ns = load_under_test(fake_env())
+    classify = ns["classify_text"]
+    for text in (HCCL_ENV_DUMP, HCCL_BENIGN_INFO):
+        label, _sig = classify(text)
+        assert label != HCCL_BUCKET, f"{text[:56]!r} 误命中 → {label!r}"
+
+
+def test_hccl_bucket_still_matches_real_error_shapes():
+    """收紧误命中的前提是真信号一条都没丢 —— 这是上一条的对偶，两条必须同时绿。"""
+    ns = load_under_test(fake_env())
+    classify = ns["classify_text"]
+    for text in HCCL_REAL_SHAPES:
+        label, sig = classify(text)
+        assert label == HCCL_BUCKET, f"{text.strip()!r} 漏判 → {label!r}"
+        assert sig and sig.strip(), f"{text.strip()!r} 必须带上证据片段"
+
+
 def test_store_bucket_has_no_official_leaf():
     """官方 19 个叶子里没有「会合超时」：硬套 leaf_running_hang 会生成一句错的「官方口径对齐」。"""
     from forensics.knowledge_tables import knowledge_for
@@ -496,18 +554,27 @@ def test_report_omits_peer_section_when_not_applicable():
     assert peer_basis_lines({}) == []
 
 
+def test_report_calls_peer_snippet_a_match_not_an_exception():
+    """措辞守门：`peer.sig` 是**命中桶正则的原文片段**，不是「第一条异常」。
+
+    实测有 case 命中的就是环境变量行（`HCCL_EXEC_TIMEOUT=204`）。叫「异常」会把一行 INFO
+    读成报错，等于替一个假阳性作证 —— 报告替证据说话，不能替证据加戏。"""
+    lines = peer_basis_lines(PEER_CASE)
+    text = "\n".join(lines)
+    assert "命中片段" in text, text
+    assert "异常" not in text, f"不得把命中片段说成「异常」：{text}"
+    # `<details>` 折叠块的标题与 bullet 是两处独立文案（`render_case` 渲染），单测 bullet 挡不住这处
+    rendered = render_case(PEER_CASE, 1)
+    # 只看对端节点那几行：报告别处出现「异常」是正当的（如「容器异常退出」），不能一票否决全篇
+    peer_lines = [line for line in rendered if "对端节点" in line]
+    assert any("命中片段" in line for line in peer_lines), peer_lines
+    assert not any("异常" in line for line in peer_lines), \
+        f"对端节点那几行仍把命中片段说成「异常」：{peer_lines}"
+
+
 def test_report_marks_fallback_source_and_caps_confidence():
     """靠对端兜底定性的 case：依据首行须写明来源，且不给「高」置信度、标需人工确认。"""
-    case = {
-        "bucket": STORE_BUCKET, "owner": "infra", "sig_source": "对端节点日志",
-        "peer": {"ok": True, "empty": False, "artifact": ARTIFACT_NAME, "peers": ["node1"],
-                 "node_lines": {"node1": 839}, "kept_lines": {"node1": 400},
-                 "bucket": STORE_BUCKET, "sig": "recvValueWithTimeout failed", "adopted": True},
-        "cluster": {"pod_evidence": {"pod": "p", "phase": "Failed", "node": "n",
-                                    "containers": [{"container": "c",
-                                                    "last_terminated_reason": "Error"}]}},
-        "history": [],
-    }
+    case = PEER_CASE
     verdict = synthesize(case)
     assert verdict["basis"][0].startswith("日志侧：node0 失败步骤时间窗**未能分类**"), verdict["basis"][0]
     assert "兜底" in verdict["basis"][0] or "采用对端节点日志判桶" in verdict["basis"][0]
