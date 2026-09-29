@@ -38,7 +38,7 @@ Step1 静态筛出 NPU CI workflow（按 --chips 预过滤）
   → Step2 近 N 天各 workflow 执行记录（成功率 + 排队时长）
     → Step3 抽样失败 run → 定位失败 job（含 CPU 门禁 fallback）
          并采集：最早失败步骤 / runner pod 名 / 芯片
-      → Step4 按「失败步骤」决定扫描窗口与归因路径 → 下载日志 → 根因分类（31 桶 + owner）
+      → Step4 按「失败步骤」决定扫描窗口与归因路径 → 下载日志 → 根因分类（32 桶 + owner）
         → Step5 Top3 汇总 + 失败步骤分布 + 假失败 + 待集群取证
 ```
 
@@ -141,6 +141,9 @@ Step1 静态筛出 NPU CI workflow（按 --chips 预过滤）
 | `--chips` | `a2,a3` | 芯片范围（逗号分隔）；**空字符串=不限**。同时过滤 workflow 文件名与 job runner 标签 |
 | `--tail-lines` | 1200 | 步骤时间窗**切不出来时**的回退窗口行数 |
 | `--no-step-window` | 关闭 | 关闭步骤时间窗切分，退回旧的固定尾部窗口方式（用于新旧结果对照） |
+| `--no-peer-logs` | 关闭 | 不抓取 `*-ascend-logs` 产物（多节点 job 的对端节点日志，见 §7.5） |
+| `--peer-log-lines` | 400 | 每个对端节点取尾部多少行参与判桶。对端文本无时间窗对齐，取尾部是唯一可行的粗切 |
+| `--artifact-cache-dir` | `<脚本目录>/.forensics_cache/artifacts` | 对端产物 zip 的缓存目录（按 artifact_id 存盘，同一 run 的多个失败 job 只下载一次；已在 `.gitignore`） |
 | `--cross-repo` | **关闭** | 启用四仓汇总机制（跨仓基础设施信号表、跨仓失败原因汇总表、仓库章节重排）。缺省只产出本仓本章片范围的章节，不动跨仓表格 |
 | `--cluster-kubeconfig` | 无 | **第 2 步预留**：昇腾 CI 专用只读 kubeconfig 路径。⚠️ 不可传 `ascend-backend`（那是社区微服务集群，见 §11） |
 
@@ -249,63 +252,71 @@ for 每个 workflow f:
 
 ### 7.2 分类桶体系
 
-顺序即优先级，首个命中即归类。共 **31 桶**，`owner` 用于责任归属：
+顺序即优先级，首个命中即归类。共 **32 桶**，`owner` 用于责任归属：
 
 | # | 桶（根因） | 关键信号（简化正则） | owner |
 |---|---|---|---|
 | 1 | 假失败(draft PR 阻断) | `PR is draft. Blocking CI.` | 假失败 |
 | 2 | 多节点pod调度/就绪失败(k8s侧) | `phase=Pending` / `Readiness probe failed` / `0/N nodes are available` / `Insufficient npu` | infra |
-| 3 | 分布式通信/网络(HCCL/Store) | `HCCL*error/timeout/failed` / `hcclComm…error` / `DistStoreError` / `StoreError…Timed out` | infra |
-| 4 | 模型缓存未命中(离线模式 local_files_only) | `Cannot find the requested files in the cached path` / `outgoing traffic has been disabled` | code |
-| 5 | 昇腾NPU硬件错误(507xxx/ERR99999+设备) | `error code( is)? 507\d{3}` / `Device:非-1 … ERR99999` | infra |
-| 6 | CANN运行时参数非法(107xxx) | `error code( is)? 107\d{3}` | mixed |
-| 7 | 昇腾算子执行错误(ACL) | `NPU function error` / `aclnn* failed` / `error code is \d+` | mixed |
-| 8 | 依赖解析/构建失败(含链式噪音) | `No solution found when resolving` / `no version of` / `No matching distribution` / `Failed to build` / `detected dubious ownership` | mixed |
-| 9 | 编译失败(C++/MLIR) | `FAILED: [code=1]` / `clang++ error` / `CMake Error` | code |
-| 10 | 自定义算子so缺失(csrc构建) | `cannot open shared object file` / `torch_extensions.*.so` | mixed |
-| 11 | 进程被kill(OOM/超内存) | `SIGKILL` / `exit code 137` / `OOMKilled` / `Signal 9` | mixed |
-| 12 | 分布式通信/编排(Ray) | `RayTaskError` / `ActorDiedError` / `Actor *died` | code |
-| 13 | 内网镜像/仓库下载失败 | `Failed to download metadata` / `repomd.xml` / `apt\|yum Failed to fetch` | infra |
-| 14 | GitHub API 调用失败 | `Failed to fetch PR title` | infra |
-| 15 | 模型/包下载失败(外网) | `HfHubHTTPError` / `huggingface_hub.errors` / `bytes of body are still expected` / `RPC failed` | mixed |
-| 16 | 超时 | `timed out` / `TimeoutError` / `UV_HTTP_TIMEOUT` | mixed |
-| 17 | OOM/显存不足 | `out of memory` / `aclrtMalloc failed` / `alloc.*failed.*memory` | mixed |
-| 18 | 磁盘不足 | `No space left` / `ENOSPC` | infra |
-| 19 | 依赖/安装(ImportError) | `ImportError` / `ModuleNotFoundError` | code |
-| 20 | 断言失败(代码或精度) | `AssertionError` / `E assert` | code |
-| 21 | 静态检查(pre-commit/ShellCheck) | `ShellCheck` / `pre-commit did not succeed` | code |
-| 22 | 静态类型检查失败(mypy) | `Found N errors in N files` / `error: … [attr-defined\|assignment\|arg-type\|…]` | code |
-| 23 | CI 策略检查(CSRC 变更) | `CSRC build workflows changed` | code |
-| 24 | vLLM引擎崩溃(级联，真因在上游) | `Engine core died/failed` / `EngineDeadError` | unknown |
-| 25 | Python运行时错误 | `AttributeError` / `TypeError` / `ValueError` / `KeyError` / `IndexError` | code |
-| 26 | 测试参数缺失(config未传入) | `must be provided` | code |
-| 27 | 昇腾框架异常兜底(ERR99999，非硬件信号) | `ERR99999`（无设备绑定时的兜底，排真实根因桶之后） | unknown |
-| 28 | 测试未执行(入口/用例集不存在，脚本与代码错配) | `pytest exit code: ret=4\|5` / `file or directory not found` / `collected 0 items` | code（`decisive`） |
-| 29 | 测试用例失败(pytest ret=1) | `pytest exit code: ret=1` | code（`decisive`） |
-| 30 | 步骤被强制终止(exit 255，非根因) | `exit code 255` / `command terminated with exit code 255` | infra |
-| 31 | 脚本步骤通用包装失败(需按失败步骤细化) | `failed to run script step` | unknown |
+| 3 | HCCL 集合通信失败 | `HCCL*error/timeout/failed` / `hcclComm…error` / `CollectiveError` | infra |
+| 4 | Store 会合超时(TCPStore，对端 rank 未加入) | `DistStoreError` / `StoreError…Timed out` / `DistNetworkError` / `recvValueWithTimeout failed` / `waiting for clients` / `Connection reset` / `broken pipe` | infra |
+| 5 | 模型缓存未命中(离线模式 local_files_only) | `Cannot find the requested files in the cached path` / `outgoing traffic has been disabled` | code |
+| 6 | 昇腾NPU硬件错误(507xxx/ERR99999+设备) | `error code( is)? 507\d{3}` / `Device:非-1 … ERR99999` | infra |
+| 7 | CANN运行时参数非法(107xxx) | `error code( is)? 107\d{3}` | mixed |
+| 8 | 昇腾算子执行错误(ACL) | `NPU function error` / `aclnn* failed` / `error code is \d+` | mixed |
+| 9 | 依赖解析/构建失败(含链式噪音) | `No solution found when resolving` / `no version of` / `No matching distribution` / `Failed to build` / `detected dubious ownership` | mixed |
+| 10 | 编译失败(C++/MLIR) | `FAILED: [code=1]` / `clang++ error` / `CMake Error` | code |
+| 11 | 自定义算子so缺失(csrc构建) | `cannot open shared object file` / `torch_extensions.*.so` | mixed |
+| 12 | 进程被kill(OOM/超内存) | `SIGKILL` / `exit code 137` / `OOMKilled` / `Signal 9` | mixed |
+| 13 | 分布式通信/编排(Ray) | `RayTaskError` / `ActorDiedError` / `Actor *died` | code |
+| 14 | 内网镜像/仓库下载失败 | `Failed to download metadata` / `repomd.xml` / `apt\|yum Failed to fetch` | infra |
+| 15 | GitHub API 调用失败 | `Failed to fetch PR title` | infra |
+| 16 | 模型/包下载失败(外网) | `HfHubHTTPError` / `huggingface_hub.errors` / `bytes of body are still expected` / `RPC failed` | mixed |
+| 17 | 超时 | `timed out` / `TimeoutError` / `UV_HTTP_TIMEOUT` | mixed |
+| 18 | OOM/显存不足 | `out of memory` / `aclrtMalloc failed` / `alloc.*failed.*memory` | mixed |
+| 19 | 磁盘不足 | `No space left` / `ENOSPC` | infra |
+| 20 | 依赖/安装(ImportError) | `ImportError` / `ModuleNotFoundError` | code |
+| 21 | 断言失败(代码或精度) | `AssertionError` / `E assert` | code |
+| 22 | 静态检查(pre-commit/ShellCheck) | `ShellCheck` / `pre-commit did not succeed` | code |
+| 23 | 静态类型检查失败(mypy) | `Found N errors in N files` / `error: … [attr-defined\|assignment\|arg-type\|…]` | code |
+| 24 | CI 策略检查(CSRC 变更) | `CSRC build workflows changed` | code |
+| 25 | vLLM引擎崩溃(级联，真因在上游) | `Engine core died/failed` / `EngineDeadError` | unknown |
+| 26 | Python运行时错误 | `AttributeError` / `TypeError` / `ValueError` / `KeyError` / `IndexError` | code |
+| 27 | 测试参数缺失(config未传入) | `must be provided` | code |
+| 28 | 昇腾框架异常兜底(ERR99999，非硬件信号) | `ERR99999`（无设备绑定时的兜底，排真实根因桶之后） | unknown |
+| 29 | 测试未执行(入口/用例集不存在，脚本与代码错配) | `pytest exit code: ret=4\|5` / `file or directory not found` / `collected 0 items` | code（`decisive`） |
+| 30 | 测试用例失败(pytest ret=1) | `pytest exit code: ret=1` | code（`decisive`） |
+| 31 | 步骤被强制终止(exit 255，非根因) | `exit code 255` / `command terminated with exit code 255` | infra |
+| 32 | 脚本步骤通用包装失败(需按失败步骤细化) | `failed to run script step` | unknown |
 
 **排序不是随意的——以下顺序都是踩坑后校准的，改动需回归验证**：
 
-- **桶 3 先于桶 7**：否则 `hcclComm_), error code is 7` 会被 `error code is \d+` 吞进 ACL 桶，owner 从 infra 错配成 mixed；
-- **桶 5/6 按错误码分档**（依据 `classification-guide.md` 场景 C）：`507xxx` 是硬件/驱动故障（infra）；`107xxx` 是 CANN runtime 参数非法，不是硬件信号（mixed）。旧版一律归 ACL/mixed，把硬件故障漏成了「待判定」；
-- **桶 4 先于桶 5，裸 `ERR99999` 下沉到桶 27**（2026-09-20 实测纠偏）：`ERR99999` 是昇腾对「任意未捕获应用层异常」的**通用兜底包装**，**不是硬件信号**——实测两例（job `106046329358` 模型缓存未命中、job `105440985558` 投机解码断言失败）都是紧跟在真实 Python traceback 之后打印，同行 `Device:-1, RankID:-1` 表示**未绑定 NPU 设备**。旧版把 `ERR99999` 无条件并进硬件桶，导致这两例用户侧问题被判成 infra。改法：① 硬件桶只认 `507xxx`，或 `ERR99999` 且同行 `Device/RankID` 非 `-1`；② 裸 `ERR99999` 下沉到桶 27 标 `unknown`，让真实根因先命中（实测两例分别纠正为桶 4 `code` 与桶 20 `code`）。⚠️ 与「桶 24 早于桶 25」同一原则：**级联症状不能压倒根因**；
-- **桶 8 先于桶 9/24**：依赖解析失败会连锁产生大量 `error`/`failed` 噪音，不前置则根因被级联噪音吞掉；
-- **桶 9 带负向前瞻**排除 `7739 bytes of body are still expected`——这是网络下载不全，旧版被 `error:.*expected` 误判成编译失败并把 owner 从 mixed 错配成 code；
-- **桶 12 带两处负向前瞻**（`RayTaskError(?!\(Assertion)` 和 `ray\.exceptions(?![^\n]{0,60}Assertion)`）——`ray.exceptions.RayTaskError(AssertionError)` 本质是断言失败，应落到桶 20。⚠️ 两处缺一不可：断言写在**括号里**，只挡点号形式会漏网（已实测踩坑）；
-- **桶 15 需收紧**：裸 `huggingface_hub` 会命中正常进度行 `Downloading huggingface_hub-1.30.0-py3-none-any.whl`，故必须限定为 `.errors` 或后随 `Error|Timeout|Failed|Connection`；
-- **桶 28/29（pytest 判定行）插在桶 27 之后、桶 30/31 之前**（2026-09-28 新增，三处顺序都要对）：
+- **桶 3/4 先于桶 8**：否则 `hcclComm_), error code is 7` 会被 `error code is \d+` 吞进 ACL 桶，owner 从 infra 错配成 mixed；
+- **桶 3 与桶 4 必须分开**（2026-09-29 拆分，原为合并桶「分布式通信/网络(HCCL/Store)」）：两者是**相反**的机制
+  ——① 是「进程凑齐了但集合通信出错」，② 是「进程根本没凑齐」。合并时两桶共用知识表的官方叶子
+  `leaf_hccl_port_bound`（HCCL 通信端口被占用），于是**每一次 Store 会合超时都会生成一句错的
+  「官方口径对齐：HCCL 通信端口被占用」**。实测 job `109264350421`（run 36518916532）即如此：日志里既无 HCCL
+  错误码、也无 `bind`/`address already in use`，真因是对端节点（node1）迟到导致 TCPStore 会合超时；
+  ② 的桶名读作「对端 rank 未加入」才对得上。⚠️ ② 刻意**不**收裸 `TCPStore\.cpp`——它在良性告警里也出现，
+  而本桶排在桶 12（进程被 kill）**之前**，误命中会把 mixed 的日志错配成 infra；
+- **桶 6/7 按错误码分档**（依据 `classification-guide.md` 场景 C）：`507xxx` 是硬件/驱动故障（infra）；`107xxx` 是 CANN runtime 参数非法，不是硬件信号（mixed）。旧版一律归 ACL/mixed，把硬件故障漏成了「待判定」；
+- **桶 5 先于桶 6，裸 `ERR99999` 下沉到桶 28**（2026-09-20 实测纠偏）：`ERR99999` 是昇腾对「任意未捕获应用层异常」的**通用兜底包装**，**不是硬件信号**——实测两例（job `106046329358` 模型缓存未命中、job `105440985558` 投机解码断言失败）都是紧跟在真实 Python traceback 之后打印，同行 `Device:-1, RankID:-1` 表示**未绑定 NPU 设备**。旧版把 `ERR99999` 无条件并进硬件桶，导致这两例用户侧问题被判成 infra。改法：① 硬件桶只认 `507xxx`，或 `ERR99999` 且同行 `Device/RankID` 非 `-1`；② 裸 `ERR99999` 下沉到桶 28 标 `unknown`，让真实根因先命中（实测两例分别纠正为桶 5 `code` 与桶 21 `code`）。⚠️ 与「桶 25 早于桶 26」同一原则：**级联症状不能压倒根因**；
+- **桶 9 先于桶 10/25**：依赖解析失败会连锁产生大量 `error`/`failed` 噪音，不前置则根因被级联噪音吞掉；
+- **桶 10 带负向前瞻**排除 `7739 bytes of body are still expected`——这是网络下载不全，旧版被 `error:.*expected` 误判成编译失败并把 owner 从 mixed 错配成 code；
+- **桶 13 带两处负向前瞻**（`RayTaskError(?!\(Assertion)` 和 `ray\.exceptions(?![^\n]{0,60}Assertion)`）——`ray.exceptions.RayTaskError(AssertionError)` 本质是断言失败，应落到桶 21。⚠️ 两处缺一不可：断言写在**括号里**，只挡点号形式会漏网（已实测踩坑）；
+- **桶 16 需收紧**：裸 `huggingface_hub` 会命中正常进度行 `Downloading huggingface_hub-1.30.0-py3-none-any.whl`，故必须限定为 `.errors` 或后随 `Error|Timeout|Failed|Connection`；
+- **桶 29/30（pytest 判定行）插在桶 28 之后、桶 31/32 之前**（2026-09-28 新增，三处顺序都要对）：
   它们必须晚于硬件/网络/OOM 等真根因桶（否则「OOM 导致用例失败」会被写成业务侧用例失败），
   又必须早于 `exit 255` 与 `failed to run script step` 这两个通用包装桶（否则真判定被外层包装覆盖成
   unknown/infra，即改前的实际行为）。语义与「提前退出」的联动见 §7.4；
-- **桶 24 必须早于桶 25/30**：`RuntimeError: engine core died` 是**级联症状**（引擎子进程被更早的错误打死，真因在其上游日志）。若不单列，它会落到桶 30 被标成 owner=infra——等于给一个我们并不掌握的责任方下结论；
-- **桶 30 排在真实根因桶之后**：exit 255 是 K8s 强杀，本身不是根因，只有确实无其他信号时才归到这里（它之后只剩桶 31 这个「脚本步骤通用包装」兜底桶）；
-- **桶 31 命名已更正**：`failed to run script step` 是 GitHub 对「任意脚本步骤失败」的通用包装，**并非多节点专属**（实测 sglang/triton 的 CPU 门禁 job 也被它命中），旧桶名「多节点编排层包装失败」属误命名；
-- **桶 22 是补漏**：mypy 的真实错误形态（实测 job `106079239560`）是
+- **桶 25 必须早于桶 26/31**：`RuntimeError: engine core died` 是**级联症状**（引擎子进程被更早的错误打死，真因在其上游日志）。若不单列，它会落到桶 31 被标成 owner=infra——等于给一个我们并不掌握的责任方下结论；
+- **桶 31 排在真实根因桶之后**：exit 255 是 K8s 强杀，本身不是根因，只有确实无其他信号时才归到这里（它之后只剩桶 32 这个「脚本步骤通用包装」兜底桶）；
+- **桶 32 命名已更正**：`failed to run script step` 是 GitHub 对「任意脚本步骤失败」的通用包装，**并非多节点专属**（实测 sglang/triton 的 CPU 门禁 job 也被它命中），旧桶名「多节点编排层包装失败」属误命名；
+- **桶 23 是补漏**：mypy 的真实错误形态（实测 job `106079239560`）是
   `pool_scheduler.py:175: error: "KVPoolScheduler" has no attribute "mamba_group_ids"  [attr-defined]`
-  + `Found 1 error in 1 file (checked 615 source files)`。旧版没有任何桶匹配它 → 落到桶 31 被标 `unknown`。
+  + `Found 1 error in 1 file (checked 615 source files)`。旧版没有任何桶匹配它 → 落到桶 32 被标 `unknown`。
   实测 6/40 份样本（15%）因此被误归 unknown。**注意与同一 run 的 `cpu-ut` job 的关系**：同一个属性缺失
-  会让 UT 崩成 `AttributeError`（桶 25），也就是**同一根因落进两个桶**——这正是按 `(run, 桶)` 去重之外，
+  会让 UT 崩成 `AttributeError`（桶 26），也就是**同一根因落进两个桶**——这正是按 `(run, 桶)` 去重之外，
   仍需要人工留意「同 run 跨桶同源」的原因（当前未自动合并，见 §10）。
 
 **owner 归属**：
@@ -330,7 +341,7 @@ Step4 的分类循环据路由结果分三条出口：
 | `aggregate` | 不下载日志、不归桶 | 仅计数，**不计入根因分布**，也不消耗 `--samples` 预算 |
 | `no_log` | 不下载日志，直接按表的 owner 定性 | 计入根因，标注「无需日志」 |
 | `pod` | 不下载日志 | 写入 `待集群取证` 队列（附 runner pod 名 + 失败步骤） |
-| `window_head`/`window_tail` | 下载日志 + 时间窗切片 + 31 桶扫描 | 计入根因；全部未命中 → 也进 `待集群取证` |
+| `window_head`/`window_tail` | 下载日志 + 时间窗切片 + 32 桶扫描 | 计入根因；全部未命中 → 也进 `待集群取证` |
 
 **第四种出口：日志侧已定性为业务侧 → 提前退出（`decisive`，2026-09-28 新增）**
 
@@ -374,6 +385,61 @@ Step4 的分类循环据路由结果分三条出口：
 
 `待集群取证` 队列是第 1 步与第 2 步之间的**显式接口**：它不假装知道答案，而是列出「日志侧已尽力、必须登集群才能定性」的失败清单。这是本工具对「仅看日志看不出啥」这一反馈的结构性回应。
 
+### 7.5 第二日志证据源：对端节点（`*-ascend-logs` 产物）
+
+**为什么需要它**：`gh api …/actions/jobs/{job_id}/logs` 回的**只有一台机器（node0）**的容器 stdout。
+多节点 job（`multi-node (`/`double-node (` 开头）里其余机器的日志**只**存在于 workflow 上传的
+`<分支>-<yaml stem>-ascend-logs` 产物里。这不是偶发：多节点 job 跑测试的步骤就叫 `Stream logs`，
+node1..nodeN 的输出从来不进 job log。
+
+实测代价（job `109264350421`，run `36518916532`）：node0 是 TCPStore **服务端**，只说得出
+「8 个 rank 里 1 个没连上」——
+`torch.distributed.DistStoreError: Timed out after 1801 seconds waiting for clients. 7/8 clients joined.`
+而「是谁没连上、从哪台机器连不上」只在 node1 的日志里（该文件 839 行，其中
+`TCPStore.cpp:138 recvValueWithTimeout failed` 与 `DistNetworkError: Failed to recv, got 0 bytes`
+在 job log 里 **grep 一行都没有**）。
+
+**取值链路与实测规则**（实现见 `forensics/peer_logs.py`，8 个真实 job 名 / 14 个真实产物校准）：
+
+| 环节 | 规则 | 实测依据 |
+|---|---|---|
+| job 名 → yaml stem | 取**最后一个** ` / ` 之后的段去掉 `.yaml`；无 ` / ` 分隔符则判无产物 | GitHub 会把 job 名从**中间**截断成 `…te... / GLM-5.1-W8A8C8-A3_128k_90_50.yaml`，但**尾部完整**。⚠️ 实测 42 个 job 名里 ` / ` 最多出现 **1 次**，取第一个与取最后一个结果相同、**无法区分** —— 「取最后一个」是防御性选择，不是实测定论 |
+| stem → 产物名 | `endswith(f"-{stem}-ascend-logs")`，多命中优先 `main-` 前缀 | 同 run 还有 `nightly-a3` 这类无关产物；用「包含 stem」会在 `…-dual-nodes` 与 `…-dual-nodes-x` 上串 |
+| 产物内层 | zip → `ascend-logs.tar.gz` → `collected-logs/node{N}/…` | 外层 zip 415B~5.1MB，内层 260B~6.1MB |
+| 取哪些文件 | 只取 `collected-logs/node{N}/var/log/*_logs.txt`（容器 stdout，与 job log 同源可比对） | 昇腾设备日志（`root/ascend/log/…`）属另一类证据、行格式不同，不取 |
+| 判「空」 | 内层 tar **常规文件数为 0** | 实测 415B 产物内层 260B、**只有目录项**，且目录里照样列着 node0..node3 |
+| 节点数 | 只能由 `*_logs.txt` 的出现来数 | 按目录名数会对一个空产物报出「4 个节点」 |
+| 时间切分 | 无（产物是整段容器 stdout，没有失败步骤的时间戳对齐依据） | 只能取尾部 `--peer-log-lines` 行（默认 400） |
+
+**「产物存在但为空」是一条独立结论**，既不是「没有产物」，更不是「对端节点无异常」：
+实测 run `36518916532` 的 **9 个失败多节点 job 里 8 个产物是空的**——它们的 node0 日志多为
+`phase=Pending`（pod 没起来，容器日志根本没产生）。故报告/控制台在**每一档**都必须出话
+（产物为空 / 未取得 / 只有 node0 / 有文本），留白会被读成「对端节点无异常」，与事实正相反。
+
+**作用范围是三档短路**（成本控制）：`--no-peer-logs` · 非多节点 job（日志本就完整落在 job log 里，
+取产物没有增量）· **日志侧已定性**（`decisive`，结论已由 node0 时间窗给出，产物不改变归因）。
+
+**采用策略：仅兜底，不覆盖。**
+
+| node0（主日志） | 对端节点 | 结果 |
+|---|---|---|
+| 判出桶 | 判出桶 / 未分类 | 沿用 node0 的桶；对端只作报告里**并列的一条证据**（`sig_source=失败步骤窗口`） |
+| 未分类 | 判出桶 | **采用**对端桶，`sig_source=对端节点日志`，报告首行写明「node0 时间窗未能分类，采用对端节点日志判桶」 |
+| 未分类 | 未分类 / 产物为空 / 未取得 | 维持未分类，进 `待集群取证` |
+
+不给对端覆盖权的理由：`synthesize()` 的第一条纪律是「三层证据并列，不互相覆盖」。node0 的窗口是
+**本 job 失败步骤的时间窗**，对端文本只是粗切的尾部若干行（无时间窗对齐）；拿它改写一个已经定性的
+结论，等于用一个时间基准更弱的证据推翻更强的那个。
+
+**对端文本不参与「已定性」判定**（`decisive` 只用主日志那对桶/owner 算）：对端文本若含
+`pytest exit code: ret=1` 就会被判成 `DECISIVE_BUCKETS` 里的桶，拿它算 `decisive` 会让第 2 步
+按规则跳过集群取证——而真因可能恰恰是集群侧的调度延迟（本案例正是如此）。
+`tests/test_peer_logs.py::test_peer_text_cannot_make_case_decisive` 用源码层断言钉住这一点。
+
+对端产物按 **artifact_id** 缓存（默认 `<脚本目录>/.forensics_cache/artifacts/`，已在 `.gitignore`），
+「该 run 有哪些产物」在进程内按 `(repo, run_id)` 备忘一次：实测 run `36518916532` 里 14 个产物
+对应 20 个 job，不缓存会对同一份产物重复下载。
+
 ## 8. Top3 汇总输出
 
 报告章节按 `SECTION_SLUG`（`{repo}` 或 `{repo}@{chips}`）定位，只写自己这一节；跨仓表格由 `--cross-repo` 控制是否联动。
@@ -401,8 +467,8 @@ Step4 的分类循环据路由结果分三条出口：
 
 - **抽样上限**：百分比为样本内占比，不是全量统计。分母已从「下载成功份数」改为「**按 run 去重后的根因数**」（`aggregate` 级联与假失败均不计入），否则百分比会被未下载的样本、重复 job 与级联失败三重稀释；
 - **去重只到「按桶」粒度**：同一 run 内**同源但落进不同桶**的失败不会自动合并。实测 mypy 的
-  `"KVPoolScheduler" has no attribute "mamba_group_ids"`（桶 22）与同一 run 的 UT 崩溃
-  `AttributeError: 'KVPoolScheduler' object has no attribute ...`（桶 25）是**同一处代码缺陷**，
+  `"KVPoolScheduler" has no attribute "mamba_group_ids"`（桶 23）与同一 run 的 UT 崩溃
+  `AttributeError: 'KVPoolScheduler' object has no attribute ...`（桶 26）是**同一处代码缺陷**，
   但会计成 2 个根因。跨桶同源识别需要更深的语义关联，当前未做；
 - **样本预算未随去重收缩**：去重发生在计数阶段，日志下载仍按 job 进行。因此一个 run 若有 5 个同因 job，
   仍会下载 5 份日志（只是计 1 个根因），`--samples` 额度存在浪费。要在采样阶段就合并需要先知道桶，
@@ -420,11 +486,17 @@ Step4 的分类循环据路由结果分三条出口：
 
   识别思路（尚未实现）：同一错误签名在**多个不同 head_branch** 上重复出现、且其中一个分支是默认分支时，
   应判为基线缺陷而非 N 个 PR 缺陷。这需要把 `head_branch` 纳入分析并做签名聚合；
-- **时间窗依赖日志时间戳**：窗口切不出来时静默回退到尾部窗口，此时会退化回旧版的级联噪音问题。可用 `--no-step-window` 显式对照，但**无法从输出区分**「窗口生效」与「回退」，是当前的一个可观测性缺口；
-- **多节点日志缺失（结构性）**：多节点测试的 GitHub 日志只有 orchestrator 层，真实错误在 k8s pod 日志——这正是必须走第 2 步的原因，不是本工具能修的；
+- **时间窗依赖日志时间戳**：窗口切不出来时回退到尾部窗口，此时会退化回旧版的级联噪音问题。可用 `--no-step-window` 显式对照。
+  可观测性现状：控制台逐条标了扫描方式（`时间窗`/`尾部窗口`）、汇总行给了 `window_hits/logs_done`，
+  `detail[]` 里也有 `windowed` 字段 —— 但**第 5 步渲染的取证报告不写这一项**，
+  只看 `forensics_report_*.md` 的读者仍分不出「窗口生效」与「回退」（缺口，未修）；
+- **多节点日志缺失（结构性）**：多节点 job 的 job log 只有 node0 一台机器（多节点测试的 GitHub 日志只有 orchestrator 层），
+  node1..nodeN 只在 `*-ascend-logs` 产物里（见 §7.5）。第 2 步仍是必须的：产物**可能为空或未上传**
+  （实测 run `36518916532` 的 9 个失败多节点 job 里 8 个为空），且对端文本没有时间窗对齐。
+  故「对端节点已查过」**不能**读成「对端节点无异常」；
 - **cancelled 语义**：cancelled 且从未启动 → 调度/资源问题；否则多为主动取消/上游中断；
 - **未分类兜底**：依赖 `(FAILED|Error|error:)` 正则，可能把非根因的普通报错行当证据。这类样本现在也会进 `待集群取证`，不再硬给一个桶；
-- **桶体系是经验校准的产物**：31 桶的**顺序**承载了大量踩坑结论（见 §7.2 的校准说明），新增桶时必须回归验证既有样例，不能只测新样例。
+- **桶体系是经验校准的产物**：32 桶的**顺序**承载了大量踩坑结论（见 §7.2 的校准说明），新增桶时必须回归验证既有样例，不能只测新样例。
 
 ## 11. 第 2 步（集群取证）· 状态与边界
 

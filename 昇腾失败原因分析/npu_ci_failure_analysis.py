@@ -48,6 +48,11 @@ from collections import Counter, defaultdict
 # 这样在任意 cwd 下运行（仓库根或本目录内）产物路径都一致，不会因 cwd 变化而散落
 BASE_DIR = os.path.dirname(os.path.abspath(__file__))
 
+# 对端节点日志（多节点 job 的第二日志证据源）。实现放 forensics/ 的理由与 classify_text 同：
+# 本脚本是**全模块级执行**的（import 即联网跑整轮分析），纯逻辑只有放在那个包里才能被测试直接 import。
+sys.path.insert(0, BASE_DIR)
+from forensics import peer_logs as peer_ops        # noqa: E402
+
 # ---------- 昇腾芯片族：is_npu 与 chip_of 的唯一真值源 ----------
 # 权威来源 ascend-gha-runners/docs 的 docs/assets/problem-labels.json
 # ——「仓库 → 合法 runner 标签」映射表（19 仓 102 个标签），全量回归见 tests/test_label_classification.py。
@@ -98,6 +103,16 @@ def parse_args():
                          "反查失败 job 的 runner pod 调度状态；未配置则跳过集群取证（不阻塞第1、3步）")
     ap.add_argument("--no-step-window", action="store_true",
                     help="关闭步骤时间窗切分，退回旧的「固定尾部窗口」日志扫描方式（用于新旧结果对照）")
+    ap.add_argument("--no-peer-logs", action="store_true",
+                    help="不抓取 ascend-logs 产物（多节点 job 的对端节点日志，第二日志证据源）。"
+                         "缺省开启：仅对 multi-node/double-node 开头且日志侧未定性的 job 抓取")
+    ap.add_argument("--peer-log-lines", type=int, default=400,
+                    help="每个对端节点取尾部多少行参与判桶（默认400）。对端文本无时间窗对齐，"
+                         "取尾部是唯一可行的粗切，行数越大越可能扫到与本步骤无关的旧噪声")
+    ap.add_argument("--artifact-cache-dir",
+                    default=os.path.join(BASE_DIR, ".forensics_cache", "artifacts"),
+                    help="ascend-logs 产物 zip 的缓存目录（按 artifact_id 存盘，"
+                         "同一 run 的多个失败 job 只下载一次）。默认 <脚本目录>/.forensics_cache/artifacts")
     ap.add_argument("--report-dir", default=os.path.join(BASE_DIR, "npu_ci_reports"),
                     help="报告输出目录，每次运行生成带时间戳的 md 文件（默认 <脚本目录>/npu_ci_reports/）")
     ap.add_argument("--summary-file", default=os.path.join(BASE_DIR, "npu_ci_failure_report.md"),
@@ -563,11 +578,26 @@ BUCKETS = [
     (r'phase=Pending|pod failed to come online|Readiness probe failed|'
      r'Insufficient\s+(?:npu|cpu|memory)|0/\d+ nodes are available|nodes are available.*didn.t match',
      "多节点pod调度/就绪失败(k8s侧)", "infra"),
-    # 分布式通信/网络：必须先于 ACL 桶——否则 `hcclComm_, error code is 7` 会被 `error code is \d+` 吞进 ACL 桶，
-    # owner 从 infra 错配成 mixed。同理 DistStoreError 超时是网络/分布式，先于通用超时桶
-    (r'HCCL\w*(?:error|timeout|failed)|hcclComm[^\n]{0,80}error|DistStoreError|'
-     r'StoreError[^\n]{0,40}[Tt]imed out|Connection reset|broken pipe|CollectiveError',
-     "分布式通信/网络(HCCL/Store)", "infra"),
+    # 分布式通信/网络拆成两桶（原为一个合并桶「分布式通信/网络(HCCL/Store)」）：
+    # 两桶**都必须先于 ACL 桶**——否则 `hcclComm_, error code is 7` 会被 `error code is \d+` 吞进 ACL 桶，
+    # owner 从 infra 错配成 mixed。同理两者都先于通用超时桶。
+    # 拆的理由（实测 job 109264350421，run 36518916532）：合并桶把两种**不同机制**合成一个标签，
+    # 再在知识表里配上官方叶子 `leaf_hccl_port_bound`（HCCL 通信端口被占用），于是每一次 Store 会合超时
+    # 都会生成一句**错的**「官方口径对齐：HCCL 通信端口被占用」——而该 case 日志里既无 HCCL 错误码、
+    # 也无 bind / address already in use，真因是对端节点迟到导致 TCPStore 会合超时。
+    # 桶名是报告「根因」一行的原文：粒度错了，读者拿到的机制就是错的。
+    # ① HCCL 集合通信失败 = 通信**已建立**后的集合通信出错/超时。
+    (r'HCCL\w*(?:error|timeout|failed)|hcclComm[^\n]{0,80}error|CollectiveError',
+     "HCCL 集合通信失败", "infra"),
+    # ② Store 会合超时 = 进程**还没凑齐**（与①相反）。判据取服务端与客户端两侧的实测原文：
+    #      node0（服务端）：`DistStoreError: Timed out after 1801 seconds waiting for clients. 7/8 clients joined.`
+    #      node1（客户端）：`TCPStore.cpp:138 [c10d] recvValueWithTimeout failed … Failed to recv, got 0 bytes.`
+    #                       `torch.distributed.DistNetworkError: Failed to recv, got 0 bytes.`
+    #    ⚠️ 刻意**不**收裸 `TCPStore\.cpp`：它在良性告警里也会出现，而本桶排在 OOM/进程被 kill 桶**之前**，
+    #       误命中会把 mixed 的日志错配成 infra。只收带「失败」语义的串。
+    (r'DistStoreError|StoreError[^\n]{0,40}[Tt]imed out|DistNetworkError|'
+     r'recvValueWithTimeout failed|waiting for clients|Connection reset|broken pipe',
+     "Store 会合超时(TCPStore，对端 rank 未加入)", "infra"),
     # 模型缓存未命中（离线模式）：必须排在昇腾错误码桶之前。
     # 实测 job 106046329358：modelscope snapshot_download 在 local_files_only 且缓存为空时 raise ValueError，
     # 昇腾框架紧接着打印 ERR99999 兜底（Device:-1, RankID:-1），旧版因此把用户侧配置问题误判成 infra 硬件故障。
@@ -718,6 +748,99 @@ def classify_text(text_scan):
             return label, text_scan[max(0, match.start() - 30):match.end() + 30].replace("\n", " ")
     return "未分类", ""
 
+
+def collect_peer_evidence(rec, bucket, owner, text_scan):
+    """取该 job 的**对端节点**日志（多节点 job 的第二日志证据源）；不适用时返回 None。
+
+    为什么需要这条源（实测 job 109264350421 / run 36518916532）：`gh api …/jobs/{id}/logs`
+    回的**只有 node0 一台机器**的容器 stdout。该 case 是多节点 DP，node0 是 TCPStore 服务端，
+    只说得出「8 个 rank 里 1 个没连上」：
+        torch.distributed.DistStoreError: Timed out after 1801 seconds waiting for clients. 7/8 clients joined.
+    「是谁没连上」只在 node1 的日志里（实测 839 行，其 `TCPStore.cpp:138 recvValueWithTimeout failed`
+    与 `DistNetworkError: Failed to recv, got 0 bytes` 在 job log 里 grep 一行都没有）。
+    多节点 job 跑测试的步骤就叫 `Stream logs`，这个错配是结构性的，不是偶发。
+
+    三档短路（成本控制，见 --no-peer-logs / --peer-log-lines）：
+      ① `--no-peer-logs`
+      ② 非 multi-node/double-node 开头的 job —— 单节点 job 的日志本就完整落在 job log 里，取产物没有增量
+      ③ 日志侧**已定性**（is_decisive）—— 结论已经由 node0 时间窗给出，产物不改变归因，
+         还要多花一次 API + 一次解包。这一条与「已定性→退出集群取证」是同一个判断。
+
+    返回的 dict 直接进 `classifications[]`（`_enrich()` 用 dict(item) 复制，无需改下游解析），
+    报告与测试都按这些键取值，故键名固定、缺项也留 None 而不是删键。
+    """
+    if ARGS.no_peer_logs or not peer_ops.is_multi_node_job(rec.get("job_name") or ""):
+        return None
+    if is_decisive(bucket, owner, text_scan):
+        return None
+    stem = peer_ops.artifact_stem_for_job(rec.get("job_name") or "")
+    if not stem:
+        return None
+
+    repo = f"{OWNER}/{REPO}"
+    peer = {"artifact": None, "artifact_id": None, "size": None, "from_cache": False,
+            "ok": False, "empty": False, "nodes": [], "peers": [],
+            "node_lines": {}, "kept_lines": {},
+            "bucket": None, "sig": None, "adopted": False, "reason": None, "note": None}
+
+    artifacts, reason = peer_ops.list_artifacts(repo, rec["run_id"], gh)
+    if reason:
+        peer["reason"] = reason
+        return peer
+    # ⚠️ 必须按命名规则匹配到**这个** job 的产物：同一 run 里还有 `nightly-a3` 这类无关产物
+    name = peer_ops.match_artifact([a.get("name") or "" for a in artifacts], stem)
+    if not name:
+        peer["reason"] = f"该 run 无与 yaml「{stem}」匹配的 -ascend-logs 产物"
+        return peer
+    peer["artifact"] = name
+    record_, reason = peer_ops.pick_artifact(artifacts, name)
+    if reason:
+        peer["reason"] = reason
+        return peer
+
+    fetched = peer_ops.fetch_artifact_zip(repo, record_, ARGS.artifact_cache_dir, gh)
+    peer.update(artifact_id=fetched.get("artifact_id"), size=fetched.get("size"),
+                from_cache=fetched.get("from_cache"))
+    if not fetched.get("ok"):
+        peer["reason"] = fetched.get("reason")
+        return peer
+
+    extracted = peer_ops.extract_node_logs(fetched["zip"], ARGS.peer_log_lines)
+    peer.update(ok=extracted.get("ok"), empty=extracted.get("empty"),
+                nodes=sorted(extracted.get("nodes") or {}),
+                peers=extracted.get("peers") or [],
+                node_lines={n: e.get("lines") for n, e in (extracted.get("nodes") or {}).items()},
+                kept_lines={n: e.get("kept_lines") for n, e in (extracted.get("nodes") or {}).items()},
+                reason=extracted.get("reason"), note=extracted.get("note"))
+    if not extracted.get("ok"):
+        return peer
+
+    # 判桶仍走同一个 classify_text：对端文本与主日志是同一类证据（容器 stdout），
+    # 只是机器不同、没有时间窗对齐，故复用同一张 BUCKETS 表而不是另立一套规则。
+    peer_text = peer_ops.peer_scan_text(extracted)
+    peer_bucket, peer_sig = classify_text(peer_text) if peer_text else ("未分类", "")
+    if peer_bucket == "未分类" and peer_text:
+        m = re.search(r'(FAILED|Error|error:)', peer_text)
+        peer_sig = (peer_text[max(0, m.start() - 20):m.end() + 40].replace("\n", " ")
+                    if m else "(无匹配)")
+    peer.update(bucket=peer_bucket, sig=peer_sig,
+                adopted=peer_ops.adopt_peer_bucket(bucket, peer_bucket))
+    return peer
+
+
+def peer_console_line(peer):
+    """控制台里对端证据那一行。**留白会被读成「对端节点无异常」**，故每档都必须有话说。"""
+    if peer.get("empty"):
+        return "↳ 对端节点：产物存在但为空（tar 内只有目录项），无对端证据"
+    if not peer.get("ok"):
+        return f"↳ 对端节点：未取得（{peer.get('reason') or '未知原因'}）"
+    if not peer.get("peers"):
+        return (f"↳ 对端节点：产物内只有 node0 的容器日志（{peer.get('artifact')}），无对端节点文本")
+    nodes = "、".join(f"{n}（{peer['node_lines'].get(n, 0)} 行，取尾部 "
+                      f"{peer['kept_lines'].get(n, 0)} 行）" for n in peer["peers"])
+    role = "采用兜底：本 case 的桶来自对端日志" if peer.get("adopted") else "并列证据，未参与本 case 定性"
+    return f"↳ 对端节点 {nodes}：命中桶【{peer.get('bucket')}】（{role}）| {peer.get('sig')}"
+
 # 与根因无关的噪音行：失败后的清理动作、GHA 自身收尾输出（实测占尾部窗口的绝大多数）
 NOISE_PATTERNS = [
     r'Cleaning up orphan processes',
@@ -820,7 +943,8 @@ for rec in failed_jobs:
     tag = "NPU" if rec["is_npu"] else "gate"
     link = f"https://github.com/{OWNER}/{REPO}/actions/runs/{rec['run_id']}/job/{rec['job_id']}"
 
-    def record(bucket, sig, owner, logs_scanned, windowed=False, decisive=None):
+    def record(bucket, sig, owner, logs_scanned, windowed=False, decisive=None,
+               peer=None, sig_source=None):
         global dedup_skipped
         # 登记伪桶的 owner：`步骤直接定性:{步骤名}` 是 no_log 路径动态生成的桶名，
         # 不在 BUCKETS 里，因此 BUCKET_OWNER 取不到 → 报告表格的 owner 列会显示 unknown，
@@ -842,7 +966,10 @@ for rec in failed_jobs:
                        "windowed": windowed, "duplicate": duplicate,
                        # 日志侧已定性为业务侧 → 下游（第 2/5 步）据此提前退出集群取证。
                        # 默认按桶判（no_log 路径的动态桶名「步骤直接定性:*」天然不在集合里）
-                       "decisive": (bucket in DECISIVE_BUCKETS if decisive is None else decisive)})
+                       "decisive": (bucket in DECISIVE_BUCKETS if decisive is None else decisive),
+                       # 对端节点日志（多节点 job 的第二证据源；None = 不适用/未抓取）
+                       # 与「本条的桶来自哪段文本」——报告靠它决定是否写「结论来自对端节点」
+                       "peer": peer, "sig_source": sig_source})
 
     # 多节点编排阶段的失败：登记 runner pod，供第 2 步 kubectl 反查调度/排队
     if route == "pod":
@@ -892,26 +1019,50 @@ for rec in failed_jobs:
     if bucket == "未分类":
         m = re.search(r'(FAILED|Error|error:)', text_scan)
         sig = text_scan[max(0, m.start()-20):m.end()+40].replace("\n", " ") if m else "(无匹配)"
-        # 未分类且属编排阶段 → 日志确实没给出根因，登记待集群取证
+
+    # ---- 第二日志证据源：对端节点（多节点 job 才有；node0 之外的机器只在产物里）----
+    # 策略是**仅兜底**（见 peer_logs.adopt_peer_bucket）：node0 的窗口是本 job 失败步骤的时间窗，
+    # 对端文本只是粗切的尾部若干行、无时间窗对齐，拿它改写一个已经定性的结论 = 用更弱的证据
+    # 推翻更强的那个。故只在 node0 判「未分类」时才采用，并在报告里注明来源。
+    owner = BUCKET_OWNER.get(bucket, "unknown")
+    peer, sig_source = None, "失败步骤窗口"
+    # 「已定性」判据固定用**主日志（node0）**这一段：对端文本无时间窗对齐、且只是兜底，
+    # 拿它命中判定行等于用更弱的证据把 case 推成「已定性→跳过集群取证」
+    # （反例见 tests/test_peer_logs.py：对端文本里有 ret=1 也不得让 case 变 decisive）。
+    verdict_bucket, verdict_owner = bucket, owner
+    if owner != "假失败":      # 假失败不是真失败，为它抓产物纯属浪费一次 API
+        peer = collect_peer_evidence(rec, bucket, owner, text_scan)
+        if peer and peer.get("adopted"):
+            bucket, sig = peer["bucket"], peer["sig"]
+            owner = BUCKET_OWNER.get(bucket, "unknown")
+            sig_source = "对端节点日志"
+
+    if bucket == "未分类":
+        # 未分类且属编排阶段 → 日志确实没给出根因，登记待集群取证。
+        # 注意这里的 bucket 是**兜底之后**的结果：被对端日志救回来的 case 已不属于「未给出根因」，
+        # 再写这条 reason 会与报告里的桶自相矛盾；它的集群取证走知识表的 probe 通道（Store 桶
+        # 的 probe=pod_node），不依赖本清单。
         if step_name and not any(t["job_name"] == rec["job_name"] for t in cluster_todo):
             cluster_todo.append({"runner_name": rec["runner_name"], "chip": rec["chip"],
                                  "step": step_name, "workflow": rec["workflow"],
                                  "job_name": rec["job_name"], "link": link,
                                  "reason": "日志未给出根因，需集群侧确认 pod/节点状态"})
 
-    owner = BUCKET_OWNER.get(bucket, "unknown")
     if owner == "假失败":
         false_positive[bucket] += 1
         detail.append({"workflow": rec["workflow"], "job_name": rec["job_name"], "tag": tag,
                        "bucket": bucket, "sig": sig, "link": link, "owner": owner,
                        "step": step_name, "chip": rec["chip"], "scanned": True,
                        "windowed": window is not None, "duplicate": False,
-                       "decisive": False})       # 假失败不是真失败，无所谓「提前退出」
+                       "decisive": False,        # 假失败不是真失败，无所谓「提前退出」
+                       "peer": None, "sig_source": None})
     else:
         # 判据用的 text_scan 与本函数的扫描窗口一致（同一段文本判桶、判是否已定性），
-        # 不能换成全文：全文里别的步骤留下的 pytest 判定行不是本步骤的结论
+        # 不能换成全文：全文里别的步骤留下的 pytest 判定行不是本步骤的结论。
+        # 同理桶与 owner 也用**兜底之前**的那对（verdict_*），见上面赋值处的注释。
         record(bucket, sig, owner, True, window is not None,
-               decisive=is_decisive(bucket, owner, text_scan))
+               decisive=is_decisive(verdict_bucket, verdict_owner, text_scan),
+               peer=peer, sig_source=sig_source)
 
 n_root_cause = sum(classified.values())
 print(f"\n=== Step4 已定性失败 {logs_done} 份 → 去重后根因 {n_root_cause} 个"
@@ -935,6 +1086,9 @@ for d in detail:
     print(f"  [{d['owner'][:4]:4s}|{d['tag']:4s}|{chip:4s}|{mode}] {d['workflow'][:24]:24s} "
           f"{d['job_name'][:28]:28s} → {d['bucket'][:22]:22s} | {d['sig']}{dup}")
     print(f"      step={d['step'] or '未知'}  run: {d['link']}")
+    # 对端节点证据单列一行：产物为空/抓取失败也照写（留白会被读成「对端节点无异常」）
+    if d.get("peer"):
+        print(f"      {peer_console_line(d['peer'])}")
 
 # ---------- Step 5: top3 ----------
 print(f"\n=== Top3 失败原因（共 {n_root_cause} 个根因（已按 run 去重）"
@@ -963,6 +1117,17 @@ if n_root_cause:
               + "，".join(f"{s}×{n}" for s, n in step_owner.most_common()))
     print(f"\n  扫描方式: 成功按失败步骤时间窗切分 {window_hits}/{logs_done} 份"
           f"（其余回退全局尾部窗口{'(已 --no-step-window 强制回退)' if ARGS.no_step_window else ''}）")
+    # 第二证据源同样要报「拿不到」，而不是只在拿到时才提：产物存在但为空是**常态**，
+    # 静默跳过会让人以为「多节点 job 的对端节点都查过了」。
+    peer_items = [d["peer"] for d in detail if d.get("peer")]
+    if peer_items:
+        got = [p for p in peer_items if p.get("ok") and not p.get("empty")]
+        empty = [p for p in peer_items if p.get("empty")]
+        adopted = [p for p in peer_items if p.get("adopted")]
+        print(f"  对端节点日志(第二证据源): 抓取 {len(peer_items)} 份 → 有文本 {len(got)} / "
+              f"产物存在但为空 {len(empty)} / 未取得 {len(peer_items) - len(got) - len(empty)}"
+              f"{f'；其中兜底采用了 {len(adopted)} 条' if adopted else ''}"
+              f"（抓取范围: 多节点 job 且日志侧未定性）")
 
 # 待集群取证清单（第 2 步输入）
 if cluster_todo:
