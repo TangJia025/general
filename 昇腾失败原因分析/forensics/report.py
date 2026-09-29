@@ -75,6 +75,44 @@ def interpret_pod_evidence(pod_evidence: dict) -> list:
     return verdicts
 
 
+def peer_basis_lines(case: dict) -> list[str]:
+    """对端节点日志（多节点 job 的第二日志证据源）在报告里的依据行。
+
+    ⚠️ **无论取到与否都要出话**：产物存在但为空是多节点 job 的常态（实测 run 36518916532 的
+    9 个失败多节点 job 里 8 个产物内层 tar 零个常规文件），留白会被读成「对端节点无异常」——
+    与事实正相反（那 8 个 job 的 node0 日志多为 pod Pending，日志根本没产生）。
+    """
+    peer = case.get("peer") or {}
+    if not peer:
+        return []
+    adopted = case.get("sig_source") == "对端节点日志"
+    artifact = peer.get("artifact") or "(未匹配到产物)"
+    lines = []
+    if peer.get("empty"):
+        return [f"对端节点日志：**产物存在但为空**（`{artifact}`，tar 内只有目录项、无任何常规文件）"
+                f" —— 该 job 大概率在容器日志产出前就已失败（如 pod 未就绪），"
+                f"**不能**据此判「对端节点无异常」"]
+    if not peer.get("ok"):
+        return [f"对端节点日志：**未取得**（{peer.get('reason') or '未知原因'}）"
+                f" —— 多节点 job 的 job log 只覆盖 node0，对端节点本次**没有**证据"]
+    if not peer.get("peers"):
+        return [f"对端节点日志：产物 `{artifact}` 内只有 node0 的容器日志，无对端节点文本"]
+    nodes = "、".join(f"`{node}`（{peer.get('node_lines', {}).get(node, 0)} 行，"
+                      f"取尾部 {peer.get('kept_lines', {}).get(node, 0)} 行）"
+                      for node in peer["peers"])
+    role = ("**node0 时间窗未分类，本 case 的桶由对端节点日志兜底得出**" if adopted
+            else "与 node0 并列的第二证据（未参与本 case 定性）")
+    lines.append(f"对端节点日志：{nodes}，命中桶【{peer.get('bucket')}】—— {role}")
+    # 子行用 `  - `（嵌套列表）而不是裸缩进：渲染层对缩进行是原样透传，
+    # 裸缩进在 markdown 里会变成上一行的续行、丢掉换行，读起来像一句话没说完。
+    if peer.get("sig"):
+        lines.append(f"  - 对端节点首条异常：`{(peer.get('sig') or '')[:160]}`")
+    note = peer.get("note")
+    if note:
+        lines.append(f"  - ⚠️ {note}")
+    return lines
+
+
 def synthesize(case: dict) -> dict:
     """综合三层证据，产出 {root_cause, owner, confidence, basis[], conflicts[], needs_human}。
 
@@ -89,12 +127,20 @@ def synthesize(case: dict) -> dict:
     pod_evidence = cluster.get("pod_evidence")
     availability = cluster.get("availability")
     history = case.get("history") or []
+    peer_adopted = case.get("sig_source") == "对端节点日志"
 
     # --- 日志侧基线 ---
-    if bucket != "未分类":
+    if peer_adopted:
+        # 桶是从对端节点兜底来的，首行必须说清「node0 没判出来、结论来自对端」，
+        # 否则读者会以为 node0 的失败步骤时间窗本身就命中了这个桶（证据强度差一个档）。
+        basis.append(f"日志侧：node0 失败步骤时间窗**未能分类**，采用对端节点日志判桶 "
+                     f"→ 【{bucket}】，owner={log_owner}")
+    elif bucket != "未分类":
         basis.append(f"日志侧：命中桶【{bucket}】，owner={log_owner}")
     else:
         basis.append("日志侧：未能分类（正则无命中），需人工或集群侧补足")
+    # 对端节点证据紧跟日志侧基线：它属同一层（容器 stdout），只是机器不同
+    basis.extend(peer_basis_lines(case))
 
     # --- 集群侧证据 ---
     cluster_owner_votes = []
@@ -278,6 +324,16 @@ def synthesize(case: dict) -> dict:
     else:
         confidence = "低（未分类）"
         needs_human = True
+    # 靠对端节点日志兜底才定性的 case 不给「高」：那个桶是从产物的**尾部粗切**文本里判出来的，
+    # 没有时间窗对齐，而 node0 自己什么都没有判出来（见 peer_logs.adopt_peer_bucket）。
+    # 集群侧即便一致，也只是「同一台机器的旁证」，不等于给这段粗切文本补上了时间基准。
+    if peer_adopted and confidence.startswith("高"):
+        confidence = "中（采用对端节点日志兜底定性，对端文本无时间窗对齐）"
+    if peer_adopted:
+        hints_requiring_human.append(
+            "本 case 的桶来自对端节点日志（node0 时间窗未分类）：对端文本是产物的尾部粗切、"
+            "与失败步骤没有时间窗对齐，需人工按该节点的时间戳复核后再落库")
+
     # 有「需人工确认」的提示项时，置信度不能标为不需人工
     if hints_requiring_human:
         needs_human = True
@@ -345,6 +401,35 @@ def render_case(case: dict, index: int) -> list:
     if window.get("started_at"):
         lines.append(f"- 失败步骤时间窗：{window['started_at']} ~ {window.get('completed_at') or '(未完成)'}")
     lines.append("")
+
+    # --- 第 1 步的第二证据源：对端节点日志（紧跟日志侧元信息，在集群段之前）---
+    # 「未取得/产物为空」也必须成段出现：多节点 job 的 job log 只有 node0 一台机器，
+    # 对端节点本次没有证据，与「对端节点无异常」是两回事。
+    peer = case.get("peer") or {}
+    if peer:
+        lines.append("#### 对端节点日志（第 1 步第二证据源）")
+        lines.append("")
+        lines.append(f"- 产物：`{peer.get('artifact') or '(未匹配到产物)'}`"
+                     + (f"（artifact_id={peer['artifact_id']}，"
+                        f"{'本地缓存' if peer.get('from_cache') else '本次下载'}）"
+                        if peer.get("artifact_id") else ""))
+        for line in peer_basis_lines(case):
+            lines.append(f"- {line}" if not line.startswith(" ") else line)
+        if peer.get("peers") and peer.get("sig"):
+            # 展开块只放「依据原文 + 怎么拿全文」：摘要行已在上面的依据里给过，
+            # 不重复；整段日志不复制进报告（一份就 800+ 行），按 artifact_id 随时可取回。
+            lines.append("")
+            lines.append("<details><summary>对端节点首条异常原文</summary>")
+            lines.append("")
+            lines.append("```")
+            lines.append((peer.get("sig") or "")[:300])
+            lines.append("```")
+            lines.append(f"完整文本随产物留存，可用 `gh api repos/<owner>/<repo>/actions/"
+                         f"artifacts/{peer.get('artifact_id')}/zip` 重新取得"
+                         f"（本报告只登记判定依据，不复制整段日志）")
+            lines.append("")
+            lines.append("</details>")
+        lines.append("")
 
     # --- 第 2 步：集群现场 ---
     lines.append("#### 集群侧现场（第 2 步）")
