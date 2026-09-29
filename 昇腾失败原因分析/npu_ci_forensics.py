@@ -86,6 +86,16 @@ LIMITATIONS = [
     "**部分 case 按规则跳过集群取证**：日志里出现 pytest 的判定行（用例收集结果/退出码）时，"
     "责任方已落在业务侧且集群侧查不出新信息，工具会**提前退出**第 2 步（报告里写明「按规则跳过」）。"
     "跳过不是「没查到」——两者在报告里的措辞与计数都分开。",
+    "**job log 只覆盖多节点 job 的一台机器（node0）**：`gh api …/jobs/{id}/logs` 返回的是 node0 的"
+    "容器 stdout，其余机器（node1..nodeN）的日志**只**存在于 workflow 上传的 `*-ascend-logs` 产物里。"
+    "本工具对 multi-node/double-node 开头的 job 会额外取该产物（报告里单列「对端节点日志」一节），"
+    "但该产物**可能为空或未上传**：实测 run 36518916532 的 9 个失败多节点 job 里 8 个产物内层 tar"
+    "零个常规文件（job 在容器日志产出前就已失败）。**产物为空 ≠ 对端节点无异常**，"
+    "它只说明本次没有对端证据，此时结论仍只基于 node0。",
+    "**对端节点日志没有时间窗对齐**：产物里的文本是 Docker 收集的整段容器 stdout，"
+    "没有按失败步骤切分的依据，本工具只能取尾部若干行（`--peer-log-lines`，默认 400）。"
+    "故对端文本只用于**兜底**（node0 判「未分类」时才采用，报告里注明来源并降置信度），"
+    "不覆盖 node0 时间窗已给出的结论。",
 ]
 
 
@@ -826,6 +836,9 @@ def main():
             "sig": item.get("sig"), "step": item.get("step"), "chip": item.get("chip"),
             "labels": item.get("labels") or [], "runner_name": item.get("runner_name"),
             "is_npu": item.get("is_npu"),
+            # 对端节点日志（多节点 job 的第二证据源）：必须显式带进 case，
+            # 因为它进的是渲染层与 synthesize() 的依据行（第 1 步的 detail 不会自动流过来）。
+            "peer": item.get("peer"), "sig_source": item.get("sig_source"),
             "window": {"started_at": item.get("failed_step_started_at"),
                        "completed_at": item.get("failed_step_completed_at")},
             "cluster": cluster_result,

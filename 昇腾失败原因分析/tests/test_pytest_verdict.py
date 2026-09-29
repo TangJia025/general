@@ -170,7 +170,10 @@ def test_bucket_order_keeps_real_root_causes_first():
     那是把硬件问题读成业务问题，比原来的错判更糟。
     """
     labels = [label for _, label, _ in BUCKETS]
-    for real_cause in ("OOM/显存不足", "分布式通信/网络(HCCL/Store)",
+    # 「HCCL 集合通信失败」「Store 会合超时」原为一个合并桶「分布式通信/网络(HCCL/Store)」，
+    # 两者同属真根因层，故与 OOM/调度并列断言（旧桶名已不存在，写旧名会让本断言直接 ValueError）
+    for real_cause in ("OOM/显存不足", "HCCL 集合通信失败",
+                       "Store 会合超时(TCPStore，对端 rank 未加入)",
                        "多节点pod调度/就绪失败(k8s侧)", "进程被kill(OOM/超内存)"):
         assert labels.index(real_cause) < labels.index(ENTRY_MISSING_BUCKET), \
             f"{real_cause} 应排在 pytest 判定行之前"
