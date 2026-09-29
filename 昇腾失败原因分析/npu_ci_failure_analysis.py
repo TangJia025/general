@@ -587,7 +587,25 @@ BUCKETS = [
     # 也无 bind / address already in use，真因是对端节点迟到导致 TCPStore 会合超时。
     # 桶名是报告「根因」一行的原文：粒度错了，读者拿到的机制就是错的。
     # ① HCCL 集合通信失败 = 通信**已建立**后的集合通信出错/超时。
-    (r'HCCL\w*(?:error|timeout|failed)|hcclComm[^\n]{0,80}error|CollectiveError',
+    # ⚠️ 旧写法 `HCCL\w*(?:error|timeout|failed)` 会命中**环境变量名**：`HCCL_EXEC_TIMEOUT=204`、
+    #    `HCCL_CONNECT_TIMEOUT=120`（`\w*` 把 `_EXEC_` 吃掉、再匹配 `TIMEOUT`）。
+    #    实测代价（2026-09-29）：5 份真实日志里该正则共命中 176 处，**全部**是这两个变量名，
+    #    `hcclComm`/`CollectiveError` 一处都没有；job 109330881116 因此被判「HCCL 集合通信失败、
+    #    owner=infra、官方口径对齐：HCCL 通信端口被占用」，而它真实失败是**性能不达标**
+    #    （`Performance verification failed. The current Output Token Throughput …` 共 6 处 +
+    #    `AssertionError: some aisbench cases failed` + `pytest exit code: ret=1`，均为业务侧 code）。
+    #    修后同一 job 判为「断言失败(代码或精度)」/ owner=code / decisive=True。
+    #    同形误判更早也发生过（单节点 job 107220928141 的 sig 就是 `can set the interval by using HCCL_EXEC_TIMEOUT.`）。
+    #    故 `HCCL` 必须**独立成词**（`\bHCCL\b` 排除 `HCCL_xxx`），且失败词要**紧跟其后**
+    #    （中间只允许至多 3 个非字母数字字符 + 一个可选限定词）。紧跟这一条同时排除了良性行
+    #    `The timeout interval of the HCCL operator is 1836s. Timeout in seconds…` —— 它 HCCL 后面
+    #    跟的是 `operator is`，不是失败词。
+    #    保留 `hcclComm[^\n]{0,80}error` 与 `CollectiveError`：实测真实报错形如
+    #    `hcclComm_, error code is 7, opType is AllReduce`、`hcclCommInitRootInfoConfig … error code 4`，
+    #    都不含「独立成词的 HCCL」。
+    (r'hcclComm[^\n]{0,80}error|CollectiveError|'
+     r'\bHCCL\b[^A-Za-z0-9_\n]{0,3}(?:(?:execute|communication|collective|operator)\s+)?'
+     r'(?:error|timeout|timed\s*out|failed|failure)',
      "HCCL 集合通信失败", "infra"),
     # ② Store 会合超时 = 进程**还没凑齐**（与①相反）。判据取服务端与客户端两侧的实测原文：
     #      node0（服务端）：`DistStoreError: Timed out after 1801 seconds waiting for clients. 7/8 clients joined.`
