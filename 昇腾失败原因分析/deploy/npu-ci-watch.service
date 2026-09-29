@@ -1,0 +1,48 @@
+# 上游 vllm-ascend CI 失败监听器（用户级 systemd 服务）
+#
+# 安装（完整步骤见同目录 README.md）：
+#   mkdir -p ~/.config/systemd/user
+#   cp deploy/npu-ci-watch.service ~/.config/systemd/user/
+#   systemctl --user daemon-reload
+#   systemctl --user enable --now npu-ci-watch
+#   journalctl --user -u npu-ci-watch -f
+#
+# 为什么是 **user** 服务而不是 system 服务：kubeconfig 与 gh 凭据都在本机用户目录下
+# （%h/kconf/…、%h/.config/gh/hosts.yml）。装成 system 服务就得把这些凭据复制到
+# root 或系统目录，等于把集群访问权多开一份 —— 监听器做的事全在用户态，不需要。
+#
+# ⚠️ 路径里含中文目录名：systemd 对 UTF-8 路径没问题，但复制/编辑本文件时注意别让
+#    编辑器把文件名转义成别的东西（ExecStart 里的路径必须逐字对得上）。
+
+[Unit]
+Description=上游 vllm-ascend CI 失败监听器（抢集群快照 + 日志分类 + 报告）
+# 不写 Documentation=：systemd 要求那里是合法 URL，而本仓路径含中文，会被判为
+# Invalid URL 并留一条警告（systemd-analyze verify 实测）。部署说明见同目录 README.md。
+After=network-online.target
+
+[Service]
+Type=simple
+WorkingDirectory=%h/work/general/昇腾失败原因分析
+
+# PATH 必须显式给出：systemd 的默认 PATH 不含 %h/.local/bin，而 kubectl 正装在那里
+# （实测 `which kubectl` = /home/tangjia/.local/bin/kubectl）。
+# 少了它，每一次集群取证都会退化成 stderr=「未找到 kubectl 可执行文件」，
+# 于是每个 job 都被记成 snapshot_missed、报告里全是「未取证」——
+# 而台账写的理由（pod 已回收）还是错的。这个坑已实测确认，不是推测。
+Environment=PATH=%h/.local/bin:/usr/local/bin:/usr/bin:/bin
+
+# 不缓冲：否则 journalctl 要等缓冲满才看得到日志，而监听器的价值恰恰在「近实时」。
+Environment=PYTHONUNBUFFERED=1
+
+ExecStart=/usr/bin/python3 %h/work/general/昇腾失败原因分析/npu_ci_watch.py --interval 30 --idle-interval 300
+
+# gh 未登录 / 内网 VPN 断开 / 集群 API 不可达都属于「本轮失败」，进程本身要活着继续等。
+Restart=always
+RestartSec=30
+
+# 停止时给足时间：主循环在每轮开头检查停止标志，故一轮内会干净收尾（不打断台账落盘）。
+KillSignal=SIGTERM
+TimeoutStopSec=120
+
+[Install]
+WantedBy=default.target
