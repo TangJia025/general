@@ -44,59 +44,10 @@ from forensics.cluster_registry import (ClusterRegistry, fetch_cluster_md,  # no
 from forensics.issue_knowledge import (IssueIndex, extract_signatures,  # noqa: E402
                                        fetch_comments, fetch_issues, keywords_for)
 from forensics.knowledge_tables import knowledge_for           # noqa: E402
+from forensics.limitations import select_limitations           # noqa: E402
 from forensics.report import render_report, synthesize         # noqa: E402
 
 ANALYSIS_SCRIPT = os.path.join(BASE_DIR, "npu_ci_failure_analysis.py")
-
-LIMITATIONS = [
-    "**官方分类树不含正文**：problem-tree.json 的 19 个叶子节点 text 为空，只能用来对齐分类口径，"
-    "不能提供根因描述或修复建议——建议内容来自本工具的桶知识表 + 历史 issue 先例。",
-    "**SA 权限受限**：kubeconfig 对应的 serviceaccount 只有 `pods[get,list]` 与 `pods/log[get,watch]`；"
-    "`nodes`/`events`/`namespaces` 均 Forbidden。因此**拿不到调度事件**（FailedScheduling 的具体原因）、"
-    "节点 condition 与 taint 列表，也无法用 `kubectl describe`（其 Events 段会 403）。",
-    "**runner 标签后缀不能判集群**：Liqo 会把虚拟节点 pod 反射进共享 namespace，"
-    "实测 `linux-aarch64-a3-800i-*-cn12-001` 的 pod 能同时从 aiframework/cn12-001/mind-third-ci 三个"
-    "kubeconfig 看到。本工具靠 Cluster.md 的标签登记 + 集群本地 CPU scale-set 标识收敛，并把歧义显式写出。",
-    "**标签可用性核查是查询时刻的快照**：查到「无 runner」只能说明此刻没部署，"
-    "不能证明失败当时 runner 掉线。官方分类树的「runs-on 标签不存在 / Runner 未上线」需另有失败时刻证据。",
-    "**登记全名与 pod 实际命名可能对不上**：Cluster.md 登记的集群后缀（如 `-cn12-001`）与 pod 名实际用的"
-    "后缀（实测 `…-chlqk-runner-*`、`…-{8位hex}-listener`）不一致，只按登记全名匹配会得出"
-    "「无 runner 在线」的**假阴性**。故核查分两级：全名匹配（强证据）落空后，再按标签主干匹配（弱证据，"
-    "要求名字带 runner/listener 标记），并把实测后缀变体原样列出 —— 此时结论是「标签族有效、登记后缀"
-    "对不上实际命名」，**不是** runner 未上线。",
-    "**pod 已回收是常态**：历史失败的 job pod 多数早已回收，第 2 步只能降级为标签可用性核查；"
-    "只有仍在运行或刚结束的 job 才能拿到 pod 级实证。",
-    "**靠标签定位的 pod 是「推定」而非「确证」**：runner pod 会被复用，且未调度成功的 pod 也存在，"
-    "故本工具在按标签匹配时只接受『真的启动过、且存在起点早于失败步骤』的 pod，"
-    "拿不到就如实报「未取证」。但这只排除了**不可能**的候选，不能证明选中的那个一定跑过本 job ——"
-    "同一窗口内该 scale-set 若并发跑过多个 job，仍需用容器日志里的 job 号二次确认。",
-    "**pod 名精确匹配才免疫上面的推定问题**：job 在 GitHub 上报的 runner_name 带 5 位随机段，"
-    "与 pod 名精确一致时可确认身份；只是这种理想情况依赖 pod 尚未被回收，实测多为已回收。",
-    "**历史匹配的覆盖面**：仅索引 issue 的标题、正文与评论，不含 PR 讨论、文档、IM 记录；"
-    "且标签（label）无结构化语义（179 个 issue 中 2/3 无标签），匹配完全依赖错误签名，"
-    "对没有可判别签名的纯描述性 issue 会漏检。",
-    "**换说法的同一现象，词面匹配连不上**：本工具说「模型缓存未命中」，历史 #238 说「找不到缓存模型」，"
-    "两者无稀有词重叠（#238 只得 11 分、排 44 名）。这类已知同现象靠知识表里的**人工策展关联**兜住，"
-    "策展表是有限的、需要人维护——报告里凡出自策展的条目都会标明，不会冒充自动发现。",
-    "**分数高 ≠ 同现象**：实测 #228（AOP bisect 超时）仅凭 `schedule_nightly_test_a2` 这个工作流名"
-    "就拿到 65 分。故报告对每条匹配都标出证据强度（强/中/弱），且只让命中「带机制签名」"
-    "（如 exitcode:137）或「核心症状词」的复盘充当先例；`valueerror` 这类异常类名不算机制证据。",
-    "**不自动裁定责任方**：历史先例只作线索与先例引用。当先例根因提到平台侧动作而日志侧判 code 时，"
-    "报告会标为「证据冲突」并要求人工裁定，不会自动改写 owner。",
-    "**部分 case 按规则跳过集群取证**：日志里出现 pytest 的判定行（用例收集结果/退出码）时，"
-    "责任方已落在业务侧且集群侧查不出新信息，工具会**提前退出**第 2 步（报告里写明「按规则跳过」）。"
-    "跳过不是「没查到」——两者在报告里的措辞与计数都分开。",
-    "**job log 只覆盖多节点 job 的一台机器（node0）**：`gh api …/jobs/{id}/logs` 返回的是 node0 的"
-    "容器 stdout，其余机器（node1..nodeN）的日志**只**存在于 workflow 上传的 `*-ascend-logs` 产物里。"
-    "本工具对 multi-node/double-node 开头的 job 会额外取该产物（报告里单列「对端节点日志」一节），"
-    "但该产物**可能为空或未上传**：实测 run 36518916532 的 9 个失败多节点 job 里 8 个产物内层 tar"
-    "零个常规文件（job 在容器日志产出前就已失败）。**产物为空 ≠ 对端节点无异常**，"
-    "它只说明本次没有对端证据，此时结论仍只基于 node0。",
-    "**对端节点日志没有时间窗对齐**：产物里的文本是 Docker 收集的整段容器 stdout，"
-    "没有按失败步骤切分的依据，本工具只能取尾部若干行（`--peer-log-lines`，默认 400）。"
-    "故对端文本只用于**兜底**（node0 判「未分类」时才采用，报告里注明来源并降置信度），"
-    "不覆盖 node0 时间窗已给出的结论。",
-]
 
 
 def parse_args():
@@ -832,6 +783,8 @@ def main():
             # job_id/run_id 必须带进 case：集群快照是按 job_id 关联的（见 load_cluster_snapshots），
             # 早先的 case 字典里没有它们，快照无从匹配 —— 表现为「明明抢到了快照却没用上」。
             "job_id": item.get("job_id"), "run_id": item.get("run_id"),
+            # repo 进 case：报告要印「怎么把本 job 的控制台日志取回来」（gh api 命令需要 owner/repo）
+            "repo": repo,
             "link": item.get("link"), "bucket": item.get("bucket"), "owner": item.get("owner"),
             "sig": item.get("sig"), "step": item.get("step"), "chip": item.get("chip"),
             "labels": item.get("labels") or [], "runner_name": item.get("runner_name"),
@@ -858,25 +811,30 @@ def main():
         health[cluster_name] = session.health()
 
     # ---- 输出 ----
+    # json_path 必须在渲染**之前**算出来：精简版报告的头部要写出「完整证据在哪个 json」，
+    # 而早先它是渲染之后才拼的路径（报告里无处引用自己那份 json）。
+    os.makedirs(args.report_dir, exist_ok=True)
+    stamp = started.strftime("%Y%m%d_%H%M%S")
+    report_path = os.path.join(args.report_dir, f"forensics_report_{stamp}.md")
+    json_path = os.path.join(args.report_dir, f"forensics_report_{stamp}.json")
     run_meta = {
         "repo": repo, "since": meta.get("since"), "chips": meta.get("chips"),
         "generated_at": started.strftime("%Y-%m-%d %H:%M:%S"),
         "handoff_source": meta.get("handoff_source"),
         "total_jobs": len(payload.get("failed_jobs") or []),
+        "json_path": json_path,
     }
-    integrity = {"limitations": LIMITATIONS, "errors": errors}
+    # 局限带 triggered 标志：md 只渲染触发的那些，json 全量落盘（含未触发项与判据）
+    limitations = select_limitations(rendered_cases, run_meta)
+    integrity = {"limitations": limitations, "errors": errors}
     report_text = render_report(rendered_cases, run_meta, registry_plan, health, integrity)
 
-    os.makedirs(args.report_dir, exist_ok=True)
-    stamp = started.strftime("%Y%m%d_%H%M%S")
-    report_path = os.path.join(args.report_dir, f"forensics_report_{stamp}.md")
     with open(report_path, "w", encoding="utf-8") as fh:
         fh.write(report_text)
-    json_path = os.path.join(args.report_dir, f"forensics_report_{stamp}.json")
     with open(json_path, "w", encoding="utf-8") as fh:
         json.dump({"meta": run_meta, "cases": rendered_cases,
                    "cluster_availability": registry_plan, "cluster_health": health,
-                   "limitations": LIMITATIONS, "errors": errors}, fh, ensure_ascii=False, indent=2)
+                   "limitations": limitations, "errors": errors}, fh, ensure_ascii=False, indent=2)
 
     elapsed = (datetime.datetime.now() - started).total_seconds()
     print(f"\n=== 完成（耗时 {elapsed:.0f}s）===")
