@@ -12,6 +12,8 @@
 """
 from __future__ import annotations
 
+import re
+
 from .knowledge_tables import knowledge_for, official_leaf_title
 
 # 容器终止原因 → (责任方倾向, 说明)。集群侧最硬的一类证据。
@@ -21,6 +23,57 @@ TERMINATION_INTERPRETATION = {
     "Completed": ("code", "容器正常退出（exit 0）但 job 判失败——失败发生在业务步骤逻辑内，非容器层"),
     "ContainerStatusUnknown": ("infra", "容器状态丢失，通常因节点失联或 pod 被强制删除"),
 }
+
+# 报告默认是**精简版**：正文只留结论与实时证据；完整证据（容器日志原文、全部历史匹配、
+# 15 条局限）在同名 json 里，md 只给检索路径。下面两个函数是精简的两种基本手法 ——
+# 把引用来的多行文本压成一行、把整段日志截成有信息量的样例。
+_HEADING_RE = re.compile(r"^\s{0,3}#{1,6}\s*", re.MULTILINE)
+_WS_RE = re.compile(r"\s+")
+# job 链接 → (owner/repo, job_id)：取全文的命令要能从 case 自己拼出来（case 未必带 repo 字段）
+_GITHUB_JOB_LINK_RE = re.compile(r"github\.com/([^/\s]+/[^/\s]+)/actions/runs/\d+/job/(\d+)")
+
+
+def _oneline(text: str, limit: int = 120) -> str:
+    """把**引用来的**多行文本压成单行，供 bullet 内联使用。
+
+    为什么必须压：历史 issue 的正文自带 markdown 标题（实测 `#### 1. 路径映射不一致`），
+    原样贴进报告会**冒充本报告的章节** —— 读者在编辑器大纲里看到它，会以为那是本工具的一节；
+    多行内容还会把 bullet 列表撑断。换行按 ` / ` 接续（保留语义分隔），并剥掉标题前缀。
+    """
+    if not text:
+        return ""
+    # 先按行去掉标题前缀，再把换行折成 ` / `：先折行会把 `\n####` 变成句中片段、剥不掉
+    lines = [_HEADING_RE.sub("", line) for line in text.splitlines()]
+    text = _WS_RE.sub(" ", " / ".join(line.strip() for line in lines if line.strip())).strip()
+    if len(text) <= limit:
+        return text
+    return text[:limit].rstrip() + "…"
+
+
+def _sample_log_lines(text: str, sig: str = "", limit: int = 3) -> list[str]:
+    """从整段容器日志里取 ≤limit 行**有信息量**的样例。
+
+    优先取命中本 case 签名（`sig`，即命中桶正则命中的原文片段）的行：快照场景下容器还在跑，
+    尾部全是 `HostContext: Well known directory` 这类 INFO 噪音，贴尾部几行等于没贴
+    （实测 run 36658382517 的容器日志尾部 40 行全是这种行）。命中不足 limit 条时用尾部行补齐。
+    """
+    all_lines = text.splitlines()
+    if not all_lines:
+        return []
+    sample: list[str] = []
+    needles = [line.strip() for line in (sig or "").splitlines() if line.strip()]
+    if needles:
+        for line in all_lines:
+            if any(needle in line for needle in needles):
+                sample.append(line)
+                if len(sample) >= limit:
+                    return sample
+    for line in all_lines[-limit:]:
+        if len(sample) >= limit:
+            break
+        if line not in sample:
+            sample.append(line)
+    return sample[:limit]
 
 
 def snapshot_pod_still_running(cluster: dict, pod_evidence: dict) -> bool:
@@ -109,7 +162,8 @@ def peer_basis_lines(case: dict) -> list[str]:
         # 措辞必须说成「命中片段」而不是「首条异常」：这个字段是**命中桶正则的原文片段**，
         # 不是「第一条异常」。实测有 case 命中的是环境变量行（`HCCL_EXEC_TIMEOUT=204`），
         # 叫「异常」会把一行 INFO 读成报错，等于替一个假阳性作证。
-        lines.append(f"  - 对端节点命中片段：`{(peer.get('sig') or '')[:160]}`")
+        # 走 _oneline：日志片段可能多行，原样内联会把 bullet 列表撑断
+        lines.append(f"  - 对端节点命中片段：`{_oneline(peer.get('sig') or '', 160)}`")
     note = peer.get("note")
     if note:
         lines.append(f"  - ⚠️ {note}")
@@ -124,7 +178,17 @@ def synthesize(case: dict) -> dict:
     bucket = case.get("bucket") or "未分类"
     log_owner = case.get("owner") or "unknown"
     knowledge = knowledge_for(bucket)
-    basis, conflicts, hints_requiring_human = [], [], []
+    basis, basis_tags, conflicts, hints_requiring_human = [], [], [], []
+
+    def add(text: str, tag: str = "") -> None:
+        """记一条判断依据，并打上去重标签。
+
+        tag 对应**正文里已经渲染过**的那个段落（见 `_inline_rendered_tags`）：渲染层据此
+        跳过重复句 —— 依据要能独立读懂，但不必把上面的集群/对端叙述再抄一遍。
+        `basis` 本身仍是 list[str]，全量进 json，去重只发生在 md 上。
+        """
+        basis.append(text)
+        basis_tags.append(tag)
 
     cluster = case.get("cluster") or {}
     pod_evidence = cluster.get("pod_evidence")
@@ -136,14 +200,15 @@ def synthesize(case: dict) -> dict:
     if peer_adopted:
         # 桶是从对端节点兜底来的，首行必须说清「node0 没判出来、结论来自对端」，
         # 否则读者会以为 node0 的失败步骤时间窗本身就命中了这个桶（证据强度差一个档）。
-        basis.append(f"日志侧：node0 失败步骤时间窗**未能分类**，采用对端节点日志判桶 "
-                     f"→ 【{bucket}】，owner={log_owner}")
+        add(f"日志侧：node0 失败步骤时间窗**未能分类**，采用对端节点日志判桶 "
+            f"→ 【{bucket}】，owner={log_owner}")
     elif bucket != "未分类":
-        basis.append(f"日志侧：命中桶【{bucket}】，owner={log_owner}")
+        add(f"日志侧：命中桶【{bucket}】，owner={log_owner}")
     else:
-        basis.append("日志侧：未能分类（正则无命中），需人工或集群侧补足")
+        add("日志侧：未能分类（正则无命中），需人工或集群侧补足")
     # 对端节点证据紧跟日志侧基线：它属同一层（容器 stdout），只是机器不同
-    basis.extend(peer_basis_lines(case))
+    for line in peer_basis_lines(case):
+        add(line, "peer")
 
     # --- 集群侧证据 ---
     cluster_owner_votes = []
@@ -151,7 +216,7 @@ def synthesize(case: dict) -> dict:
     # 「按规则跳过」必须是一条**独立**的依据，不能落进下面「未解析出候选集群」那一支：
     # 后者说的是「想查但没查到集群」，与「日志已定性、规则上不必查」是两个相反的意思。
     if cluster.get("skipped"):
-        basis.append(f"集群侧：**按规则跳过** —— {cluster.get('skip_reason')}")
+        add(f"集群侧：**按规则跳过** —— {cluster.get('skip_reason')}", "cluster.skip")
     # 只有「一个候选集群都没解析出来」才能说「无可用 kubeconfig」。路径 B（pod 已回收、
     # 降级为标签可用性核查）不设 kubeconfig_path，那不是「没用上 kubeconfig」——
     # 早先只判 kubeconfig_path 为空就贴这条，会在明明查过集群的案例上凭空多出一句误导。
@@ -164,31 +229,31 @@ def synthesize(case: dict) -> dict:
         # 这种证据不但不能计入 owner 票，还必须在报告里明确降级为「邻近 pod」。
         foreign_pod = cluster.get("time_consistent") is False
         if foreign_pod:
-            basis.append(f"集群侧：找到的 pod `{pod_evidence.get('pod')}` 与本 job **时序不符** —— "
-                         f"{cluster.get('window_note')}")
-            basis.append("  ⚠️ 该 pod 的容器状态与日志**不计入**本次归因（它属于同 scale-set 的"
-                         "另一次运行）；它只能证明该 runner 标签可用、集群本身在正常工作")
+            add(f"集群侧：找到的 pod `{pod_evidence.get('pod')}` 与本 job **时序不符** —— "
+                f"{cluster.get('window_note')}", "cluster.pod")
+            add("  ⚠️ 该 pod 的容器状态与日志**不计入**本次归因（它属于同 scale-set 的"
+                "另一次运行）；它只能证明该 runner 标签可用、集群本身在正常工作", "cluster.pod")
             hints_requiring_human.append(
                 "集群侧命中的 pod 启动时间晚于本 job 的失败步骤，属同 scale-set 的另一次运行；"
                 "本 job 的真实现场已回收，需靠 runner 侧日志或平台监控补足")
         else:
             for verdict in pod_verdicts:
-                basis.append(f"集群侧：{verdict['verdict']} —— {verdict['detail']}")
+                add(f"集群侧：{verdict['verdict']} —— {verdict['detail']}", "cluster.pod-verdict")
                 cluster_owner_votes.append(verdict["owner"])
         if not foreign_pod and not pod_verdicts:
             if snapshot_pod_still_running(cluster, pod_evidence):
                 # 快照取自 job 结束前：没有退出码是**时间点**造成的，不是「无异常」。
                 # 说成「无异常终止记录」是反向结论 —— 它会让一个本该存疑的现场显得清白。
-                basis.append(f"集群侧：pod 已找到（phase={pod_evidence.get('phase')}，"
-                             f"节点 `{pod_evidence.get('node')}`），但快照取自 job 结束前、"
-                             f"容器仍在运行 —— 退出码与终止原因**尚未产生**，不能据此判「无异常」")
+                add(f"集群侧：pod 已找到（phase={pod_evidence.get('phase')}，"
+                    f"节点 `{pod_evidence.get('node')}`），但快照取自 job 结束前、"
+                    f"容器仍在运行 —— 退出码与终止原因**尚未产生**，不能据此判「无异常」")
                 hints_requiring_human.append(
                     "集群侧拿到的是失败时刻的进程内日志，没有退出码；"
                     "如需退出码必须在 job 结束的瞬间补查（实测窗口约 55s，随后 pod 即被回收）")
             else:
-                basis.append(f"集群侧：pod 已找到（phase={pod_evidence.get('phase')}，"
-                             f"节点 `{pod_evidence.get('node')}`），"
-                             f"但容器状态无异常终止记录，未能据此指向责任方")
+                add(f"集群侧：pod 已找到（phase={pod_evidence.get('phase')}，"
+                    f"节点 `{pod_evidence.get('node')}`），"
+                    f"但容器状态无异常终止记录，未能据此指向责任方")
     elif availability and availability.get("checked"):
         labels_text = "、".join(case.get("labels") or []) or "—"
         cluster_label = cluster.get("availability_cluster") or cluster.get("cluster_name")
@@ -198,21 +263,21 @@ def synthesize(case: dict) -> dict:
             # 登记后缀与 pod 名实际后缀不一致（实测：登记 cn12-001，实际 chlqk）。
             # 标签族**确实在线**，所以「标签不存在」「runner 未上线」两个结论都不成立；
             # 对不上的是注册表本身。这与「有 runner」和「没 runner」都是两回事，必须单独措辞。
-            basis.append(f"集群侧：runner 标签 `{labels_text}` 在集群 `{cluster_label}` **确有** "
-                         f"{availability.get('runners_online')} 个 runner / "
-                         f"{availability.get('listeners')} 个 listener，但 pod 名用的后缀是 "
-                         f"{variants_text or '—'}，与 Cluster.md 登记的后缀 "
-                         f"`{availability.get('registered_suffix') or '—'}` **不一致** —— "
-                         f"即**标签族有效**，对不上的是登记后缀与实际命名（注册表问题），"
-                         f"**不是** runner 未上线")
+            add(f"集群侧：runner 标签 `{labels_text}` 在集群 `{cluster_label}` **确有** "
+                f"{availability.get('runners_online')} 个 runner / "
+                f"{availability.get('listeners')} 个 listener，但 pod 名用的后缀是 "
+                f"{variants_text or '—'}，与 Cluster.md 登记的后缀 "
+                f"`{availability.get('registered_suffix') or '—'}` **不一致** —— "
+                f"即**标签族有效**，对不上的是登记后缀与实际命名（注册表问题），"
+                f"**不是** runner 未上线", "cluster.availability")
             hints_requiring_human.append(
                 f"Cluster.md 为该标签登记的集群后缀（`{availability.get('registered_suffix') or '—'}`）"
                 f"与 pod 名实际后缀（{variants_text or '—'}）不一致；按登记全名匹配会得出"
                 f"「无 runner 在线」的**假阴性**，登记信息需要修正")
         elif availability.get("available"):
-            basis.append(f"集群侧：runner 标签 `{labels_text}` 在集群 `{cluster_label}` 有 "
-                         f"{availability.get('runners_online')} 个 runner / "
-                         f"{availability.get('listeners')} 个 listener，标签本身有效")
+            add(f"集群侧：runner 标签 `{labels_text}` 在集群 `{cluster_label}` 有 "
+                f"{availability.get('runners_online')} 个 runner / "
+                f"{availability.get('listeners')} 个 listener，标签本身有效", "cluster.availability")
         else:
             # 「没查到」**不计入 owner 票**：这是查询时刻的快照，证不了失败当时的状态。
             # 只作为提示，并强制人工确认——早先的实现把它当成 infra 的集群侧实证，
@@ -220,10 +285,11 @@ def synthesize(case: dict) -> dict:
             # 措辞要交代**查过哪些匹配方式**：阴性结论的强度取决于查得多宽，
             # 只写「未查到」会让读者以为只按登记全名试过一次（那正是假阴性的来源）。
             scopes = "、".join(availability.get("scopes_checked") or ["全名"])
-            basis.append(f"集群侧：在候选集群中**未查到** runner 标签 `{labels_text}` 的任何 pod"
-                         f"（匹配方式：{scopes}，均 0 命中）")
-            basis.append("  ⚠️ 仅为查询时刻快照，**不能据此断言**失败当时 runner 掉线；"
-                         "官方分类树的「runs-on 标签不存在 / Runner 未上线」需另有失败时刻证据")
+            add(f"集群侧：在候选集群中**未查到** runner 标签 `{labels_text}` 的任何 pod"
+                f"（匹配方式：{scopes}，均 0 命中）", "cluster.availability")
+            add("  ⚠️ 仅为查询时刻快照，**不能据此断言**失败当时 runner 掉线；"
+                "官方分类树的「runs-on 标签不存在 / Runner 未上线」需另有失败时刻证据",
+                "cluster.availability")
             hints_requiring_human.append(
                 "集群侧未查到该 runner 标签 —— 若怀疑是「标签不存在 / runner 未上线」，"
                 "需补充失败时刻的 runner 侧证据后确认")
@@ -252,8 +318,8 @@ def synthesize(case: dict) -> dict:
         evidence = ("命中带机制的签名 `" + "`, `".join(mechanism[:3]) + "`"
                     if mechanism
                     else "命中核心症状词 " + "、".join(strong_precedent["core_keywords"][:4]))
-        basis.append(f"历史先例：#{issue['number']}（score={strong_precedent['score']}，"
-                     f"根因取自{where}，{evidence}）{issue['title'][:60]}")
+        add(f"历史先例：#{issue['number']}（score={strong_precedent['score']}，"
+            f"根因取自{where}，{evidence}）{issue['title'][:60]}")
     if weak_leads:
         listed = "、".join(f"#{item['issue']['number']}(score={item['score']})"
                           for item in weak_leads[:3])
@@ -266,7 +332,7 @@ def synthesize(case: dict) -> dict:
     if cluster_owner_votes:
         # 集群侧实证比日志侧正则硬：一致则强化，不一致则记冲突
         if all(vote == log_owner for vote in cluster_owner_votes):
-            basis.append(f"集群侧与日志侧 owner 一致（{log_owner}），归因可信度提升")
+            add(f"集群侧与日志侧 owner 一致（{log_owner}），归因可信度提升")
         else:
             conflicts.append(f"日志侧判 owner={log_owner}，集群侧证据指向 {'/'.join(sorted(set(cluster_owner_votes)))}")
     # 只在知识表**确实给了** owner 且与日志侧不符时才算冲突。
@@ -359,13 +425,15 @@ def synthesize(case: dict) -> dict:
         root_cause = "未能定性（需人工介入）"
 
     # --- 修复建议：知识表 + 先例的修复小节 ---
+    # 先例的 fix/prevention 同样是**引用来的正文**（自带标题、多行），走 _oneline 压成一行：
+    # 建议是给人照着做的，带 `####` 的整段正文贴进来只会把这一节的层级搞乱。
     suggestions = list(knowledge.get("action") or [])
     if strong_precedent and strong_precedent["issue"]["sections"].get("fix"):
         suggestions.append(f"历史先例 #{strong_precedent['issue']['number']} 的修复记录："
-                           f"{strong_precedent['issue']['sections']['fix'][:400]}")
+                           f"{_oneline(strong_precedent['issue']['sections']['fix'], 200)}")
     if strong_precedent and strong_precedent["issue"]["sections"].get("prevention"):
         suggestions.append(f"历史先例 #{strong_precedent['issue']['number']} 的防复发建议："
-                           f"{strong_precedent['issue']['sections']['prevention'][:300]}")
+                           f"{_oneline(strong_precedent['issue']['sections']['prevention'], 150)}")
 
     return {
         "root_cause": root_cause,
@@ -373,6 +441,9 @@ def synthesize(case: dict) -> dict:
         "owner_from_cluster": bool(cluster_owner_votes),
         "confidence": confidence,
         "basis": basis,
+        # 与 basis 等长、逐条对应的去重标签（渲染层用，见 _inline_rendered_tags）。
+        # basis 仍是 list[str]：json 与其他读者不受影响，去重只发生在 md 渲染这一步。
+        "basis_tags": basis_tags,
         "conflicts": conflicts,
         # 未达「冲突」程度、但必须人工确认的提示项（如集群侧查无 runner 的快照级负向结果）
         "hints_requiring_human": hints_requiring_human,
@@ -389,20 +460,87 @@ def synthesize(case: dict) -> dict:
     }
 
 
+def _job_log_command(case: dict) -> str | None:
+    """本 job 控制台日志（含测试输出）的取回命令。
+
+    报告默认不贴整段日志，那就必须给出**怎么把它拿回来**：这条命令是按 job_id 直接拉
+    GitHub 侧原始日志（第 1 步分析的也是它）。repo/job_id 缺失时退回从 job 链接里取，
+    链接不是 GitHub 形态（测试 fixture）则返回 None —— 宁可少一行，也不印一条假的命令。
+    """
+    repo, job_id = case.get("repo"), case.get("job_id")
+    if not (repo and job_id):
+        match = _GITHUB_JOB_LINK_RE.search(str(case.get("link") or ""))
+        if match:
+            repo, job_id = match.group(1), match.group(2)
+    if not (repo and job_id):
+        return None
+    return f"`gh api repos/{repo}/actions/jobs/{job_id}/logs`"
+
+
+def _log_retrieval_commands(case: dict, cluster: dict, pod_evidence: dict,
+                            log_entry: dict) -> list:
+    """「怎么把这段容器日志完整取回来」的命令列表（k8s 侧 + GitHub 侧）。
+
+    集群侧那份用 kubectl 就能复现（kubeconfig 路径、namespace、pod、容器都在报告里）；
+    GitHub 侧那份是 job 的控制台日志，两者是**不同的产物**，故都给。
+    """
+    commands = []
+    kubeconfig = cluster.get("kubeconfig_path")
+    pod, namespace = pod_evidence.get("pod"), cluster.get("namespace")
+    if kubeconfig and pod and namespace:
+        command = (f"kubectl --kubeconfig {kubeconfig} logs {pod} -n {namespace} "
+                   f"-c {log_entry.get('container')}")
+        if log_entry.get("source") == "重启前的实例":
+            command += " --previous"
+        commands.append(f"`{command}`")
+    job_log = _job_log_command(case)
+    if job_log:
+        commands.append(f"{job_log}（本 job 的控制台日志，含测试输出）")
+    return commands
+
+
+def _inline_rendered_tags(case: dict) -> set:
+    """本 case 在**正文段落里已经渲染过**的依据类别 —— 判断依据据此去重，同一句不说两遍。
+
+    只在对应段落**确实会输出**时才算「已渲染」：这些 tag 各自对应下面某个渲染分支，
+    分支不成立时依据里的那条就是独一份（例如集群段整段缺失时，依据里的集群叙述不能被删掉）。
+    """
+    cluster = case.get("cluster") or {}
+    rendered = set()
+    if cluster.get("skipped"):
+        rendered.add("cluster.skip")
+    pod_evidence = cluster.get("pod_evidence")
+    if pod_evidence:
+        if cluster.get("time_consistent") is False:
+            rendered.add("cluster.pod")
+        elif interpret_pod_evidence(pod_evidence):
+            rendered.add("cluster.pod-verdict")
+    availability = cluster.get("availability") or {}
+    if availability.get("checked"):
+        rendered.add("cluster.availability")
+    if peer_basis_lines(case):
+        rendered.add("peer")
+    return rendered
+
+
 def render_case(case: dict, index: int) -> list:
     """渲染单个失败 job 的完整取证过程。"""
     lines = []
     lines.append(f"### case {index}. {case.get('job_name')}　`{case.get('workflow')}`")
     lines.append("")
-    lines.append(f"- 失败 job：{case.get('link')}")
-    lines.append(f"- 失败步骤：`{case.get('step') or '未知'}`"
+    # 抬头按「这是什么 job」与「跑在哪台机器、哪个时间窗」并成两行：
+    # 四个 bullet 各占一行时，case 的开头要六行才读到证据
+    lines.append(f"- 失败 job：{case.get('link')}"
+                 f"　步骤：`{case.get('step') or '未知'}`"
                  f"　芯片：{case.get('chip') or 'CPU 门禁'}"
                  f"　runner 标签：`{', '.join(case.get('labels') or []) or '—'}`")
-    if case.get("runner_name"):
-        lines.append(f"- runner pod 名：`{case['runner_name']}`")
     window = case.get("window") or {}
+    pod_line = f"- runner pod 名：`{case['runner_name']}`　" if case.get("runner_name") else "- "
     if window.get("started_at"):
-        lines.append(f"- 失败步骤时间窗：{window['started_at']} ~ {window.get('completed_at') or '(未完成)'}")
+        pod_line += (f"失败步骤时间窗：{window['started_at']} ~ "
+                     f"{window.get('completed_at') or '(未完成)'}")
+    if pod_line != "- ":
+        lines.append(pod_line.rstrip("　"))
     lines.append("")
 
     # --- 第 1 步的第二证据源：对端节点日志（紧跟日志侧元信息，在集群段之前）---
@@ -425,7 +563,7 @@ def render_case(case: dict, index: int) -> list:
             lines.append("<details><summary>对端节点命中片段原文</summary>")
             lines.append("")
             lines.append("```")
-            lines.append((peer.get("sig") or "")[:300])
+            lines.append(_oneline(peer.get("sig") or "", 300))
             lines.append("```")
             lines.append(f"完整文本随产物留存，可用 `gh api repos/<owner>/<repo>/actions/"
                          f"artifacts/{peer.get('artifact_id')}/zip` 重新取得"
@@ -445,24 +583,29 @@ def render_case(case: dict, index: int) -> list:
         lines.append("- 该 case 的判据来自日志里测试框架自己的输出（pytest 的收集结果/退出码），"
                      "责任方已落在业务侧；集群侧的 pod/节点状态即便查到，也只能说明「容器当时活着」，"
                      "给不出新信息——故**不**计入「集群侧取得 pod 实证」的分母")
+    # 集群归属、实际查询的标签全名、定位方式并成一行：它们是「这次查的是谁」的三个侧面，
+    # 分开写会各占一行而读者总要连着读。（标签全名必须如实记下：job 上报展示名、pod 名用
+    # 带后缀全名，不写清楚「查无 pod」就会被误读成「runner 不在线」。）
+    attribution = []
     if cluster.get("candidate_note"):
-        lines.append(f"- 集群归属判定：{cluster['candidate_note']}")
+        attribution.append(f"集群归属：{cluster['candidate_note']}")
     if cluster.get("queried_labels"):
-        # 如实记下**实际查的是哪个标签**：job 上报展示名，pod 名用带后缀全名，
-        # 两者不写清楚，「查无 pod」就会被误读成「runner 不在线」
-        lines.append("- 实际查询的标签全名："
-                     + "、".join(f"`{label}`" for label in cluster["queried_labels"]))
+        attribution.append("实际查询的标签全名："
+                           + "、".join(f"`{label}`" for label in cluster["queried_labels"]))
+    if cluster.get("kubeconfig_path") and cluster.get("match_kind"):
+        attribution.append(f"pod 定位方式：{cluster['match_kind']}")
+    if attribution:
+        lines.append("- " + "　".join(attribution))
     if cluster.get("kubeconfig_path"):
-        lines.append(f"- 取证集群：`{cluster.get('cluster_name')}`"
-                     f"（namespace `{cluster.get('namespace')}`，kubeconfig `{cluster.get('filename')}`）")
         identity = cluster.get("identity") or {}
         if identity.get("reachable"):
-            lines.append(f"- 连通性：正常（server {identity.get('server_version')}，"
-                         f"身份 `{identity.get('identity')}`）")
+            reachability = (f"正常（server {identity.get('server_version')}，"
+                            f"身份 `{identity.get('identity')}`）")
         else:
-            lines.append(f"- 连通性：**不可达** —— {identity.get('error')}")
-        if cluster.get("match_kind"):
-            lines.append(f"- pod 定位方式：{cluster['match_kind']}")
+            reachability = f"**不可达** —— {identity.get('error')}"
+        lines.append(f"- 取证集群：`{cluster.get('cluster_name')}`"
+                     f"（namespace `{cluster.get('namespace')}`，kubeconfig `{cluster.get('filename')}`）"
+                     f"　连通性：{reachability}")
     elif cluster.get("candidates"):
         # 有候选集群却没拿到 pod：多是路径 B（pod 已回收）。这句话不能说成「没有目标集群」，
         # 那是**另一个**结论，会把「现场已回收」误读成「工具没找到集群」。
@@ -519,16 +662,25 @@ def render_case(case: dict, index: int) -> list:
             for verdict in interpret_pod_evidence(pod_evidence):
                 lines.append(f"- 判定：{verdict['verdict']} —— {verdict['detail']}")
             logs = cluster.get("logs") or []
-            for log_entry in logs:
-                if log_entry.get("ok") and log_entry.get("text"):
-                    lines.append("")
-                    lines.append(f"<details><summary>容器 {log_entry.get('container')} 日志尾部"
-                                 f"（{log_entry.get('source')}）</summary>")
+            for log_index, log_entry in enumerate(logs):
+                if not (log_entry.get("ok") and log_entry.get("text")):
+                    continue
+                # 默认**不贴**容器日志：实测尾部 40 行全是 `HostContext: Well known directory`
+                # 这类 INFO（快照场景容器还在跑），贴了等于给报告灌水 45 行。改为给「怎么取全文」
+                # 加一个有信息量的样例（优先命中本 case 签名的行）。全文在同名 json 里，不丢证据。
+                sample = _sample_log_lines(log_entry["text"], case.get("sig") or "")
+                sample_note = f"，样例 {len(sample)} 行" if sample else ""
+                lines.append(f"- 容器 `{log_entry.get('container')}` 日志（{log_entry.get('source')}）："
+                             f"共 {len(log_entry['text'].splitlines())} 行{sample_note}。"
+                             f"本工具取的那份在 json `cases[{index - 1}].cluster.logs[{log_index}].text`")
+                retrievals = _log_retrieval_commands(case, cluster, pod_evidence, log_entry)
+                if retrievals:
+                    lines.append(f"  - 取全文：{'；'.join(retrievals)}")
+                if sample:
                     lines.append("")
                     lines.append("```")
-                    lines.append("\n".join(log_entry["text"].splitlines()[-40:]))
+                    lines.extend(sample)
                     lines.append("```")
-                    lines.append("</details>")
     availability = cluster.get("availability")
     if availability and availability.get("checked"):
         lines.append("")
@@ -580,10 +732,14 @@ def render_case(case: dict, index: int) -> list:
     history = case.get("history") or []
     lines.append("#### 历史问题定位（第 4 步）")
     lines.append("")
+    # 只展开前 2 条：历史匹配已按分数降序，第 3 名往后基本都是「只命中通用词或 workflow 名」
+    # 的弱线索 —— 那正是 synthesize 明令**不采信**的一类（强先例已被它单独提升到判断依据里）。
+    # 其余压成一行计数，完整匹配在同名 json 的 cases[i].history 里。
+    shown = history[:2]
     if not history:
         lines.append("- 知识库中未找到相关历史 issue（签名与关键词均无命中）")
     else:
-        for match in history:
+        for match in shown:
             issue = match["issue"]
             tag = "📌" if issue.get("is_postmortem") else "　"
             source = {"body": "正文", "comment": "评论"}.get(issue.get("root_cause_source"), "")
@@ -596,10 +752,15 @@ def render_case(case: dict, index: int) -> list:
                 lines.append(f"  - 命中签名：`{'`, `'.join(match['matched_signatures'][:6])}`")
             if match.get("core_keywords"):
                 lines.append(f"  - 命中核心症状词：{'、'.join(match['core_keywords'][:6])}")
-            if match["matched_keywords"]:
-                lines.append(f"  - 命中关键词：{', '.join(match['matched_keywords'][:6])}")
+            # 不再输出「命中关键词」：实测是 `aarch64, linux, open, run` 这类通用词，
+            # 既不能区分现象也不能支撑结论，只让读者以为匹配很强。签名与症状词才是机制证据。
             if issue["sections"].get("root_cause"):
-                lines.append(f"  - 历史根因：{issue['sections']['root_cause'][:300]}")
+                lines.append(f"  - 历史根因：{_oneline(issue['sections']['root_cause'], 120)}")
+        rest = history[2:]
+        if rest:
+            best = max(rest, key=lambda item: item["score"])
+            lines.append(f"- 另有 {len(rest)} 条弱命中（最高 #{best['issue']['number']} "
+                         f"score={best['score']}）—— 完整匹配见 json `cases[{index - 1}].history`")
     related = case.get("related_issues") or []
     if related:
         matched_numbers = {match["issue"]["number"] for match in history}
@@ -616,15 +777,15 @@ def render_case(case: dict, index: int) -> list:
             # 上面按分数列过的，这里只补「为何关联」（那是策展独有的信息），
             # 不再重复贴一遍标题/根因，免得同一 issue 在报告里出现两次长得一样的块
             if item["number"] in matched_numbers:
-                lines.append(f"- #{item['number']}：为何关联 —— {item.get('why') or '（未填）'}")
+                lines.append(f"- #{item['number']}：为何关联 —— {_oneline(item.get('why') or '（未填）', 120)}")
                 continue
             lines.append(f"- #{item['number']}（{item.get('state')}"
                          f"{'，根因在' + source if source else ''}）"
                          f"[{item['title'][:70]}]({item['url']})")
             if item.get("why"):
-                lines.append(f"  - 为何关联：{item['why']}")
+                lines.append(f"  - 为何关联：{_oneline(item['why'], 120)}")
             if item.get("root_cause"):
-                lines.append(f"  - 历史根因：{item['root_cause'][:300]}")
+                lines.append(f"  - 历史根因：{_oneline(item['root_cause'], 120)}")
     lines.append("")
 
     # --- 第 5 步：结论 ---
@@ -643,7 +804,15 @@ def render_case(case: dict, index: int) -> list:
     lines.append("")
     lines.append("**判断依据：**")
     lines.append("")
-    for item in verdict.get("basis") or []:
+    # 去重：对端/pod 判定/标签可用性三类依据与上面的段落**逐句相同**（它们本就是同一批数据
+    # 的两种呈现），这里不再抄一遍 —— 但要按 case 实际渲染了哪几段来判（见 _inline_rendered_tags），
+    # 段落没渲染时依据里那条就是独一份，删掉就成丢证据了。basis 全量仍在 json 里。
+    rendered_tags = _inline_rendered_tags(case)
+    basis_items = verdict.get("basis") or []
+    for position, item in enumerate(basis_items):
+        tags = verdict.get("basis_tags") or []
+        if position < len(tags) and tags[position] in rendered_tags:
+            continue
         lines.append(f"- {item}" if not item.startswith("  ") else item)
     if verdict.get("conflicts"):
         lines.append("")
@@ -675,6 +844,11 @@ def render_report(cases: list, meta: dict, registry_plan: list, health: dict,
                  f"芯片范围：{meta.get('chips') or '不限'}")
     lines.append(f"- 生成时间：{meta.get('generated_at')}")
     lines.append(f"- 日志侧来源：`{meta.get('handoff_source')}`")
+    if meta.get("json_path"):
+        # 本页是**精简版**：容器日志原文、全部历史匹配、全部局限条目都在同名 json 里。
+        # 这条路径必须写在开头 —— 读者看到「全文见 json」时得知道去哪儿找。
+        lines.append(f"- 完整证据：`{meta['json_path']}`"
+                     f"（本页只留结论与实时证据；原文与未渲染的条目都在其中）")
     lines.append("")
 
     # 摘要
@@ -723,10 +897,20 @@ def render_report(cases: list, meta: dict, registry_plan: list, health: dict,
     lines.append("")
     lines.append("| 集群 | kubeconfig | server | 备注 |")
     lines.append("|---|---|---|---|")
+    # 缺 kubeconfig 的集群不逐行占位：它们那四行的备注文字一模一样，只是集群名不同，
+    # 逐行展开会把一张清单读成四句重复的话。改为表下列一行，信息不减。
+    missing_kubeconfig = []
     for row in registry_plan:
-        flag = "✅" if row["has_kubeconfig"] else "❌ 缺失"
-        lines.append(f"| `{row['cluster']}` | {flag} | {row.get('server') or '—'} | {row.get('warning') or ''} |")
+        if not row["has_kubeconfig"]:
+            missing_kubeconfig.append(row["cluster"])
+            continue
+        lines.append(f"| `{row['cluster']}` | ✅ | {row.get('server') or '—'} | {row.get('warning') or ''} |")
     lines.append("")
+    if missing_kubeconfig:
+        lines.append(f"- 无 kubeconfig 的集群 {len(missing_kubeconfig)} 个："
+                     + "、".join(f"`{name}`" for name in missing_kubeconfig)
+                     + "　→ 落到这些集群的失败做不了集群侧取证，只能依据日志侧结论")
+        lines.append("")
     if health:
         lines.append("### 各集群现场快照")
         lines.append("")
@@ -749,11 +933,25 @@ def render_report(cases: list, meta: dict, registry_plan: list, health: dict,
     for index, case in enumerate(cases, 1):
         lines.extend(render_case(case, index))
 
-    # 局限
+    # 局限：只列**本次运行真的触发**的条目。15 条全量输出时每份报告逐字节相同、与本次结论
+    # 多半无关，反而把该读的那几条淹掉；全量清单与触发判据在设计文档 §7，这里给一行指针。
     lines.append("## 能力边界与局限")
     lines.append("")
-    for item in integrity.get("limitations") or []:
-        lines.append(f"- {item}")
+    all_limitations = integrity.get("limitations") or []
+    shown = []
+    for item in all_limitations:
+        # 兼容纯字符串（旧调用方/测试直接塞文本的形态）：那种一律视为「本次相关」
+        if isinstance(item, str):
+            shown.append(item)
+        elif item.get("triggered"):
+            shown.append(item.get("text"))
+    if shown:
+        for item in shown:
+            lines.append(f"- {item}")
+    else:
+        lines.append("- 本次运行未触发任何已知局限条目。")
+    lines.append(f"- 局限共 {len(all_limitations)} 条（本页只列本次触发项）—— 完整清单与触发判据见 "
+                 f"`npu_ci_forensics_design.md` §7")
     if integrity.get("errors"):
         lines.append("")
         lines.append("### 本次运行遇到的错误")
