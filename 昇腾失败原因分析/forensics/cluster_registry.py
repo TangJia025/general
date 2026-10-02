@@ -332,6 +332,19 @@ class ClusterRegistry:
                 return True
         return False
 
+    def cluster_for_virtual_node(self, node_name: str) -> str | None:
+        """Liqo 虚拟节点名 → 已登记集群名；**仅当唯一命中**时返回，否则 None。
+
+        为什么只做「唯一命中」：Liqo 的虚拟节点名取自提供方集群（实测 `mind-third-ci`
+        对应登记的 `ascend-mind-third-ci`，正好是 `canonical_aliases` 里的短名），
+        但这是**命名约定**而非接口保证。多义时返回 None —— 报一个不确定的集群名，
+        比报「不确定」危害大得多（读者会直接采信）。
+        """
+        if not node_name:
+            return None
+        matched = [name for name in self.clusters if node_name in canonical_aliases(name)]
+        return matched[0] if len(matched) == 1 else None
+
     # ---------- 身份自检 ----------
 
     def identity_markers(self, cluster_name: str) -> list:

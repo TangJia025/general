@@ -188,13 +188,42 @@ def apply_cluster_snapshot(cluster_result: dict, snapshot: dict) -> dict:
     """把快照内容贴进 cluster_result，并留下**来源与时刻**（报告要如实标注）。
 
     只覆盖第 2 步的取证字段，不动其它键（candidates / not_obtained 等由快照自身携带）。
+
+    读取时**再判一次 pod 身份**：修复前抢下的快照里装着标签推定出来的错 pod（实测 19 份），
+    只修 find_job_pod 挡不住它们 —— 重扫旧快照时会把别人的 node 与容器日志当成本次失败的
+    现场。判据（runner_name 与 pod 名）快照里就有，无需再查集群，故在这里就地作废。
     """
     cluster_result.update(snapshot.get("cluster_result") or {})
     cluster_result["snapshot_from"] = snapshot.get("snapshot_file")
     cluster_result["snapshot_taken_at"] = snapshot.get("taken_at")
     cluster_result["snapshot_job_status"] = snapshot.get("job_status_at_snapshot")
     cluster_result["snapshot_note"] = snapshot.get("taken_reason")
+    _retire_foreign_snapshot_pod(cluster_result, snapshot.get("runner_name"))
     return cluster_result
+
+
+def _retire_foreign_snapshot_pod(cluster_result: dict, runner_name: str | None):
+    """作废快照里那个「同标签的别的 job」的 pod 证据（容器状态与日志一并撤下）。
+
+    作废而不是保留：这类证据的危害是读者据此下结论。撤下后本 case 会如实落到
+    「未取得本 job 的 pod 实证」，并在未取证说明里写明作废原因 —— 与「压根没查」
+    是两回事，故两边都留下文字。
+    """
+    reason = cluster_ops.foreign_pod_reason(cluster_result.get("pod_evidence"),
+                                            cluster_result.get("match_kind"), runner_name)
+    if not reason:
+        return
+    foreign_pod = (cluster_result.get("pod_evidence") or {}).get("pod")
+    cluster_result["pod_evidence"] = None
+    cluster_result["logs"] = []
+    cluster_result["retired_pod"] = foreign_pod
+    cluster_result["retired_reason"] = reason
+    # match_kind / match_reason / time_consistent 都描述的是那个已经被撤下的 pod，
+    # 留着会让报告说「pod 定位方式：runner 标签 + 时间窗收敛」却又不给出 pod，自相矛盾。
+    # 置 None 而不是删键：字段集合保持稳定，调用方不必区分「没有这个键」与「值为空」。
+    for key in ("match_kind", "match_reason", "time_consistent", "window_note", "placement_hint"):
+        cluster_result[key] = None
+    cluster_result["not_obtained"] = list(cluster_result.get("not_obtained") or []) + [reason]
 
 
 class ClusterSession:
@@ -446,7 +475,7 @@ def step3_skip_cluster(case: dict) -> dict:
     return {"cluster_name": None, "kubeconfig_path": None, "filename": None,
             "namespace": None, "identity": None, "match_kind": None,
             "pod_evidence": None, "logs": [], "availability": None,
-            "availability_by_cluster": {}, "candidates": [],
+            "availability_by_cluster": {}, "candidates": [], "placement_hint": None,
             "not_obtained": [], "candidate_note": None,
             "queried_labels": [], "queried_namespaces": {},
             "skipped": True,
@@ -476,7 +505,7 @@ def step3_cluster_forensics(case: dict, registry: ClusterRegistry, sessions: dic
     cluster_result = {"cluster_name": None, "kubeconfig_path": None, "filename": None,
                       "namespace": None, "identity": None, "match_kind": None,
                       "pod_evidence": None, "logs": [], "availability": None,
-                      "availability_by_cluster": {}, "candidates": [],
+                      "availability_by_cluster": {}, "candidates": [], "placement_hint": None,
                       "not_obtained": [], "candidate_note": None,
                       "queried_labels": [], "queried_namespaces": {}}
     job_id = case.get("job_id")
@@ -544,6 +573,12 @@ def step3_cluster_forensics(case: dict, registry: ClusterRegistry, sessions: dic
                                "window_note": found.get("window_note")})
         evidence = cluster_ops.pod_evidence(found["pod"])
         cluster_result["pod_evidence"] = evidence
+        # 取到的是 Liqo 影子对象时，真实负载不在本集群 —— 把「疑似提供方集群」一并算出来。
+        # 算在这里而不是报告层：只有这里手上有注册表（虚拟节点名 → 已登记集群的映射）。
+        placement = evidence.get("placement") or {}
+        if placement.get("shadow_pod") is True:
+            cluster_result["placement_hint"] = registry.cluster_for_virtual_node(
+                placement.get("virtual_node"))
         # 取日志的两个前提缺一不可：① 用户没关掉（--no-pod-logs）；② 该 pod 时序自洽。
         # 时序不符的 pod 属于另一次运行，取它的日志既无用又会误导（报告层也不展示）。
         # ⚠️ 这个条件曾写成 `if args.no_pod_logs or ... is False:`（少了 not），后果是**恰好相反**：

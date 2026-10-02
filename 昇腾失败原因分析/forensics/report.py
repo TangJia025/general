@@ -499,6 +499,36 @@ def _log_retrieval_commands(case: dict, cluster: dict, pod_evidence: dict,
     return commands
 
 
+def placement_lines(cluster: dict, pod_evidence: dict) -> list:
+    """pod 是**真实负载**还是 Liqo 影子对象 —— 直接回答「这个 job 到底跑在哪个集群」。
+
+    为什么必须单独说一句：上面那行 `取证集群` 只说「**从**哪个集群查到了这个 pod」，
+    不等于「负载跑在那儿」。实测 runner 标签登记在 cn12-001，而同一个 pod 从
+    cn12-001 看是影子对象（node 为虚拟节点名 `mind-third-ci`），从 mind-third-ci 看
+    才是真实负载（node 为真实节点）—— 只报「取证集群：cn12-001」会被读成
+    「job 跑在 cn12-001」，这是本工具最容易误导人的一处。
+    """
+    placement = pod_evidence.get("placement")
+    if not placement:                     # 旧快照没有这个字段：宁可不写，也不猜
+        return []
+    node = placement.get("node") or "—"
+    if placement.get("shadow_pod") is True:
+        hint = cluster.get("placement_hint")
+        if hint:
+            provider = (f"提供方集群 `{hint}`（按虚拟节点名与已登记集群名匹配推断，"
+                        f"属命名约定，需人工确认）")
+        else:
+            provider = (f"提供方集群（虚拟节点名 `{placement.get('virtual_node') or node}` "
+                        f"未能唯一对应到某个已登记集群，无法判定是哪一个）")
+        return [f"- ⚠️ **真实负载不在本集群**：该 pod 带标签 `liqo.io/shadowPod=true`（Liqo 影子对象），"
+                f"`node` 字段 `{node}` 是**虚拟节点名**，真实负载运行在{provider}。"
+                f"本集群只是消费方 —— runner 标签登记在此，只说明**调度请求**发在此，"
+                f"不说明负载跑在此（容器状态与日志是 Liqo 反射来的，仍属该 pod 本身）"]
+    evidence_note = ("`liqo.io/shadowPod=false`" if placement.get("shadow_pod") is False
+                     else "无 Liqo 影子标签")
+    return [f"- 真实负载在**本集群**：pod {evidence_note}，`node` 字段 `{node}` 是真实节点名"]
+
+
 def _inline_rendered_tags(case: dict) -> set:
     """本 case 在**正文段落里已经渲染过**的依据类别 —— 判断依据据此去重，同一句不说两遍。
 
@@ -644,6 +674,7 @@ def render_case(case: dict, index: int) -> list:
                          f" 创建={pod_evidence.get('created_time') or '—'}")
             if cluster.get("match_reason"):
                 lines.append(f"- 定位说明：{cluster['match_reason']}")
+            lines.extend(placement_lines(cluster, pod_evidence))
             if cluster.get("window_note"):
                 # 时序本身自洽，但时间戳存疑（如精确名匹配却对不上时间）——仍需提示
                 lines.append(f"- {cluster['window_note']}")
