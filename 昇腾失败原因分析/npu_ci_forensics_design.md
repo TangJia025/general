@@ -521,8 +521,10 @@ job 字典从台账里还原出来」救回 —— 而这一步原先只对**本
 run 一旦滚出 `--lookback` 窗口，就再没有任何代码路径替它调用还原逻辑，它名下没分析完的
 job 会被**永久跳过**。实测代价：3 个 job（`108916075758` / `109408442978` / `109715573934`）
 停在 `snapshot_ok` 永不重试 —— 报告里没有、日志里也看不出异常；副作用是
-`pending(PHASE_B_STATES)` 恒非空，`run_once()` 的 `active` 恒为真，监听器 30s 空转、
-再也不进空闲档（累计 47 分钟 CPU）。故 `candidates_from_ledger(run_id=None)` 每轮把台账里
+`pending(PHASE_B_STATES)` 恒非空，`run_once()` 的 `active` 恒为真，监听器再也**不进空闲档**
+—— 日志里每轮都写「30s 后」，从未出现空闲档的「300s 后」；本轮调用自 09-30 14:42 起
+跑了 50 小时，systemd 记的 `CPUUsageNSec` 是 43 分钟（其中大头是抢快照的 kubectl 与真分析，
+空转本身每轮仅 ~0.05 秒 CPU，实测）。故 `candidates_from_ledger(run_id=None)` 每轮把台账里
 **所有**非终态 job 都还原出来（与实时 jobs 的结果按 job_id 去重，实时的那份优先）。
 反向守门同样必要：本轮已知**仍在跑**的 run 不还原 —— 还原出来的 job 的 `status` 恒为
 `completed`，喂给阶段 B 就会去取还不存在的日志（实测 404 BlobNotFound），反复失败直到
