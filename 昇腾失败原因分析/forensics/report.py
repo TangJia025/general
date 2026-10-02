@@ -486,7 +486,11 @@ def _log_retrieval_commands(case: dict, cluster: dict, pod_evidence: dict,
     """
     commands = []
     kubeconfig = cluster.get("kubeconfig_path")
-    pod, namespace = pod_evidence.get("pod"), cluster.get("namespace")
+    # namespace 必须取 **pod 实际所在**的那个：`cluster["namespace"]` 是 Cluster.md 登记的
+    # 项目共享 namespace（实测 `vllm-project`），而 runner pod 在仓库名派生的
+    # `vllm-project-vllm-ascend` 里 —— 用登记名拼出来的命令照抄会 NotFound。
+    pod = pod_evidence.get("pod")
+    namespace = pod_evidence.get("namespace") or cluster.get("namespace")
     if kubeconfig and pod and namespace:
         command = (f"kubectl --kubeconfig {kubeconfig} logs {pod} -n {namespace} "
                    f"-c {log_entry.get('container')}")
@@ -633,8 +637,18 @@ def render_case(case: dict, index: int) -> list:
                             f"身份 `{identity.get('identity')}`）")
         else:
             reachability = f"**不可达** —— {identity.get('error')}"
+        # namespace 写**两个**：登记的那个是查询口径，pod 实际所在的那个才是取证口径。
+        # 实测登记 `vllm-project`、pod 在 `vllm-project-vllm-ascend` —— 只写前者会让人
+        # 以为「登记的 namespace 里就有 runner pod」，取日志时也会找错地方。
+        pod_namespace = (cluster.get("pod_evidence") or {}).get("namespace")
+        registered_namespace = cluster.get("namespace")
+        if pod_namespace and pod_namespace != registered_namespace:
+            namespace_text = (f"pod 实际 namespace `{pod_namespace}`"
+                              f"（登记 namespace `{registered_namespace}`）")
+        else:
+            namespace_text = f"namespace `{registered_namespace}`"
         lines.append(f"- 取证集群：`{cluster.get('cluster_name')}`"
-                     f"（namespace `{cluster.get('namespace')}`，kubeconfig `{cluster.get('filename')}`）"
+                     f"（{namespace_text}，kubeconfig `{cluster.get('filename')}`）"
                      f"　连通性：{reachability}")
     elif cluster.get("candidates"):
         # 有候选集群却没拿到 pod：多是路径 B（pod 已回收）。这句话不能说成「没有目标集群」，
