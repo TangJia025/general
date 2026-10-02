@@ -486,7 +486,11 @@ def _log_retrieval_commands(case: dict, cluster: dict, pod_evidence: dict,
     """
     commands = []
     kubeconfig = cluster.get("kubeconfig_path")
-    pod, namespace = pod_evidence.get("pod"), cluster.get("namespace")
+    # namespace 必须取 **pod 实际所在**的那个：`cluster["namespace"]` 是 Cluster.md 登记的
+    # 项目共享 namespace（实测 `vllm-project`），而 runner pod 在仓库名派生的
+    # `vllm-project-vllm-ascend` 里 —— 用登记名拼出来的命令照抄会 NotFound。
+    pod = pod_evidence.get("pod")
+    namespace = pod_evidence.get("namespace") or cluster.get("namespace")
     if kubeconfig and pod and namespace:
         command = (f"kubectl --kubeconfig {kubeconfig} logs {pod} -n {namespace} "
                    f"-c {log_entry.get('container')}")
@@ -497,6 +501,36 @@ def _log_retrieval_commands(case: dict, cluster: dict, pod_evidence: dict,
     if job_log:
         commands.append(f"{job_log}（本 job 的控制台日志，含测试输出）")
     return commands
+
+
+def placement_lines(cluster: dict, pod_evidence: dict) -> list:
+    """pod 是**真实负载**还是 Liqo 影子对象 —— 直接回答「这个 job 到底跑在哪个集群」。
+
+    为什么必须单独说一句：上面那行 `取证集群` 只说「**从**哪个集群查到了这个 pod」，
+    不等于「负载跑在那儿」。实测 runner 标签登记在 cn12-001，而同一个 pod 从
+    cn12-001 看是影子对象（node 为虚拟节点名 `mind-third-ci`），从 mind-third-ci 看
+    才是真实负载（node 为真实节点）—— 只报「取证集群：cn12-001」会被读成
+    「job 跑在 cn12-001」，这是本工具最容易误导人的一处。
+    """
+    placement = pod_evidence.get("placement")
+    if not placement:                     # 旧快照没有这个字段：宁可不写，也不猜
+        return []
+    node = placement.get("node") or "—"
+    if placement.get("shadow_pod") is True:
+        hint = cluster.get("placement_hint")
+        if hint:
+            provider = (f"提供方集群 `{hint}`（按虚拟节点名与已登记集群名匹配推断，"
+                        f"属命名约定，需人工确认）")
+        else:
+            provider = (f"提供方集群（虚拟节点名 `{placement.get('virtual_node') or node}` "
+                        f"未能唯一对应到某个已登记集群，无法判定是哪一个）")
+        return [f"- ⚠️ **真实负载不在本集群**：该 pod 带标签 `liqo.io/shadowPod=true`（Liqo 影子对象），"
+                f"`node` 字段 `{node}` 是**虚拟节点名**，真实负载运行在{provider}。"
+                f"本集群只是消费方 —— runner 标签登记在此，只说明**调度请求**发在此，"
+                f"不说明负载跑在此（容器状态与日志是 Liqo 反射来的，仍属该 pod 本身）"]
+    evidence_note = ("`liqo.io/shadowPod=false`" if placement.get("shadow_pod") is False
+                     else "无 Liqo 影子标签")
+    return [f"- 真实负载在**本集群**：pod {evidence_note}，`node` 字段 `{node}` 是真实节点名"]
 
 
 def _inline_rendered_tags(case: dict) -> set:
@@ -603,8 +637,18 @@ def render_case(case: dict, index: int) -> list:
                             f"身份 `{identity.get('identity')}`）")
         else:
             reachability = f"**不可达** —— {identity.get('error')}"
+        # namespace 写**两个**：登记的那个是查询口径，pod 实际所在的那个才是取证口径。
+        # 实测登记 `vllm-project`、pod 在 `vllm-project-vllm-ascend` —— 只写前者会让人
+        # 以为「登记的 namespace 里就有 runner pod」，取日志时也会找错地方。
+        pod_namespace = (cluster.get("pod_evidence") or {}).get("namespace")
+        registered_namespace = cluster.get("namespace")
+        if pod_namespace and pod_namespace != registered_namespace:
+            namespace_text = (f"pod 实际 namespace `{pod_namespace}`"
+                              f"（登记 namespace `{registered_namespace}`）")
+        else:
+            namespace_text = f"namespace `{registered_namespace}`"
         lines.append(f"- 取证集群：`{cluster.get('cluster_name')}`"
-                     f"（namespace `{cluster.get('namespace')}`，kubeconfig `{cluster.get('filename')}`）"
+                     f"（{namespace_text}，kubeconfig `{cluster.get('filename')}`）"
                      f"　连通性：{reachability}")
     elif cluster.get("candidates"):
         # 有候选集群却没拿到 pod：多是路径 B（pod 已回收）。这句话不能说成「没有目标集群」，
@@ -644,6 +688,7 @@ def render_case(case: dict, index: int) -> list:
                          f" 创建={pod_evidence.get('created_time') or '—'}")
             if cluster.get("match_reason"):
                 lines.append(f"- 定位说明：{cluster['match_reason']}")
+            lines.extend(placement_lines(cluster, pod_evidence))
             if cluster.get("window_note"):
                 # 时序本身自洽，但时间戳存疑（如精确名匹配却对不上时间）——仍需提示
                 lines.append(f"- {cluster['window_note']}")

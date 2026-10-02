@@ -51,8 +51,9 @@ def named(suffix):
     return f"{LABEL}-{suffix}-runner-{suffix}"
 
 
-def find(pods):
-    return cf.find_job_pod(pods, OTHER_RUNNER, [LABEL], STEP_START, STEP_END)
+def find(pods, runner_name=None):
+    """按标签匹配（不传 runner_name）—— 这是 job 未被分配 runner 时才走的路径。"""
+    return cf.find_job_pod(pods, runner_name, [LABEL], STEP_START, STEP_END)
 
 
 # ---------- 1. 时间窗判据的方向 ----------
@@ -145,6 +146,42 @@ def test_picks_the_plausible_candidate_over_the_pending_one():
     assert got["pod"] is plausible, got
     assert got["time_consistent"] is True
     assert "剔除 1 个尚未启动的" in (got.get("reason") or ""), got.get("reason")
+
+
+def test_known_runner_name_blocks_label_guessing():
+    """★ 本次修的缺陷：runner_name 已知却查不到时，**不许**拿同标签的别的 pod 顶替。
+
+    实测样例（2026-10-02）：job 110701473809 的 runner_name = …-26v84-runner-wddd8 已被回收，
+    标签匹配选中同 run 内**另一个成功 job**(110701477428) 的 pod …-runner-5j29n，并把它标成
+    「runner 标签 + 时间窗收敛」。161 份快照里 19 份是这样取错 pod 的（其中 5 份取到的是
+    别人 runner 的 `-workflow` 伴生 pod）。
+    """
+    sibling = make_pod(named("5j29n"), start_time="2026-09-24T09:20:00Z",
+                       created="2026-09-24T09:20:00Z")
+    got = cf.find_job_pod([sibling], OTHER_RUNNER, [LABEL], STEP_START, STEP_END)
+    assert got["pod"] is None, "精确名查不到时不该退到标签猜测"
+    assert got.get("informative") is True
+    assert "runner_name 精确名" in got["reason"] and "不构成本 job" in got["reason"], got["reason"]
+    # 措辞必须能落到路径 B 的「同标签现存 pod 均非本 job 现场」那一支，而不是「pod 多已回收」
+    assert "已被回收" in got["reason"]
+
+
+def test_workflow_pod_of_another_runner_is_not_adopted():
+    """别人的 runner 的 `-workflow` 伴生 pod 同样不许顶替：它属于另一个 runner 段。"""
+    other_workflow = make_pod(f"{LABEL}-w9qwr-runner-b8f9x-workflow",
+                              start_time="2026-09-24T09:20:00Z",
+                              created="2026-09-24T09:20:00Z")
+    got = cf.find_job_pod([other_workflow], OTHER_RUNNER, [LABEL], STEP_START, STEP_END)
+    assert got["pod"] is None, got
+
+
+def test_label_guessing_still_works_without_runner_name():
+    """job 未被分配 runner（runner_name 缺失）时，标签匹配仍是唯一线索，必须保留。"""
+    plausible = make_pod(named("ccccc"), start_time="2026-09-24T09:20:00Z",
+                         created="2026-09-24T09:20:00Z")
+    got = find([plausible], runner_name=None)
+    assert got["pod"] is plausible, got
+    assert "标签" in got["match_kind"], got
 
 
 def test_exact_runner_name_wins_over_label_guessing():
