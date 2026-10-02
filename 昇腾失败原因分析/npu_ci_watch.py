@@ -547,6 +547,22 @@ class Watcher:
                 recorded = self.ledger.cursor("scanned_runs", {}) or {}
                 recorded[str(run_id)] = run.get("updated_at")
                 self.ledger.set_cursor("scanned_runs", recorded)
+        # 兜底：台账里所有非终态 job 都要还原，**不按 run 过滤**。
+        # 上面两个入口（僵尸 run、已扫描 run）都要求 run 还在本轮视野里，而滚出 --lookback
+        # 窗口的 run 谁也代表不了它 —— 它名下没分析完的 job 会就此永久丢失。
+        # 去重按 job_id：已收集的那份来自实时 jobs，字段更全，优先保留。
+        known = {job["id"] for job in candidates}
+        for job in self.candidates_from_ledger():
+            # 已知仍未结束的 run 不还原：还原出来的 job 的 status 恒为 "completed"，
+            # 一旦喂给阶段 B 就会去取还不存在的日志（实测 404 BlobNotFound），
+            # 反复失败直到 gave_up —— 那是**制造**失败，比不还原更糟。
+            # 未知状态的 run 仍然还原：它多半是滚出窗口的老 run（收集不到状态），
+            # 而那正是本兜底要救的那一类。
+            if self.current_run_status.get(job["run_id"]) not in (None, "completed"):
+                continue
+            if job["id"] not in known:
+                candidates.append(job)
+                known.add(job["id"])
         self.drain_stale_scans()
 
         # 阶段 A：抢快照（此刻 pod 必在）；阶段 B：job 结束后补日志与报告
@@ -570,21 +586,31 @@ class Watcher:
         active = any(status != "completed" for status in self.current_run_status.values())
         return active or bool(self.ledger.pending(PHASE_B_STATES))
 
-    def candidates_from_ledger(self, run_id: int) -> list:
-        """从台账里把某个**已结束**run 中还没处理完的 job 还原成 job 字典。
+    def candidates_from_ledger(self, run_id: int | None = None) -> list:
+        """从台账里把还没处理完的 job 还原成 job 字典；run_id=None 表示**不按 run 过滤**。
 
         为什么需要这一步：`scanned_runs` 记账避免了重复取 jobs，但台账里可能还有刚记下、
         还没来得及分析（或分析失败待重试）的 job。若不还原，这些 job 会随着「run 已扫描」被
         永久跳过 —— 表现为「失败了、台账里有、但报告里没有」，是最难发现的那类丢失。
 
         用 status="completed" 是**可靠推断**而不是猜测：run 已结束 ⇒ 它的所有 job 都已结束。
+
+        ⚠️ run_id=None 那一档是**必须**的：按 run 过滤只能救回「本轮视野里还有这个 run」的 job。
+        run 一旦滚出 --lookback 窗口（或已结束且被记进 scanned_runs），它就不再出现在
+        collect_runs() 的结果里，于是**没人会替它调用本方法**。实测代价：3 个 job
+        （108916075758 / 109408442978 / 109715573934）停在 snapshot_ok 状态永不重试，
+        报告里没有、日志里也看不出异常；副作用是 pending(PHASE_B_STATES) 永不为空，
+        run_once() 的 active 恒为真，监听器再也不进空闲档（日志里每轮都是「30s 后」，
+        从未出现空闲档的「300s 后」）—— 本轮调用自 09-30 14:42 起跑了 50 小时，
+        systemd 记的 CPUUsageNSec 是 43 分钟。
         """
         restored = []
         for record in self.ledger.pending(PHASE_B_STATES):
-            if record.get("run_id") != run_id:
+            record_run_id = record.get("run_id")
+            if run_id is not None and record_run_id != run_id:
                 continue
             restored.append({
-                "id": record["job_id"], "run_id": run_id,
+                "id": record["job_id"], "run_id": record_run_id if run_id is None else run_id,
                 "name": record.get("job_name"), "workflow": record.get("workflow"),
                 "runner_name": record.get("runner_name"), "labels": record.get("labels") or [],
                 "failed_step": record.get("failed_step"),
