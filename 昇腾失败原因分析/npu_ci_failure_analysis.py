@@ -1070,14 +1070,14 @@ for rec in failed_jobs:
         detail.append({"workflow": rec["workflow"], "job_name": rec["job_name"], "tag": tag,
                        "bucket": bucket, "sig": sig, "link": link, "owner": owner,
                        "step": step_name, "chip": rec["chip"], "scanned": True,
-                       "windowed": window is not None, "duplicate": False,
+                       "windowed": windowed, "duplicate": False,
                        "decisive": False,        # 假失败不是真失败，无所谓「提前退出」
                        "peer": None, "sig_source": None})
     else:
         # 判据用的 text_scan 与本函数的扫描窗口一致（同一段文本判桶、判是否已定性），
         # 不能换成全文：全文里别的步骤留下的 pytest 判定行不是本步骤的结论。
         # 同理桶与 owner 也用**兜底之前**的那对（verdict_*），见上面赋值处的注释。
-        record(bucket, sig, owner, True, window is not None,
+        record(bucket, sig, owner, True, windowed,
                decisive=is_decisive(verdict_bucket, verdict_owner, text_scan),
                peer=peer, sig_source=sig_source)
 
