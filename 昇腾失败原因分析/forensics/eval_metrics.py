@@ -227,6 +227,28 @@ def cost_summary(records):
             "elapsed_total": (sum(elapsed) if elapsed else None)}
 
 
+def coverage_split(records):
+    """把已裁定的样本按「闭集里到底有没有正确的那只桶」劈成两半。
+
+    为什么非劈不可：整体一致率把性质完全不同的两种错误混成一个数 ——
+      - **可表达**（闭集里有正确桶，规则却选了别的）：排序/逻辑缺陷。
+        这正是第一阶段要修的东西，换判决器就能改善；
+      - **不可表达**（闭集里根本没有正确桶，例如「性能未达标(benchmark)」）：
+        **覆盖**缺陷。换判决器也表达不出来，得先往桶表里加桶 ——
+        把这类算进「上 LLM 的收益」，就是拿覆盖缺口给判决器记功。
+    两半的分母都写出来，读者自己看哪个才是主要缺口。
+    """
+    groups = {"expressible": [], "not_expressible": [], "unmarked": []}
+    for record in records:
+        mark = record.get("truth_expressible")
+        key = "expressible" if mark is True else \
+              "not_expressible" if mark is False else "unmarked"
+        groups[key].append(record)
+    return {name: agreement_detail([(row.get("pred_class"), row.get("truth_class"))
+                                   for row in items])
+            for name, items in groups.items()}
+
+
 def arm_metrics(records, *, n=2000, seed=0):
     """一个臂的全部指标。三臂（规则 / 模型A / 模型B）走**同一个函数** ——
     口径差一点，比出来的差值就没有意义（而「规则臂复现 ~48%」正是靠这个函数校准的）。"""
@@ -246,6 +268,7 @@ def arm_metrics(records, *, n=2000, seed=0):
         "degrade_rate": degrade_rate(records),
         "fallback_reasons": fallback_reasons(records),
         "by_stratum": by_stratum(records),
+        "coverage_split": coverage_split(records),
         "cost": cost_summary(records),
     }
 
