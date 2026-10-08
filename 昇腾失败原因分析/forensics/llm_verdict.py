@@ -11,13 +11,18 @@
 
 3. **降级必须显式。** 任何一步失败都退回规则判决，且把原因具名写进 `verdict.llm.fallback_reason`：
    静默退回等于把「AI 判的」和「规则判的」混成一种东西，报告读者无法分辨，比不接 LLM 更糟。
+
+4. **桶是事后归类，不是判决入口。** `verdict_class` 选填：闭集里没有贴合的就留空。
+   强迫模型在定性**之前**先落一个桶，等于把规则层「首个命中正则胜出」原样搬进模型 ——
+   实测那正是 60% 的真值根本不在 32 桶里、而模型仍被逼着挑一个最接近的成因。
+   投影结果只用于统计/去重/派活，**不进任何给人读的结论行**。
 """
 import json
 import re
 
 # 改了 prompt（含纪律条款、输出契约）必须改这里：它进判决缓存的键与报告，
 # 否则改完 prompt 会静默复用旧口径的判决，「评测证明改进了」而线上还是旧的。
-PROMPT_VERSION = "v1"
+PROMPT_VERSION = "v2"
 
 OWNER_ENUM = ("infra", "code", "mixed", "unknown")
 CONFIDENCE_ENUM = ("high", "medium", "low")
@@ -82,9 +87,14 @@ def _require(parsed, field, types):
 def parse_llm_verdict(text, *, allowed_classes):
     """解析并校验模型输出。字段缺失/类型错/枚举越界一律抛 VerdictParseError（→ 降级）。
 
-    必填：root_cause / owner / confidence / verdict_class / evidence_lines
-    选填：phenomenon / decisive_line / disagrees_with_rule / missing_evidence
+    必填：root_cause / owner / confidence / evidence_lines
+    选填：verdict_class / phenomenon / decisive_line / disagrees_with_rule / missing_evidence
       —— 诊断性字段不参与判决，缺了不该让整条判决作废（那会白白抬高降级率）。
+
+    `verdict_class` 是**事后归类**（见模块 docstring 第 4 条），因此选填、默认空串，且
+    **取值越界不再作废整条判决**：把「模型挑了个闭集里没有的桶」升级成「整条判决不可用」，
+    代价（丢掉一条本来可用的自由文本判决）与收益完全不成比例。越界与否记在
+    `verdict_class_in_closed_set` 里，供指标读取 —— 它本身就是闭集覆盖不足的读数。
     """
     parsed = extract_json(text)
 
@@ -97,9 +107,13 @@ def parse_llm_verdict(text, *, allowed_classes):
     confidence = _require(parsed, "confidence", str)
     if confidence not in CONFIDENCE_ENUM:
         raise VerdictParseError("bad_enum:confidence", confidence)
-    verdict_class = _require(parsed, "verdict_class", str)
-    if verdict_class not in tuple(allowed_classes) + FALLBACK_CLASSES:
-        raise VerdictParseError("bad_enum:verdict_class", verdict_class)
+    raw_class = parsed.get("verdict_class")
+    if raw_class is None:
+        verdict_class = ""
+    elif not isinstance(raw_class, str):
+        raise VerdictParseError("bad_type:verdict_class", type(raw_class).__name__)
+    else:
+        verdict_class = raw_class.strip()
 
     evidence_lines = _require(parsed, "evidence_lines", list)
     if not evidence_lines:
@@ -116,6 +130,9 @@ def parse_llm_verdict(text, *, allowed_classes):
         "owner": owner,
         "confidence": confidence,
         "verdict_class": verdict_class,
+        # 空串（模型没归类）与「归了个闭集外的名字」都记 False —— 两者对指标的含义不同，
+        # 靠 verdict_class 是否为空串区分，不靠这个布尔值。
+        "verdict_class_in_closed_set": verdict_class in tuple(allowed_classes) + FALLBACK_CLASSES,
         "phenomenon": str(parsed.get("phenomenon") or "").strip(),
         "evidence_lines": list(evidence_lines),
         "decisive_line": decisive_line,

@@ -67,23 +67,30 @@ SYSTEM_PROMPT = """你是昇腾 NPU CI 失败的根因判决者。你会看到�
 ```json
 {
   "root_cause": "一句话，含失败机制（中文，≤200 字）",
+  "phenomenon": "现象是什么（名词短语，≤20 字，不写机制、不写数字）",
   "owner": "code",
   "confidence": "high",
-  "verdict_class": "<下面的闭集之一>",
-  "phenomenon": "现象描述，自由文本，用于人工阅读与聚类",
   "decisive_line": 1234,
   "evidence_lines": [1230, 1234, 1240],
+  "verdict_class": "<可选的事后归类；见下，贴合才填>",
   "disagrees_with_rule": true,
   "missing_evidence": "补什么才能定性；没有就留空串"
 }
 ```
 
+**先写 `root_cause` 与 `phenomenon`，最后才看 `verdict_class`。** 顺序很重要：判决是\
+对这次失败的解释，不是对某个桶的填空。
+
 字段约束：
 - `owner` ∈ `infra`（集群/调度/镜像仓库/网络等基础设施侧）\| `code`（业务代码、用例、精度门限）\
 \| `mixed` \| `unknown`；
 - `confidence` ∈ `high` \| `medium` \| `low`（拿不出决定性行只能是 `low`）；
-- `verdict_class` 必须严格取自下面给出的闭集，一个字都不能改；闭集里没有合适的就选 `其他`，\
-并在 `phenomenon` 里写清楚是什么现象；
+- `phenomenon` 是**现象的名词短语**：≤20 字，只描述发生了什么，不写机制、不写数字、\
+不写结论。**同一个现象在不同的 job 上必须用同一句话** —— 它会被跨 job 聚类，\
+用来发现该新增哪些归类，措辞漂移会让聚类失效；
+- `verdict_class` **选填**：若下面闭集里**恰好**有一个贴合你判断的，就填上它（一个字都不能改）；\
+**不贴合就留空串**（也可以显式填 `其他`）。**不要挑一个最接近的** —— 归错类比不归类更糟，\
+留空不是失败，是有效信息；
 - `evidence_lines` 非空，元素是整数行号。
 
 `disagrees_with_rule` 只是诊断字段（服务端会按 `verdict_class` 与规则桶自行重算），\
@@ -102,10 +109,13 @@ def build_system_prompt(allowed_classes):
     """把桶闭集与版本号拼进 system prompt。
 
     闭集必须来自调用方（规则层桶表）：写死在 prompt 里的话，桶表一改，
-    prompt 的闭集与解析器的闭集就会静默分叉 —— 模型选了个解析器不认的类，全部降级。
+    prompt 的闭集与解析器的闭集就会静默分叉 —— 模型填了个解析器不认的类，指标就不可比。
+
+    小标题的前缀 `# verdict_class 闭集` 是测试用来切分闭集段的锚点，改动它要同步改
+    `tests/test_llm_prompt.py::_closed_set_section`。
     """
     classes = "、".join(f"`{name}`" for name in allowed_classes)
-    return (f"{SYSTEM_PROMPT}\n# verdict_class 闭集（只能从此表中选择）\n\n{classes}\n"
+    return (f"{SYSTEM_PROMPT}\n# verdict_class 闭集（可选的事后归类：贴合才填，不贴合留空）\n\n{classes}\n"
             f"\n（prompt 版本：{PROMPT_VERSION}）\n")
 
 
