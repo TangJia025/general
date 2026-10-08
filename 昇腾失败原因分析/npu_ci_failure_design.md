@@ -497,6 +497,7 @@ node1..nodeN 的输出从来不进 job log。
 - **cancelled 语义**：cancelled 且从未启动 → 调度/资源问题；否则多为主动取消/上游中断；
 - **未分类兜底**：依赖 `(FAILED|Error|error:)` 正则，可能把非根因的普通报错行当证据。这类样本现在也会进 `待集群取证`，不再硬给一个桶；
 - **桶体系是经验校准的产物**：32 桶的**顺序**承载了大量踩坑结论（见 §7.2 的校准说明），新增桶时必须回归验证既有样例，不能只测新样例。
+- **现象归因这一层的实测准确率与它的天花板**：见 §12.5 —— 这批数字同时说明了「排序坏了」与「桶表本身盖不住一部分真因」两件事，后者不是判决器能修的。
 
 ## 11. 第 2 步（集群取证）· 状态与边界
 
@@ -522,3 +523,166 @@ node1..nodeN 的输出从来不进 job log。
 > 目标 workflow 一失败就抢集群快照（pod 是一次性的），job 结束后自动补日志分类与报告。
 > 为什么必须两阶段、台账怎么防重复与防静默丢弃、systemd 部署，见
 > [npu_ci_forensics_design.md](npu_ci_forensics_design.md) 的 §9 与 [deploy/README.md](deploy/README.md)。
+
+## 12. 根因判决 LLM 化 · 第一阶段（离线评测，未接入服务）
+
+### 12.1 决策与边界
+
+**判决这一层换成 LLM，规则层退到「取数与校验」位。** 规则层擅长的部分（`runner_name`
+精确身份、liqo placement、集群归属、先例检索）实测可靠，不动。
+
+第一阶段**只做离线评测**，不碰服务：不改 `npu_ci_watch.py`、不改 `deploy/` 里的 unit、
+`--llm-judge` 默认关闭。设计目标是一个可复现的数字，而不是先上线再解释效果。
+
+### 12.2 病灶：是排序，不是取数
+
+决定性证据是「规则命中的那一行到底是什么行」：
+
+| 观测 | 数值 |
+|---|---|
+| 语料最大桶 `依赖/安装(ImportError)` 抽样 40 条，真依赖问题 | **0 条**（40/40 的 ImportError 字串只在 `WARNING` 行） |
+| 该桶 66 份缓存日志里 ImportError 命中 345 次，落在 `WARNING` 行 | **343 次** |
+| 本设计文档 §7.2 的桶序：`classify_text` 按表序取**首个命中** | 良性 WARNING 因此排在真判据之前 |
+| 冻结集 30 例中，规则命中行落进人工标注证据行 | **3/30** |
+| 弱决定性行率（命中行是 WARNING/INFO 而置信度非低） | **26.7%** |
+
+即：真判据通常在窗口内（早期那批样本上下过一条观测：错判样本 11/12 的真值行就在被扫描的尾部
+窗口里；该批样本的代理真值口径已退役，见 §12.5，故这条只作旁证，不作依据），
+只是被「首个命中正则胜出」排到了良性噪声后面。**换判决器换的是排序能力，
+不是取数能力** —— 这也是为什么不能为了省 token 而用正则预筛喂给模型：
+那等于把「首个命中正则胜出」原封不动搬到模型前面，会把天花板焊死。
+
+### 12.3 判决契约与降级
+
+判决同时产出**闭集类**与**自由文本现象**：
+
+```jsonc
+{
+  "root_cause": "一句话，含机制",
+  "owner": "code",                    // infra|code|mixed|unknown
+  "confidence": "high",               // high|medium|low
+  "verdict_class": "测试用例失败(pytest ret=1)",  // 闭集：32 桶 + 其他 + 未分类
+  "phenomenon": "用例真失败（精度/逻辑）",         // 自由文本
+  "decisive_line": 4,                 // 必须是 evidence_lines 之一
+  "evidence_lines": [2, 3, 4, 5],     // ⊆ 窗口行号集合，非空
+  "missing_evidence": "缺用例级 traceback…"
+}
+```
+
+**为什么要两套**：只有自由文本 → 一致率算不出来、无法与基线比；只有闭集 → 把模型锁回桶粒度，
+而「桶粒度错了」正是要修的问题。故**指标用闭集类**（可算、可跨臂比），**报告显示自由文本**；
+`verdict_class == "其他"` 的样本按现象聚类，就是「该新增哪个桶」的数据驱动候选。
+
+**不信任模型自报**：`disagrees_with_rule` 由服务端按 `verdict_class != rule_bucket` 计算；
+`evidence_lines ⊆ 窗口行号集合` 是抑制幻觉的核心闸门（模型可以编，编的行号过不了）。
+
+**降级绝不静默**：超时 / 429 / 5xx / 4xx / 网络 / 空 content / 非法 JSON / 缺字段 / 枚举越界 /
+引用窗口外行号 / 证据不可用 / 预算耗尽，全部退回规则判决，且 `fallback_reason` 具名。
+降级时四条硬约束：① `root_cause`/`owner` **逐字等于**规则判决；② 置信度封顶到「低」并注明退回；
+③ `needs_human=True`；④ `basis` 追加一行原因说明。报告摘要给出降级率与原因分布 ——
+**降级率本身就是线上健康指标**。
+
+置信度与结论同排（`根因（LLM 判决，置信度 high）`），`low` 时把 `missing_evidence` 渲染成
+「补齐什么才能定性」；`needs_human` 做成单向棘轮（LLM 只能说 True，不能清除规则或集群侧已判出的 True）；
+`owner_from_cluster=True` 时 LLM 不得覆盖 owner，只加冲突标记并降置信。
+
+### 12.4 Prompt 纪律（成败几乎全在这里）
+
+同一份日志的 A/B 实测：朴素 prompt（「你是根因分析器，输出 JSON」）给出 `owner=infra`、
+`confidence=high`、把 WARNING 当根因、`disagrees_with_rule=false` —— **原样重演了正则的锚定偏差**；
+带纪律的 prompt 给出 `owner=code`、`decisive_line=4`、`disagrees_with_rule=true`。
+
+system prompt 的六条纪律：
+1. **只有终局判定行能定性**，逐个点名形态：pytest 的 `short test summary info` 段与
+   `N failed, M warnings in …`、`pytest exit code: ret=N`；benchmark 的 `Performance verification failed`。
+2. **终局行出现即责任方在业务侧**，不得再去上游找「更根本」的原因（直接对抗 §12.2 的实测缺陷）。
+3. **WARNING/INFO 不是根因**，并**具名**列出本仓陷阱：`No module named 'vllm._deepselect_C'`、
+   `Failed to import the … extension`、`ERR99999` 是框架兜底打印。具名比抽象规则有效得多。
+4. **强制引用证据行**：`decisive_line` 是其中最能定性的一行；**拿不出决定性行就必须选 `low`**。
+5. **禁止外推**：不得补日志里没有的机制，缺什么写进 `missing_evidence`。
+6. 输出**只有一个 JSON 对象**，无解释文本。
+
+`eval/canaries/import_error_warning.json` 把上述 A/B 钉成回归：自包含 7 行摘录
+（陷阱是 `Error retrieving safetensors…` 与 `Failed to import the DeepSelect extension` 两条 WARNING，
+判据是吞吐量数值与 `not greater than or equal to 0.97 * baseline`），
+朴素 prompt 必错、纪律 prompt 必对。`PROMPT_VERSION` 进缓存键：改 prompt 必须改它，
+否则会静默复用旧口径的判决。
+
+### 12.5 评测口径（本阶段的核心交付）
+
+**三层避免自证**：
+- 终局行抽取器**只用于分层抽样与选金丝雀，绝不作评分真值** —— 拿它当真值，测出来的只是
+  「LLM 跟我的启发式像不像」；
+- 评分真值是**人工裁定表**，且顺序是硬要求：**先冻结真值、再跑 LLM**；裁定者**看不到 LLM 输出**；
+- 抽 20 例双裁并报 **Cohen's κ**：κ 是任何准确率的天花板，不报 κ 的准确率在评审里站不住。
+
+**冻结集**（`eval/`，30 例，确定性配额，名单可复跑）：defect 21（benchmark 12 / pytest 8 / 其他 1）、
+normal 5、undetermined 4。单按分层会让 42 例 benchmark 压满缺陷层，于是「缺陷层」实际只测一个家族，
+故按**失败家族**再分。日志窗口只在本机与端点之间流动，**不入库**（本仓 PUBLIC）；
+入库的 `cases.jsonl` 用 sha256 钉住窗口文本，可按 job_id 重取并逐字节校验。
+
+**规则基线：48% 已退役，为什么** —— 原基线是用「终局行代理真值」在另一批样本上量出来的 48%。
+本次按计划要求复现时只得到 8.2%（5/61），且加不加步骤时间窗**完全一样**（同为 8.2%），
+证明窗口口径不是原因。机制是两条：① 代理真值是用**同一张 32 桶表**在少数行上生成的，
+在该池里退化成 3 个粗粒度值（36× `测试用例失败(pytest ret=1)`、22× `未分类`、3× `测试未执行`），
+细粒度规则桶在结构上不可能匹配，8.2% 是伪影；② `terminal_bucket` 与 `rule_bucket` 是在**同一份**
+`scan_text` 上算的，该指标实际比的是「规则 vs 规则自己的一个子集」，对窗口不敏感。
+**故改用人工真值、同一 N、同一函数（`eval_metrics.arm_metrics`）三臂同口径对比。**
+
+**现行基线**（`python3 eval/run_eval.py --arms rule`，30 例人工真值、状态 `proposed`）：
+
+| 指标 | 值 |
+|---|---|
+| 现象归因一致率 | **6/30 = 20.0%**（95% CI 6.7%~36.7%） |
+| ├ 闭集内可表达（n=12） | 6/12 = **50.0%** |
+| └ 闭集内不可表达（n=18） | 0/18 = **0.0%** |
+| owner 一致率 | 23/30 = 76.7%（CI 60%~90%） |
+| 分层 | defect 3/21 = 14.3% / normal 3/5 = 60.0% / undetermined 0/4 = 0.0% |
+| 弱决定性行率 | 26.7% |
+
+**必须一起读的两个天花板**：
+- **闭集一致率的上限是 40%**（12/30）—— 18 条真值在现有 32 桶里**没有正确的桶**，
+  任何判决器（含 LLM）都表达不出来。这 18 条里 10 条是 benchmark 性能/精度未达标，
+  而 `npu_ci_failure_analysis.py` 的 32 个桶里**根本没有性能桶**（grep「性能」零命中）。
+  这是**覆盖缺陷**，换个判决器修不了，得先加桶；
+- 因此指标必须**分半算**（`eval_metrics.coverage_split`）：可表达子集量的是判决器好坏
+  （规则已 50%），不可表达子集量的是桶表覆盖度。不分半，就会拿覆盖缺口给判决器记功。
+- **决策门需重定**：原定「缺陷层准确率的 CI 下界 > 规则基线 + 5pp」在本冻结集上几乎无区分力
+  （defect 层规则 14.3%、n=21、CI 极宽）。建议改成「**可表达子集上，LLM 的 CI 下界 > 50%**」，
+  覆盖度单列一项跟进。
+
+**由真值集直接暴露的误配**（规则桶 → 真值，均可在 `eval/runs/*/metrics.json` 的混淆矩阵复核）：
+`性能未达标(benchmark)` → `断言失败(代码或精度)` ×5 / `依赖/安装(ImportError)` ×3；
+`测试参数缺失(config未传入)` → `依赖/安装(ImportError)` ×2；`内网镜像拉取失败(SWR)`
+→ `多节点pod调度/就绪失败(k8s侧)` ×2（pod 调度正常，卡在拉镜像）；
+`KV传输后端(Mooncake)初始化失败(EL0004)` → `OOM/显存不足` ×2（owner 会因此错派给业务侧）。
+
+### 12.6 复现步骤
+
+```bash
+# 1) 重取日志窗口并校验 sha（窗口文本不入库）
+python3 eval/build_fixtures.py            # scan_sha256 必须与 cases.jsonl 逐字节相同
+# 2) 复跑抽样名单（确定性；变了说明配额或池子变了）
+python3 eval/select_sample.py --json
+# 3) 规则基线（同 N、同函数；LLM 臂走同一个 arm_metrics）
+python3 eval/run_eval.py --arms rule --job-id <id> …      # 或 --dry-run 验 harness，$0
+# 4) 三臂跑分（先冻结并裁定真值，再跑 LLM；真值未裁定时所有数字不成立）
+python3 eval/run_eval.py --arms rule,deepseek-flash,deepseek-v4-pro
+```
+
+### 12.7 第二阶段（本次未做）与阶段边界
+
+第二阶段才动服务：`forensics/report.py` 新增 `apply_llm_verdict()`（**`synthesize()` 一个字不改**，
+`--llm-judge` 关闭时输出与今天逐字节相同）；扫描窗写 sidecar + handoff 加 `scan_ref`（sha 钉住）；
+第 5 步按 `job_id` 缓存判决（缓存键**必须含 `prompt_version`**）；`npu_ci_watch.py` 读
+`LLM_ENABLED` 决定是否给阶段 B 子进程加 `--llm-judge`；unit 加
+`EnvironmentFile=-%h/.config/npu-ci-watch/deepseek.env`（`chmod 600`）—— **改 unit 属需用户确认的操作**。
+
+**阶段边界**：阶段 A（`npu_ci_watch.py` 里抢集群快照的进程内直调）**绝不引入 LLM** ——
+它跑在「失败步骤结束 → job 结束」实测固定 55s 的窗口里，一次 40K token 推理会直接吃掉抢快照的时间窗；
+且它是进程内直调，任何改动都要重启常驻服务，与「先离线评测再上线」冲突。
+
+**成本量级**：单例约 47K 输入 token（1200 行窗口实测 36K~64K，均值 46.6K，chars/token ≈ 2.6）；
+30 例 × 2 模型臂 ≈ 2.8M 输入 token，一次评测在几毛钱量级。两个省钱的直觉**都不成立**：
+折叠重复行只省 1%；去掉噪声行窗口反而**变大 11%**（行数上限往回吃更多内容）。
+**上限才是约束，噪声不是** —— 要省就压输出或压样本量。
