@@ -23,6 +23,7 @@ BASE_DIR = TEST_DIR.parent
 sys.path.insert(0, str(BASE_DIR))
 
 from eval.select_sample import pick_evenly, select     # noqa: E402
+from forensics.llm_verdict import FALLBACK_CLASSES, OTHER_CLASS   # noqa: E402
 
 CASES = BASE_DIR / "eval/cases.jsonl"
 TRUTHS = BASE_DIR / "eval/truths.jsonl"
@@ -186,11 +187,66 @@ def test_canaries_pin_both_arms_and_are_self_contained():
             f"{path.name}：朴素与纪律两臂的期望相同，这个金丝雀区分不了任何东西"
         assert 1 <= disciplined["decisive_line"] <= len(excerpt), \
             f"{path.name}：decisive_line 不在摘录范围内（行号是相对摘录的）"
-        assert canary["truth"]["verdict_class"] == disciplined["verdict_class"], \
-            f"{path.name}：金丝雀的期望与真值类不一致"
         # 引用必须在摘录里，否则这条金丝雀没法在服务端闸门下复核
         for line in disciplined.get("evidence_lines_are_a_subset_of", []):
             assert 1 <= line <= len(excerpt), f"{path.name}：引用行 {line} 越出摘录"
+
+
+def test_canaries_expect_a_class_the_model_could_legally_emit():
+    """纪律臂期望的归类必须是**当时的契约允许模型输出的东西**。
+
+    这条是补上去的：`disciplined_must_get_right.verdict_class` 曾写着 `性能未达标(benchmark)`
+    —— 一个**不在闭集里**的真值类。旧契约下模型必须落一个桶，所以那条期望等于要求模型
+    **违反**自己的输出契约；没有任何测试跑它，于是没人发现。现在契约改为「不贴合就留空」，
+    期望值只能是「空串」或闭集内的名字，两者不许混。
+    """
+    from eval.production import allowed_classes
+    allowed = set(allowed_classes()) | set(FALLBACK_CLASSES)
+    for path in sorted(CANARIES.glob("*.json")):
+        expected = json.loads(path.read_text(encoding="utf-8"))["disciplined_must_get_right"]
+        label = expected["verdict_class"]
+        assert label == "" or label in allowed, \
+            f"{path.name}：期望归类 {label!r} 既不是空串也不在闭集里，模型不可能合法输出它"
+
+
+def test_canary_projection_matches_what_it_declares():
+    """真值不在闭集里时，金丝雀必须把「留空 → 投影成其他」这一档写出来。
+
+    只写 `verdict_class: ""` 是不够的：读的人会以为「模型没说」。留空是一条**结论**
+    （闭集里没有这一格），投影与来源是它的机器可读形态，也是 `other_clusters` 的输入。
+    """
+    for path in sorted(CANARIES.glob("*.json")):
+        canary = json.loads(path.read_text(encoding="utf-8"))
+        expected = canary["disciplined_must_get_right"]
+        if canary["truth"].get("closed_set_expressible", True):
+            continue
+        assert expected.get("projected_class") == OTHER_CLASS, \
+            f"{path.name}：真值不可表达时，纪律臂的投影必须是「{OTHER_CLASS}」"
+        assert expected.get("projection_source") == "none", \
+            f"{path.name}：投影来源必须是 `none`（模型留空），不能记成模型给了归类"
+        assert expected["verdict_class"] == "", \
+            f"{path.name}：真值不可表达却给了具体归类 —— 闭集里没有它，这是硬塞最近桶"
+
+
+def test_canary_projection_source_agrees_with_the_declared_class():
+    """`projection_source` / `projected_class` 与 `verdict_class` 三者不许互相矛盾。
+
+    空串 ↔ `none` ↔ `其他`；非空 ↔ `llm` ↔ 原值。这三格是**同一件事的三种写法**，
+    只写其中一两个，读的人就会按自己以为的那个去解读（比如把留空读成「模型没说」）。
+    """
+    for path in sorted(CANARIES.glob("*.json")):
+        expected = json.loads(path.read_text(encoding="utf-8"))["disciplined_must_get_right"]
+        if "projection_source" not in expected:
+            continue
+        label = expected["verdict_class"]
+        want_source = "none" if label == "" else "llm"
+        want_class = OTHER_CLASS if label == "" else label
+        assert expected["projection_source"] == want_source, \
+            f"{path.name}：verdict_class={label!r} 却记 " \
+            f"projection_source={expected['projection_source']!r}"
+        assert expected["projected_class"] == want_class, \
+            f"{path.name}：verdict_class={label!r} 却记 " \
+            f"projected_class={expected['projected_class']!r}"
 
 
 def main():
