@@ -118,6 +118,26 @@ def test_hallucinated_citation_is_a_named_fallback():
     assert any("9999" in problem for problem in outcome.meta["citation_problems"])
 
 
+def test_cited_lines_are_kept_even_when_the_gate_rejects_them():
+    """幻觉率的分母是「模型引用的行」。被闸门拦下的那些如果只在成功时记录，
+    幻觉率的全部来源就消失了，指标会变成恒等于 0 的摆设。"""
+    outcome, _ = _run(_payload(evidence_lines=[3, 9999]))
+    assert outcome.used is False
+    assert 9999 in outcome.meta["cited_lines"]
+    assert outcome.meta["raw_verdict_class"] == "测试用例失败(pytest ret=1)"
+
+
+def test_raw_response_is_kept_for_replay():
+    """`--replay` 靠它 $0 重算指标；不留原始文本，事后也分不清模型判错还是解析器判错。"""
+    outcome, _ = _run()
+    assert outcome.meta["raw_response"] == _payload()
+
+
+def test_raw_response_is_kept_when_parsing_fails():
+    outcome, _ = _run("模型说这是依赖问题")
+    assert outcome.meta["raw_response"] == "模型说这是依赖问题"
+
+
 def test_enum_violation_is_named():
     outcome, _ = _run(_payload(verdict_class="模型自创的桶"))
     assert outcome.fallback_reason == "bad_enum:verdict_class"
@@ -223,9 +243,12 @@ def main():
         try:
             func()
             print(f"✅ {name}")
-        except AssertionError as exc:
+        except Exception as exc:
+            # 连 AssertionError 以外的异常也计为失败：崩在某个用例上会**掩盖后面所有用例**，
+            # 「套件整体崩溃」在证伪里看起来像「没红」，比一条失败危险得多。
             failed.append(name)
-            print(f"❌ {name}: {exc}")
+            detail = str(exc) if isinstance(exc, AssertionError) else f"{type(exc).__name__}: {exc}"
+            print(f"❌ {name}: {detail}")
     print(f"\n{len(tests) - len(failed)}/{len(tests)} 通过" + (f"，失败：{failed}" if failed else ""))
     return 1 if failed else 0
 

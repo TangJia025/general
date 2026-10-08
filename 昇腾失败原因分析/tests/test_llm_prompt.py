@@ -189,9 +189,12 @@ def main():
         try:
             func()
             print(f"✅ {name}")
-        except AssertionError as exc:
+        except Exception as exc:
+            # 连 AssertionError 以外的异常也计为失败：崩在某个用例上会**掩盖后面所有用例**，
+            # 「套件整体崩溃」在证伪里看起来像「没红」，比一条失败危险得多。
             failed.append(name)
-            print(f"❌ {name}: {exc}")
+            detail = str(exc) if isinstance(exc, AssertionError) else f"{type(exc).__name__}: {exc}"
+            print(f"❌ {name}: {detail}")
     print(f"\n{len(tests) - len(failed)}/{len(tests)} 通过" + (f"，失败：{failed}" if failed else ""))
     return 1 if failed else 0
 

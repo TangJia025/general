@@ -72,7 +72,10 @@ def judge_case(scan_text, *, client, allowed_classes, rule_hint=None,
 
     result = client.judge(system, user, max_tokens=max_tokens, timeout=timeout)
     meta.update({"attempts": result.attempts, "elapsed": round(result.elapsed, 3),
-                 "usage": dict(result.usage or {})})
+                 "usage": dict(result.usage or {}),
+                 # 原始响应必须留下：事后才分得清「模型判错」与「解析器判错」，
+                 # 也是 `--replay` 能 $0 重算指标的前提。
+                 "raw_response": result.text})
     if not result.ok:
         return LLMOutcome.degraded(result.error or "network", meta)
 
@@ -85,6 +88,11 @@ def judge_case(scan_text, *, client, allowed_classes, rule_hint=None,
     problems = validate_citations(parsed, evidence.line_numbers())
     hard = hard_citation_problems(problems)
     meta["citation_problems"] = problems
+    # 引用行与判决类在这里就记下（**包括**因引用越界而降级的那种）：幻觉率的分母是
+    # 「模型引用的行」，如果只在成功时记录，被闸门拦下的那些就消失了 ——
+    # 而那恰恰是幻觉率的全部来源，指标会变成恒等于 0 的摆设。
+    meta["cited_lines"] = list(parsed["evidence_lines"])
+    meta["raw_verdict_class"] = parsed["verdict_class"]
     if hard:
         # 引用窗口外的行号 = 幻觉。这是 prompt 纪律是否生效的直接读数，必须具名落到原因里。
         return LLMOutcome.degraded(hard[0], meta)
