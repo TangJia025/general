@@ -106,7 +106,10 @@ def peer_basis_lines(case: dict) -> list[str]:
     # 子行用 `  - `（嵌套列表）而不是裸缩进：渲染层对缩进行是原样透传，
     # 裸缩进在 markdown 里会变成上一行的续行、丢掉换行，读起来像一句话没说完。
     if peer.get("sig"):
-        lines.append(f"  - 对端节点首条异常：`{(peer.get('sig') or '')[:160]}`")
+        # 措辞必须说成「命中片段」而不是「首条异常」：这个字段是**命中桶正则的原文片段**，
+        # 不是「第一条异常」。实测有 case 命中的是环境变量行（`HCCL_EXEC_TIMEOUT=204`），
+        # 叫「异常」会把一行 INFO 读成报错，等于替一个假阳性作证。
+        lines.append(f"  - 对端节点命中片段：`{(peer.get('sig') or '')[:160]}`")
     note = peer.get("note")
     if note:
         lines.append(f"  - ⚠️ {note}")
@@ -419,7 +422,7 @@ def render_case(case: dict, index: int) -> list:
             # 展开块只放「依据原文 + 怎么拿全文」：摘要行已在上面的依据里给过，
             # 不重复；整段日志不复制进报告（一份就 800+ 行），按 artifact_id 随时可取回。
             lines.append("")
-            lines.append("<details><summary>对端节点首条异常原文</summary>")
+            lines.append("<details><summary>对端节点命中片段原文</summary>")
             lines.append("")
             lines.append("```")
             lines.append((peer.get("sig") or "")[:300])

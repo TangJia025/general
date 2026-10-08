@@ -258,7 +258,7 @@ for 每个 workflow f:
 |---|---|---|---|
 | 1 | 假失败(draft PR 阻断) | `PR is draft. Blocking CI.` | 假失败 |
 | 2 | 多节点pod调度/就绪失败(k8s侧) | `phase=Pending` / `Readiness probe failed` / `0/N nodes are available` / `Insufficient npu` | infra |
-| 3 | HCCL 集合通信失败 | `HCCL*error/timeout/failed` / `hcclComm…error` / `CollectiveError` | infra |
+| 3 | HCCL 集合通信失败 | `HCCL` **独立成词**且紧跟 `error/timeout/failed` / `hcclComm…error` / `CollectiveError` | infra |
 | 4 | Store 会合超时(TCPStore，对端 rank 未加入) | `DistStoreError` / `StoreError…Timed out` / `DistNetworkError` / `recvValueWithTimeout failed` / `waiting for clients` / `Connection reset` / `broken pipe` | infra |
 | 5 | 模型缓存未命中(离线模式 local_files_only) | `Cannot find the requested files in the cached path` / `outgoing traffic has been disabled` | code |
 | 6 | 昇腾NPU硬件错误(507xxx/ERR99999+设备) | `error code( is)? 507\d{3}` / `Device:非-1 … ERR99999` | infra |
@@ -299,6 +299,20 @@ for 每个 workflow f:
   错误码、也无 `bind`/`address already in use`，真因是对端节点（node1）迟到导致 TCPStore 会合超时；
   ② 的桶名读作「对端 rank 未加入」才对得上。⚠️ ② 刻意**不**收裸 `TCPStore\.cpp`——它在良性告警里也出现，
   而本桶排在桶 12（进程被 kill）**之前**，误命中会把 mixed 的日志错配成 infra；
+- **桶 3 的信号必须要求 `HCCL` 独立成词**（2026-09-29 修）：旧写法 `HCCL\w*(?:error|timeout|failed)`
+  里的 `\w*` 会把 `HCCL_EXEC_TIMEOUT=204` / `HCCL_CONNECT_TIMEOUT=120` 这两个**环境变量名**吃成
+  「HCCL + TIMEOUT」。实测 5 份真实日志（node0 全文 + 6 份产物文本）旧正则共命中 **176 处，全部**是这两个
+  变量名，`hcclComm`/`CollectiveError` 一处都没有。代价是实打实的误判：job `109330881116`
+  （run 36544869530）被判「HCCL 集合通信失败 / owner=infra / 官方口径对齐：HCCL 通信端口被占用」，
+  而它真实失败是性能不达标（`Performance verification failed` + `pytest exit code: ret=1`，业务侧）——
+  修后同一段失败步骤窗口判为桶 20/21 一类、`owner=code` 且 `decisive`。同形误判更早也发生过
+  （单节点 job `107220928141` 的命中断片就是 `can set the interval by using HCCL_EXEC_TIMEOUT.`）。
+  改法：`\bHCCL\b[^A-Za-z0-9_\n]{0,3}(?:(?:execute|communication|collective|operator)\s+)?(?:error|timeout|timed\s*out|failed|failure)`。
+  「紧跟」这一条同时排除了良性 INFO `The timeout interval of the HCCL operator is 1836s. Timeout in seconds…`
+  （它 HCCL 后面跟的是 `operator is`）。副作用是**修好了一个假阴性**：旧写法漏掉空格分隔的
+  `HCCL timeout`，新写法能命中。`hcclComm[^\n]{0,80}error` 与 `CollectiveError` 保留 ——
+  实测真实报错（`hcclComm_, error code is 7, opType is AllReduce`、docs issue 里的
+  `hcclCommInitRootInfoConfig … error code 4（INTERNAL）`）都不含「独立成词的 HCCL」；
 - **桶 6/7 按错误码分档**（依据 `classification-guide.md` 场景 C）：`507xxx` 是硬件/驱动故障（infra）；`107xxx` 是 CANN runtime 参数非法，不是硬件信号（mixed）。旧版一律归 ACL/mixed，把硬件故障漏成了「待判定」；
 - **桶 5 先于桶 6，裸 `ERR99999` 下沉到桶 28**（2026-09-20 实测纠偏）：`ERR99999` 是昇腾对「任意未捕获应用层异常」的**通用兜底包装**，**不是硬件信号**——实测两例（job `106046329358` 模型缓存未命中、job `105440985558` 投机解码断言失败）都是紧跟在真实 Python traceback 之后打印，同行 `Device:-1, RankID:-1` 表示**未绑定 NPU 设备**。旧版把 `ERR99999` 无条件并进硬件桶，导致这两例用户侧问题被判成 infra。改法：① 硬件桶只认 `507xxx`，或 `ERR99999` 且同行 `Device/RankID` 非 `-1`；② 裸 `ERR99999` 下沉到桶 28 标 `unknown`，让真实根因先命中（实测两例分别纠正为桶 5 `code` 与桶 21 `code`）。⚠️ 与「桶 25 早于桶 26」同一原则：**级联症状不能压倒根因**；
 - **桶 9 先于桶 10/25**：依赖解析失败会连锁产生大量 `error`/`failed` 噪音，不前置则根因被级联噪音吞掉；
