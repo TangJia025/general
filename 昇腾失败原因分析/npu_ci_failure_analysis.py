@@ -885,10 +885,14 @@ def route_for(step_name):
 
 TS_RE = re.compile(r'^(\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2})')
 
-def slice_by_step_window(lines, failed_step):
+def slice_by_step_window(lines, failed_step, *, no_step_window=False):
     """按失败步骤的 [started_at, completed_at] 切日志（日志行首带 ISO 时间戳）。
-    切不出来（无时间戳/窗口缺失）返回 None，由调用方回退到全局尾部窗口。"""
-    if ARGS.no_step_window or not failed_step:
+    切不出来（无时间戳/窗口缺失）返回 None，由调用方回退到全局尾部窗口。
+
+    no_step_window 由调用方从 ARGS 传入，不再直接读模块级 ARGS —— 这样它与
+    build_scan_window 一起可被测试用 AST 抽取后，在无全局状态的环境里直接跑。
+    """
+    if no_step_window or not failed_step:
         return None
     start_s, end_s = failed_step.get("started_at"), failed_step.get("completed_at")
     if not start_s:
@@ -909,6 +913,31 @@ def slice_by_step_window(lines, failed_step):
         except Exception:
             continue
     return kept or None
+
+
+def build_scan_window(text, *, failed_step, route, tail_lines, no_step_window=False):
+    """从原始日志文本构造「喂给归因的扫描窗」：去噪 → 按失败步骤时间窗切分 → 取头/尾 N 行。
+
+    返回 (scan_lines, windowed)；windowed=False 表示时间窗没切出来、退回了全局尾部窗口。
+
+    抽成**纯函数**（不读模块级 ARGS）是为了让离线评测复用生产代码本身的窗口算法：
+    评测里另写一遍窗口逻辑，测的就不是线上的行为，算出来的准确率也就没有意义。
+    """
+    # 丢弃两类噪音行：
+    #   \x1b[36;1m 青色前缀 = GHA 回显的脚本源码（否则正则命中脚本里 echo 的报错文案，实测占 vllm 样本 42.5%）
+    #   NOISE_PATTERNS = 失败后的清理动作与 GHA 收尾输出
+    lines = [l for l in text.splitlines()
+             if '\x1b[36;1m' not in l and not any(re.search(p, l) for p in NOISE_PATTERNS)]
+    window = slice_by_step_window(lines, failed_step, no_step_window=no_step_window)
+    if window is None:
+        # 路径二的回退：切不出时间窗就用全局尾部窗口
+        return lines[-tail_lines:], False
+    if route == "window_head":
+        # 安装/构建阶段：真错误（依赖解析）在最前面
+        return window[:tail_lines], True
+    # 测试/编排阶段：错误集中在窗口尾部
+    return window[-tail_lines:], True
+
 
 classified = Counter(); detail = []
 bucket_link = defaultdict(list)   # 桶 -> [(样例 run 链接, 是否 NPU job)]，每桶最多3条
@@ -995,24 +1024,12 @@ for rec in failed_jobs:
             pass
     logs_done += 1
     text = log.decode('utf-8', errors='ignore')
-    # 丢弃两类噪音行：
-    #   \x1b[36;1m 青色前缀 = GHA 回显的脚本源码（否则正则命中脚本里 echo 的报错文案，实测占 vllm 样本 42.5%）
-    #   NOISE_PATTERNS = 失败后的清理动作与 GHA 收尾输出
-    lines = [l for l in text.splitlines()
-             if '\x1b[36;1m' not in l and not any(re.search(p, l) for p in NOISE_PATTERNS)]
-
-    # 路径二：按失败步骤时间窗切分；切不出来回退全局尾部窗口
-    window = slice_by_step_window(lines, failed_step)
-    if window is not None:
+    # 路径二：去噪 + 按失败步骤时间窗切分（切不出来回退全局尾部窗口），见 build_scan_window
+    scan_lines, windowed = build_scan_window(
+        text, failed_step=failed_step, route=route,
+        tail_lines=ARGS.tail_lines, no_step_window=ARGS.no_step_window)
+    if windowed:
         window_hits += 1
-        if route == "window_head":
-            # 安装/构建阶段：真错误（依赖解析）在最前面
-            scan_lines = window[:ARGS.tail_lines]
-        else:
-            # 测试/编排阶段：错误集中在窗口尾部
-            scan_lines = window[-ARGS.tail_lines:]
-    else:
-        scan_lines = lines[-ARGS.tail_lines:]
     text_scan = "\n".join(scan_lines) or text
 
     bucket, sig = classify_text(text_scan)
