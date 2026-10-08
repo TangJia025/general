@@ -33,6 +33,15 @@ POD_NAME_GRAMMAR = re.compile(r"^(?P<label>.+?)-(?P<hash>[a-z0-9]{5})-runner-(?P
 # ARC scale-set 的 listener/controller 所在 namespace（实测）
 ARC_NAMESPACES = ("arc-systems", "arc-system")
 
+# Liqo 跨集群反射的判据（实测）：消费方集群里的 pod 带 liqo.io/shadowPod=true，
+# 其 nodeName 是**虚拟节点名**；真实负载在提供方集群，同一个 pod 从提供方看没有该标签。
+LIQO_SHADOW_LABEL = "liqo.io/shadowPod"
+LIQO_API_SERVER_ANNOTATION = "liqo.io/api-server-support"
+
+# 不保留的注解：kubectl 的 last-applied-configuration 是整份提交清单的副本，动辄数十 KB，
+# 与本工具的结论无关；其余注解一律保留（每条截断 200 字），因为集群归属的判据就在注解里。
+DROPPED_ANNOTATION_KEYS = ("kubectl.kubernetes.io/last-applied-configuration",)
+
 
 def kubectl(kubeconfig_path: str, *args: str, timeout: int = 20) -> dict:
     """执行一条只读 kubectl，返回 {ok, stdout, stderr}。
@@ -207,6 +216,10 @@ def find_job_pod(pods: list, runner_name: str | None, labels: list | None,
     和「靠标签前缀猜的」可信度天差地别，报告里必须能区分，不能都写成「找到了 pod」。
     命中后一律附 time_consistent / window_note（见 _pod_window_check）。
     全部失败时返回 {pod: None, match_kind: None, reason: ...}，由调用方记「未取证」。
+
+    ⚠️ **runner_name 一旦给出，标签猜测这条退路就被封死**：精确名三级都不命中即返回
+    「未取证」，不再拿同标签的 pod 顶替（理由与实测代价见下面那道闸门处的注释）。
+    标签匹配因此只在 job 压根没有 runner_name 时才生效。
     """
     by_name = {pod_name_of(pod): pod for pod in pods}
     candidates = []
@@ -236,7 +249,27 @@ def find_job_pod(pods: list, runner_name: str | None, labels: list | None,
             if name.startswith(runner_name):
                 return _hit(pod, "runner_name 前缀匹配", identity_based=True)
 
+    # 身份已知却三级都没命中 → **到此为止**，不许再退到下面的标签猜测。
+    # 为什么这道闸门是必须的：pod 名是**精确**身份（runner 名带 5 位随机段，与 pod 名逐字相等，
+    # 实测 161 份快照里只要 pod 还在就 100% 精确命中）。精确名查不到只说明一件事 ——
+    # 本 job 的 pod 已被回收；而**同一 scale-set 上并发的其它 job** 的 pod 会照样满足标签匹配与
+    # 时间窗（它先于本 job 的失败步骤启动），于是被当成本 job 的现场证据。
+    # 实测代价：161 份快照里 19 份正是这样取错了 pod。最典型的一例 ——
+    #   job 110701473809 的 runner_name = …-26v84-runner-wddd8（已回收）
+    #   标签匹配选中同 run 内**另一个成功 job**(110701477428) 的 pod …-runner-5j29n
+    #   报告于是把 5j29n 的 node（mind-third-ci）与容器日志当成该失败 job 的现场。
+    # 这一类错误的危害是「读者据此下结论」，比「未取证」严重得多，故宁可少取证也不能猜。
+    # 例外只在 runner_name **缺失**时成立（job 未被分配 runner）：那时标签匹配是唯一的线索，
+    # 才继续往下走。
+    if runner_name:
+        return {"pod": None, "match_kind": None, "time_consistent": None, "window_note": None,
+                "informative": True,
+                "reason": (f"本 job 的 runner_name 精确名（{runner_name}）在候选集群中不存在 —— "
+                           f"该 pod 已被回收；同标签的现存 pod 均属并发的**其它** job，"
+                           f"不构成本 job 的现场证据")}
+
     # 证据强度 4：按 pod 名文法拆出 runner 标签，与 job 的 labels 求交
+    # （仅在 job 没有 runner_name 时才会走到这里）
     wanted = set(labels or [])
     if wanted:
         for pod in pods:
@@ -359,10 +392,70 @@ def init_container_evidence(pod: dict) -> list:
     return findings
 
 
+# 以**精确身份**命中 pod 的三档定位方式（见 find_job_pod）；其余都是靠标签猜的推定
+IDENTITY_MATCH_KINDS = ("runner_name 精确匹配", "runner_name + -workflow",
+                        "runner_name 前缀匹配")
+
+
+def foreign_pod_reason(pod_evidence: dict | None, match_kind: str | None,
+                       runner_name: str | None) -> str | None:
+    """快照里的 pod 是不是「同标签的**别的** job 的 pod」—— 事后可判定的假证据，返回原因。
+
+    为什么要在**读取**快照时再判一次：修复前抢下的快照已经落在盘上，里面装着推定出来的
+    错 pod（实测 19 份）。只修 find_job_pod 只能挡住新快照，这些旧快照被重扫时照样会把
+    别人的 node / 容器日志当成本次失败的现场。快照里同时存着 job 的 runner_name 与选中的
+    pod 名，判据是现成的，无需再查集群。
+
+    判据：定位方式不是精确身份三档，且 pod 名与 runner_name 不是同一个 runner 段
+    （`runner_name + "-workflow"` 是伴生 pod，故用前缀判）。
+    """
+    if not pod_evidence or not runner_name:
+        return None
+    if match_kind in IDENTITY_MATCH_KINDS:
+        return None
+    pod_name = pod_evidence.get("pod") or ""
+    if pod_name == runner_name or pod_name.startswith(runner_name + "-"):
+        return None
+    return (f"快照里的 pod `{pod_name}` 不是本 job 的现场：它按「{match_kind}」推定而来，"
+            f"而本 job 的 runner_name 精确名是 `{runner_name}`（两者是不同的 runner 段，"
+            f"runner 名带 5 位随机段、不会被复用）—— 属并发的**其它** job，"
+            f"其容器状态与日志已作废，不作为本 job 的证据")
+
+
+def pod_placement(pod: dict) -> dict:
+    """这个 pod 是**真实负载**还是 Liqo 影子对象 —— 决定「job 实际跑在哪个集群」。
+
+    为什么必须判：运行集群**不能**由 runner 标签推出来。实测同一批标签
+    （`linux-aarch64-a3-800i-16-cn12-001`）的 pod 能同时从 aiframework / cn12-001 /
+    mind-third-ci 三个 kubeconfig 看到 —— Liqo 把虚拟节点上的 pod 反射进了共享 namespace。
+    决定性判据是标签 `liqo.io/shadowPod`（实测同一个 pod `…-26v84-runner-l75ch`）：
+        从 cn12-001 看：nodeName=`mind-third-ci`（**虚拟节点名**），shadowPod=true   → 影子对象
+        从 mind-third-ci 看：nodeName=`192.168.0.181`（真实节点），无该标签        → 真实负载
+    即真实负载跑在提供方集群 mind-third-ci，cn12-001 只是消费方。两者的容器状态是**一致**的
+    （Liqo 反射，实测 startTime 与容器状态逐字相同），故日志与容器状态仍可用，
+    但**集群归属不能算在消费方头上** —— 只报 nodeName 会让读者把虚拟节点名当成真实节点。
+
+    shadow_pod 取三态：None 表示标签缺失（非 Liqo 集群，或 pod 尚未被反射）。
+    """
+    labels = (pod.get("metadata") or {}).get("labels") or {}
+    annotations = (pod.get("metadata") or {}).get("annotations") or {}
+    raw = str(labels.get(LIQO_SHADOW_LABEL, "")).strip().lower()
+    shadow = True if raw == "true" else (False if raw == "false" else None)
+    node = (pod.get("spec") or {}).get("nodeName")
+    return {
+        "shadow_pod": shadow,
+        # 「虚拟节点」只在影子对象上才成立：nodeName 取自提供方集群名，不是真实节点
+        "virtual_node": node if shadow else None,
+        "node": node,
+        "liqo_api_server_support": annotations.get(LIQO_API_SERVER_ANNOTATION),
+    }
+
+
 def pod_evidence(pod: dict) -> dict:
     """汇总一个 pod 的全部可用证据（不含日志）。"""
     status = pod.get("status") or {}
     spec = pod.get("spec") or {}
+    metadata = pod.get("metadata") or {}
     conditions = [{"type": c.get("type"), "status": c.get("status"), "reason": c.get("reason"),
                    "message": (c.get("message") or "")[:200]}
                   for c in status.get("conditions") or [] if c.get("status") != "True"]
@@ -374,10 +467,18 @@ def pod_evidence(pod: dict) -> dict:
         # start_time 在 pod 还没被调度（Pending）时是空的；created_time 永远有，
         # 两者都报出来，读者才能自己看出「这个 pod 是什么时候存在的」
         "start_time": status.get("startTime"),
-        "created_time": (pod.get("metadata") or {}).get("creationTimestamp"),
+        "created_time": metadata.get("creationTimestamp"),
         "qos_class": status.get("qosClass"),
         "reason": status.get("reason"),
         "message": (status.get("message") or "")[:300],
+        # labels/annotations 必须留着：集群归属的**唯一**判据就在 `liqo.io/shadowPod`
+        # 这个标签里（见 pod_placement）。早先只留 node/phase 等字段，等于把判据丢掉，
+        # 报告只能给出「node=mind-third-ci」这种读者无法解释的组合。
+        "labels": dict(metadata.get("labels") or {}),
+        "annotations": {key: (value or "")[:200]
+                        for key, value in (metadata.get("annotations") or {}).items()
+                        if key not in DROPPED_ANNOTATION_KEYS},
+        "placement": pod_placement(pod),
         "containers": container_evidence(pod),
         "init_containers": init_container_evidence(pod),
         # 非 True 的 condition（如 PodScheduled=False / Ready=False）是 Pending 类失败的关键

@@ -442,6 +442,89 @@ def test_zombie_run_is_logged_once_not_every_round():
                                  .cursor("stale_runs", {}) or {})
 
 
+# ---------- 台账兜底：滚出监听窗口的 run，名下没分析完的 job 不能被永久跳过 ----------
+
+class _StubCompleted:
+    """假的子进程结果：returncode≠0 让调用方走「失败重试」分支，不真跑第 1 步、不联网。"""
+    returncode = 1
+    stdout = b""
+    stderr = "stub：测试不真正执行第 1 步分析".encode("utf-8")
+
+
+def _stub_pipeline(commands: list):
+    """替换 npu_ci_watch.run_command，记录被调起的命令。返回还原函数。"""
+    original = npu_ci_watch.run_command
+
+    def fake(command, timeout=None):
+        commands.append(command)
+        return _StubCompleted()
+
+    npu_ci_watch.run_command = fake
+    return lambda: setattr(npu_ci_watch, "run_command", original)
+
+
+def test_jobs_of_runs_outside_the_window_are_still_recovered():
+    """★ 本次修的缺陷：run 一旦滚出 --lookback 窗口，就没人替它名下的 job 调用还原逻辑了。
+
+    实测代价：3 个 job（108916075758 / 109408442978 / 109715573934）停在 snapshot_ok
+    永不重试 —— 报告里没有、日志里也看不出异常；副作用是 pending(PHASE_B_STATES) 恒非空，
+    run_once() 的 active 恒为真，监听器再也不进空闲档（日志里每轮都写「30s 后」，
+    从未出现空闲档的「300s 后」）。
+    """
+    outside_run, stuck_job, terminal_job = 36418103916, 108916075758, 109999999999
+    with tempfile.TemporaryDirectory() as tmp:
+        watcher = _watcher(tmp)
+        # 台账里预先有：一个卡住的 job（其 run 已滚出窗口）+ 一个已终态的 job（不该被重扫）
+        watcher.ledger.note(stuck_job, ws.STATE_SNAPSHOT_OK, run_id=outside_run,
+                            runner_name="linux-aarch64-a3-800i-16-cn12-001-26v84-runner-abcde",
+                            labels=["linux-aarch64-a3-800i-16"], snapshot_attempted=True)
+        watcher.ledger.note(terminal_job, ws.STATE_REPORTED, run_id=outside_run)
+        watcher.ledger.save()
+
+        restore_gh, _calls = _fake_gh_api([])      # 视野里一个 run 都没有（已滚出窗口）
+        commands: list = []
+        restore_run = _stub_pipeline(commands)
+        try:
+            watcher.run_once()
+        finally:
+            restore_run()
+            restore_gh()
+
+        flat = [" ".join(str(part) for part in command) for command in commands]
+        assert any(f"--job-id {stuck_job}" in text for text in flat), \
+            f"滚出窗口的 run 名下未分析完的 job 被永久跳过了：{flat}"
+        assert not any(f"--job-id {terminal_job}" in text for text in flat), \
+            f"已终态的 job 不该被重扫：{flat}"
+
+
+def test_job_of_a_run_still_running_is_not_restored_as_completed():
+    """反向守门：已知仍未结束的 run，其 job 不能被还原成「已结束」。
+
+    还原出来的 job 的 status 恒为 "completed"，一旦喂给阶段 B 就会去取**还不存在**的
+    job 日志（实测 404 BlobNotFound），反复失败直到 gave_up —— 那是**制造**失败，
+    比不还原更糟。
+    """
+    with tempfile.TemporaryDirectory() as tmp:
+        watcher = _watcher(tmp)
+        watcher.ledger.note(111111111111, ws.STATE_SEEN, run_id=LIVE_RUN["id"],
+                            runner_name="linux-aarch64-a3-800i-16-cn12-001-26v84-runner-abcde",
+                            labels=["linux-aarch64-a3-800i-16"])
+        watcher.ledger.save()
+
+        restore_gh, _calls = _fake_gh_api([LIVE_RUN])   # 该 run 仍是 in_progress
+        commands: list = []
+        restore_run = _stub_pipeline(commands)
+        try:
+            watcher.run_once()
+        finally:
+            restore_run()
+            restore_gh()
+
+        assert commands == [], f"仍在跑的 run 的 job 被当成已结束去分析了：{commands}"
+        assert watcher.ledger.entry(111111111111)["state"] == ws.STATE_SEEN, \
+            "不该被这次兜底改动状态"
+
+
 def main():
     tests = [(name, obj) for name, obj in sorted(globals().items())
              if name.startswith("test_") and callable(obj)]
