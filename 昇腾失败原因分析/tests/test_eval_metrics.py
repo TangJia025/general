@@ -30,12 +30,15 @@ PAIRS = [("A", "A"), ("A", "A"), ("B", "B"), ("A", "B"), ("C", None)]
 
 def _record(job_id="j1", pred="A", truth="A", owner=("code", "code"), stratum="normal",
             cited=(1, 2), allowed=(1, 2, 3), used=True, weak=False, reason=None,
-            usage=None, elapsed=0.0, expressible=None):
+            usage=None, elapsed=0.0, expressible=None, phenomenon="",
+            class_source="llm", root_cause=""):
     return {"job_id": job_id, "arm": "llm", "pred_class": pred, "truth_class": truth,
             "pred_owner": owner[0], "truth_owner": owner[1], "stratum": stratum,
             "truth_expressible": expressible,
             "cited": list(cited), "allowed": list(allowed), "used": used,
             "weak_decisive": weak, "fallback_reason": reason,
+            "phenomenon": phenomenon, "verdict_class_source": class_source,
+            "root_cause": root_cause,
             "usage": usage if usage is not None else {"prompt_tokens": 100,
                                                       "completion_tokens": 20},
             "elapsed": elapsed}
@@ -212,8 +215,9 @@ def test_arm_metrics_has_every_documented_key():
     metrics = em.arm_metrics(records, n=100, seed=0)
     for key in ("n", "agreement", "agreement_ci", "owner_agreement", "owner_ci",
                 "confusion", "owner_confusion", "hallucination_rate",
-                "weak_decisive_rate", "degrade_rate", "fallback_reasons",
-                "by_stratum", "coverage_split", "cost"):
+                "weak_decisive_rate", "degrade_rate", "declined_rate",
+                "fallback_reasons", "by_stratum", "coverage_split",
+                "other_clusters", "cost"):
         assert key in metrics, key
     assert abs(metrics["hallucination_rate"] - 1 / 3) < 1e-9
     assert metrics["coverage_split"]["unmarked"]["n"] == 2, \
@@ -232,6 +236,91 @@ def test_render_arm_table_shows_all_arms_and_marks_missing_truth():
     assert "规则（基线）" in table and "deepseek-flash" in table
     assert "—（无真值）" in table
     assert "100.0%" in table
+
+
+def test_render_arm_table_separates_declined_from_degraded():
+    """降级率与留空率必须分列。合成一列会把「桶表不够用」读成「模型不好用」，正好读反。"""
+    arms = {"deepseek-flash": em.arm_metrics([_record(class_source="none")], n=50, seed=0)}
+    header = em.render_arm_table(arms).splitlines()[0]
+    assert "降级率" in header and "留空率" in header
+    assert header.index("降级率") < header.index("留空率")
+
+
+# ---------------- 留空率（闭集覆盖不足的读数） ----------------
+
+def test_declined_rate_counts_only_blank_classes():
+    """分母是「LLM 真判了的」，分子是「判了但闭集里没有贴合格子」的。"""
+    records = [_record(class_source="none"), _record(class_source="llm"),
+               _record(class_source="llm"), _record(used=False, reason="timeout",
+                                                    class_source="rule_fallback")]
+    assert em.declined_rate(records) == 1 / 3, \
+        "降级（used=False）既不是留空也不是判了，不该进这个分母"
+
+
+def test_declined_rate_is_none_when_the_llm_never_ran():
+    """规则臂没有 LLM，报 0.0% 会被读成「模型从不留空」。"""
+    assert em.declined_rate([_record(pred="A", class_source="rule")]) is None
+    assert em.declined_rate([]) is None
+
+
+# ---------------- 「其他」簇：该新增哪个桶 ----------------
+
+def test_other_clusters_groups_only_the_other_class():
+    """非「其他」的记录一律不进簇 —— 否则这份清单就不再是「覆盖缺口」的读数。"""
+    records = [_record("a", pred="其他", phenomenon="性能未达标", class_source="none"),
+               _record("b", pred="A", phenomenon="性能未达标")]
+    clusters = em.phenomenon_clusters(records)
+    assert len(clusters) == 1 and clusters[0]["n"] == 1
+    assert clusters[0]["job_ids"] == ["a"]
+
+
+def test_other_clusters_normalize_wording_before_grouping():
+    """同一现象被描述成两种措辞时必须并成一簇，否则每簇 n=1，这份聚类就不可复核。"""
+    records = [_record("a", pred="其他", phenomenon="性能未达标（benchmark）",
+                       class_source="none"),
+               _record("b", pred="其他", phenomenon="性能未达标 benchmark", class_source="none")]
+    clusters = em.phenomenon_clusters(records)
+    assert len(clusters) == 1, clusters
+    assert clusters[0]["n"] == 2
+    assert clusters[0]["job_ids"] == ["a", "b"]
+
+
+def test_other_clusters_sort_by_size_and_keep_a_readable_sample():
+    clusters = em.phenomenon_clusters([
+        _record("a", pred="其他", phenomenon="外部 DP rank 退出", class_source="none",
+                root_cause="RuntimeError: External DP rank process exited before ready"),
+        _record("b", pred="其他", phenomenon="外部 DP rank 退出", class_source="none"),
+        _record("c", pred="其他", phenomenon="配置字段缺失", class_source="none")])
+    assert [cluster["n"] for cluster in clusters] == [2, 1]
+    assert clusters[0]["phenomenon"] == "外部 DP rank 退出"
+    assert "External DP rank" in clusters[0]["sample_root_cause"]
+
+
+def test_other_clusters_min_count_filters_singletons():
+    records = [_record("a", pred="其他", phenomenon="X", class_source="none"),
+               _record("b", pred="其他", phenomenon="Y", class_source="none"),
+               _record("c", pred="其他", phenomenon="Y", class_source="none")]
+    assert len(em.phenomenon_clusters(records, min_count=2)) == 1
+
+
+def test_other_clusters_are_json_serializable_and_render_as_a_table():
+    import json
+    metrics = em.arm_metrics([_record("a", pred="其他", phenomenon="性能未达标",
+                                      class_source="none")], n=50, seed=0)
+    json.dumps(metrics, ensure_ascii=False)
+    rendered = em.render_cluster_candidates(
+        {"deepseek-flash": em.arm_metrics(
+            [_record("a", pred="其他", phenomenon="性能未达标", class_source="none"),
+             _record("b", pred="其他", phenomenon="性能未达标", class_source="none")],
+            n=50, seed=0)})
+    assert "性能未达标" in rendered and "| 2 |" in rendered
+
+
+def test_blank_phenomenon_still_forms_a_visible_cluster():
+    """模型没写 phenomenon 时不能静默丢样本 —— 丢掉的是「模型契约没被遵守」这个读数。"""
+    clusters = em.phenomenon_clusters(
+        [_record("a", pred="其他", phenomenon="", class_source="none")])
+    assert clusters[0]["n"] == 1 and clusters[0]["phenomenon"] == "(未写 phenomenon)"
 
 
 # ---------------- 冻结集 sha 守卫 ----------------

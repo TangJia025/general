@@ -33,6 +33,7 @@ from forensics.llm_client import DeepSeekClient, ReplayLLMClient   # noqa: E402
 from forensics.llm_evidence import build_evidence              # noqa: E402
 from forensics.llm_judge import (judge_case, read_evidence_text,  # noqa: E402
                                  render_summary_line, summarize_outcomes)
+from forensics import llm_verdict as lv                        # noqa: E402
 from forensics.llm_verdict import PROMPT_VERSION, weak_decisive_line   # noqa: E402
 
 RULE_ARM = "rule"
@@ -77,7 +78,16 @@ def truth_expressible(truths, job_id):
 
 def _record(case, arm, *, pred_class, pred_owner, truths, cited=(), allowed=(),
             used=True, weak=False, reason=None, usage=None, elapsed=None,
-            pred_class_llm_only=None, raw_response=None):
+            pred_class_llm_only=None, raw_response=None,
+            phenomenon="", verdict_class_source="rule", root_cause=""):
+    """`verdict_class_source` 的取值口径（进指标，别随手改）：
+
+      - `"llm"`：LLM 判了，且给了闭集内的归类；
+      - `"none"`：LLM 判了，但**留空**（或填了闭集外的名字）→ 投影成 `其他`。
+        这一档进 `declined_rate`，是「桶表覆盖不足」的读数，与下面那档不是一回事；
+      - `"rule_fallback"`：LLM 整条不可用，退回规则桶（`used=False`）；
+      - `"rule"`：规则臂，根本没跑 LLM。
+    """
     truth_class, truth_owner = truth_of(truths, case["job_id"])
     return {
         "job_id": str(case["job_id"]), "arm": arm,
@@ -90,6 +100,8 @@ def _record(case, arm, *, pred_class, pred_owner, truths, cited=(), allowed=(),
         "step": case.get("step"),
         "cited": list(cited), "allowed": list(allowed),
         "used": used, "weak_decisive": weak, "fallback_reason": reason,
+        "phenomenon": phenomenon, "verdict_class_source": verdict_class_source,
+        "root_cause": root_cause,
         "usage": usage or {}, "elapsed": elapsed,
         "raw_response": raw_response,
     }
@@ -141,7 +153,15 @@ def llm_records(cases, truths, client_for, *, fixtures_dir, allowed_classes, arm
         allowed = sorted(build_evidence(scan_text, budget_tokens=budget_tokens).line_numbers())
         parsed = outcome.parsed or {}
         # 降级 = 线上退回规则判决：按那个口径计分，差值才是「上线后会发生什么」。
-        predicted = parsed.get("verdict_class") if outcome.used else case.get("rule_bucket")
+        # **这一档的口径一字不改**：改了就等于把「LLM 挂了会怎样」从报表里抹掉。
+        if outcome.used:
+            # `verdict_class` 现在可能是空串（闭集里没有贴合的那一格）；空串与越界都投影成
+            # `其他`，不硬塞最近桶 —— 投影逻辑与 `llm_verdict.projected_class` 同源。
+            predicted = lv.projected_class(parsed)
+            class_source = "llm" if predicted != lv.OTHER_CLASS else "none"
+        else:
+            predicted = case.get("rule_bucket")
+            class_source = "rule_fallback"
         owner = parsed.get("owner") if outcome.used else case.get("rule_owner")
         records.append(_record(
             case, arm_name, pred_class=predicted, pred_owner=owner, truths=truths,
@@ -149,7 +169,10 @@ def llm_records(cases, truths, client_for, *, fixtures_dir, allowed_classes, arm
             used=outcome.used, weak=bool(outcome.meta.get("weak_decisive_line")),
             reason=outcome.fallback_reason, usage=outcome.meta.get("usage"),
             elapsed=outcome.meta.get("elapsed"),
-            pred_class_llm_only=parsed.get("verdict_class") if outcome.used else None,
+            pred_class_llm_only=predicted if outcome.used else None,
+            phenomenon=parsed.get("phenomenon") or "",
+            verdict_class_source=class_source,
+            root_cause=parsed.get("root_cause") or "",
             raw_response=outcome.meta.get("raw_response")))
     return records
 
@@ -185,7 +208,19 @@ def write_report(path, *, arms, summary, env):
                  "大于 0 说明闸门被绕过。闸门真正的触发次数看 `fallback_reasons` 里的 "
                  "`cited_line_not_in_evidence:*`。")
     lines.append("- 未裁定样本上的一切数字**不成立**，只作为 harness 自检。")
+    lines.append("- **降级率与留空率是两件事**：降级是「LLM 整条不可用，退回规则桶」，"
+                 "留空是「LLM 给了结论，只是闭集里没有贴合的那一格」。"
+                 "后者才是**该往桶表里加桶**的信号，别把它读成模型不好用。")
     lines.append("")
+    clusters = em.render_cluster_candidates(arms)
+    if clusters:
+        lines.append("## 归类为「其他」的现象簇 —— 「该新增哪个桶」的候选")
+        lines.append("")
+        lines.append("闭集覆盖不到时唯一的出路是显式记成「其他」（不挑最接近的桶冒充结论）；"
+                     "下面每簇就是一条**新增归类的候选**，是否新增由人看结论样例裁定。")
+        lines.append("")
+        lines.append(clusters)
+        lines.append("")
     lines.append("## 规则基线复现")
     lines.append("")
     rule = arms.get(RULE_ARM) or {}
