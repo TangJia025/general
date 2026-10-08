@@ -85,12 +85,25 @@ def test_no_markdown_explanation_outside_json():
 
 # ---------------- 输出契约与闭集 ----------------
 
-def test_contract_lists_every_field_the_parser_requires():
+def test_contract_lists_every_field_the_parser_reads():
+    """契约里必须写明解析器会读的每个字段 —— 少写一个，模型就少填一个。
+
+    只断言字段**出现**，不断言哪些必填：必填与否由解析器决定（`test_llm_verdict_parse.py`
+    守），这里守的是「契约与解析器读的是同一批字段名」。
+    """
     system = _system()
     for field in ("root_cause", "owner", "confidence", "verdict_class", "phenomenon",
                   "decisive_line", "evidence_lines", "disagrees_with_rule",
                   "missing_evidence"):
         assert field in system, f"输出契约缺字段 {field}"
+
+
+def test_contract_marks_verdict_class_as_optional():
+    """桶是事后归类：契约必须写明「贴合才填、不贴合留空」，否则模型会硬套一个最近的桶。"""
+    system = _system()
+    assert "选填" in system
+    assert "留空" in system
+    assert "不要挑一个最接近的" in system
 
 
 def test_owner_and_confidence_enums_match_the_parser():
@@ -117,8 +130,19 @@ def test_closed_set_comes_from_the_caller_not_hardcoded():
 
 
 def test_unknown_bucket_is_not_silently_rejected():
-    """闭集里没有合适项时要有出路，否则模型会硬套一个最近的桶（正是规则层的老毛病）。"""
+    """闭集里没有合适项时要有出路，否则模型会硬套一个最近的桶（正是规则层的老毛病）。
+
+    出路有两条：显式填 `其他`，或**留空**。两条都要在契约里写明 —— 只写「填 其他」
+    的话，模型会把它当成又一个必须填的桶，锚定偏差原样复现。
+    """
     assert "其他" in _system()
+    assert "留空" in _system()
+
+
+def test_phenomenon_has_a_clustering_friendly_writing_rule():
+    """`phenomenon` 会被跨 job 聚类（用来发现该新增哪些归类），措辞漂移会让聚类失效。"""
+    system = _system()
+    assert "同一个现象" in system and "同一句话" in system, "没写「同现象同措辞」，聚类不可复核"
 
 
 def test_prompt_version_is_stamped():
