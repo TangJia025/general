@@ -75,6 +75,44 @@ def interpret_pod_evidence(pod_evidence: dict) -> list:
     return verdicts
 
 
+def peer_basis_lines(case: dict) -> list[str]:
+    """对端节点日志（多节点 job 的第二日志证据源）在报告里的依据行。
+
+    ⚠️ **无论取到与否都要出话**：产物存在但为空是多节点 job 的常态（实测 run 36518916532 的
+    9 个失败多节点 job 里 8 个产物内层 tar 零个常规文件），留白会被读成「对端节点无异常」——
+    与事实正相反（那 8 个 job 的 node0 日志多为 pod Pending，日志根本没产生）。
+    """
+    peer = case.get("peer") or {}
+    if not peer:
+        return []
+    adopted = case.get("sig_source") == "对端节点日志"
+    artifact = peer.get("artifact") or "(未匹配到产物)"
+    lines = []
+    if peer.get("empty"):
+        return [f"对端节点日志：**产物存在但为空**（`{artifact}`，tar 内只有目录项、无任何常规文件）"
+                f" —— 该 job 大概率在容器日志产出前就已失败（如 pod 未就绪），"
+                f"**不能**据此判「对端节点无异常」"]
+    if not peer.get("ok"):
+        return [f"对端节点日志：**未取得**（{peer.get('reason') or '未知原因'}）"
+                f" —— 多节点 job 的 job log 只覆盖 node0，对端节点本次**没有**证据"]
+    if not peer.get("peers"):
+        return [f"对端节点日志：产物 `{artifact}` 内只有 node0 的容器日志，无对端节点文本"]
+    nodes = "、".join(f"`{node}`（{peer.get('node_lines', {}).get(node, 0)} 行，"
+                      f"取尾部 {peer.get('kept_lines', {}).get(node, 0)} 行）"
+                      for node in peer["peers"])
+    role = ("**node0 时间窗未分类，本 case 的桶由对端节点日志兜底得出**" if adopted
+            else "与 node0 并列的第二证据（未参与本 case 定性）")
+    lines.append(f"对端节点日志：{nodes}，命中桶【{peer.get('bucket')}】—— {role}")
+    # 子行用 `  - `（嵌套列表）而不是裸缩进：渲染层对缩进行是原样透传，
+    # 裸缩进在 markdown 里会变成上一行的续行、丢掉换行，读起来像一句话没说完。
+    if peer.get("sig"):
+        lines.append(f"  - 对端节点首条异常：`{(peer.get('sig') or '')[:160]}`")
+    note = peer.get("note")
+    if note:
+        lines.append(f"  - ⚠️ {note}")
+    return lines
+
+
 def synthesize(case: dict) -> dict:
     """综合三层证据，产出 {root_cause, owner, confidence, basis[], conflicts[], needs_human}。
 
@@ -89,20 +127,32 @@ def synthesize(case: dict) -> dict:
     pod_evidence = cluster.get("pod_evidence")
     availability = cluster.get("availability")
     history = case.get("history") or []
+    peer_adopted = case.get("sig_source") == "对端节点日志"
 
     # --- 日志侧基线 ---
-    if bucket != "未分类":
+    if peer_adopted:
+        # 桶是从对端节点兜底来的，首行必须说清「node0 没判出来、结论来自对端」，
+        # 否则读者会以为 node0 的失败步骤时间窗本身就命中了这个桶（证据强度差一个档）。
+        basis.append(f"日志侧：node0 失败步骤时间窗**未能分类**，采用对端节点日志判桶 "
+                     f"→ 【{bucket}】，owner={log_owner}")
+    elif bucket != "未分类":
         basis.append(f"日志侧：命中桶【{bucket}】，owner={log_owner}")
     else:
         basis.append("日志侧：未能分类（正则无命中），需人工或集群侧补足")
+    # 对端节点证据紧跟日志侧基线：它属同一层（容器 stdout），只是机器不同
+    basis.extend(peer_basis_lines(case))
 
     # --- 集群侧证据 ---
     cluster_owner_votes = []
     pod_verdicts = interpret_pod_evidence(pod_evidence) if pod_evidence else []
+    # 「按规则跳过」必须是一条**独立**的依据，不能落进下面「未解析出候选集群」那一支：
+    # 后者说的是「想查但没查到集群」，与「日志已定性、规则上不必查」是两个相反的意思。
+    if cluster.get("skipped"):
+        basis.append(f"集群侧：**按规则跳过** —— {cluster.get('skip_reason')}")
     # 只有「一个候选集群都没解析出来」才能说「无可用 kubeconfig」。路径 B（pod 已回收、
     # 降级为标签可用性核查）不设 kubeconfig_path，那不是「没用上 kubeconfig」——
     # 早先只判 kubeconfig_path 为空就贴这条，会在明明查过集群的案例上凭空多出一句误导。
-    if case.get("runner_name") and not cluster.get("candidates"):
+    if case.get("runner_name") and not cluster.get("candidates") and not cluster.get("skipped"):
         cluster["not_obtained"] = (cluster.get("not_obtained") or []) + [
             "集群侧未取证：未解析出任何候选集群（标签未登记于 Cluster.md，或无对应 kubeconfig）"]
     if pod_evidence:
@@ -252,6 +302,11 @@ def synthesize(case: dict) -> dict:
         # 找到的 pod 属于另一次运行：既不能提升置信度，也不能当作「pod 状态无异常」的证据
         confidence = "中低（集群侧只找到同 scale-set 另一次运行的 pod，非本 job 现场）"
         needs_human = True
+    elif cluster.get("skipped") and bucket != "未分类":
+        # 判据是测试框架**自己打印**的判定行（不是正则撞上的关键词），比普通日志桶硬一档；
+        # 但不给「高」：没有集群侧实证，且「改 CI 编排还是让分支 rebase」仍需人来定。
+        confidence = "中高（日志侧决定性判据：测试框架自身的判定行；按规则未做集群取证）"
+        needs_human = True
     elif strong_precedent and strong_precedent["evidence_strength"] == "强":
         confidence = "中高（命中同签名的历史先例，但缺集群侧实证）"
         needs_human = False
@@ -269,6 +324,16 @@ def synthesize(case: dict) -> dict:
     else:
         confidence = "低（未分类）"
         needs_human = True
+    # 靠对端节点日志兜底才定性的 case 不给「高」：那个桶是从产物的**尾部粗切**文本里判出来的，
+    # 没有时间窗对齐，而 node0 自己什么都没有判出来（见 peer_logs.adopt_peer_bucket）。
+    # 集群侧即便一致，也只是「同一台机器的旁证」，不等于给这段粗切文本补上了时间基准。
+    if peer_adopted and confidence.startswith("高"):
+        confidence = "中（采用对端节点日志兜底定性，对端文本无时间窗对齐）"
+    if peer_adopted:
+        hints_requiring_human.append(
+            "本 case 的桶来自对端节点日志（node0 时间窗未分类）：对端文本是产物的尾部粗切、"
+            "与失败步骤没有时间窗对齐，需人工按该节点的时间戳复核后再落库")
+
     # 有「需人工确认」的提示项时，置信度不能标为不需人工
     if hints_requiring_human:
         needs_human = True
@@ -337,10 +402,46 @@ def render_case(case: dict, index: int) -> list:
         lines.append(f"- 失败步骤时间窗：{window['started_at']} ~ {window.get('completed_at') or '(未完成)'}")
     lines.append("")
 
+    # --- 第 1 步的第二证据源：对端节点日志（紧跟日志侧元信息，在集群段之前）---
+    # 「未取得/产物为空」也必须成段出现：多节点 job 的 job log 只有 node0 一台机器，
+    # 对端节点本次没有证据，与「对端节点无异常」是两回事。
+    peer = case.get("peer") or {}
+    if peer:
+        lines.append("#### 对端节点日志（第 1 步第二证据源）")
+        lines.append("")
+        lines.append(f"- 产物：`{peer.get('artifact') or '(未匹配到产物)'}`"
+                     + (f"（artifact_id={peer['artifact_id']}，"
+                        f"{'本地缓存' if peer.get('from_cache') else '本次下载'}）"
+                        if peer.get("artifact_id") else ""))
+        for line in peer_basis_lines(case):
+            lines.append(f"- {line}" if not line.startswith(" ") else line)
+        if peer.get("peers") and peer.get("sig"):
+            # 展开块只放「依据原文 + 怎么拿全文」：摘要行已在上面的依据里给过，
+            # 不重复；整段日志不复制进报告（一份就 800+ 行），按 artifact_id 随时可取回。
+            lines.append("")
+            lines.append("<details><summary>对端节点首条异常原文</summary>")
+            lines.append("")
+            lines.append("```")
+            lines.append((peer.get("sig") or "")[:300])
+            lines.append("```")
+            lines.append(f"完整文本随产物留存，可用 `gh api repos/<owner>/<repo>/actions/"
+                         f"artifacts/{peer.get('artifact_id')}/zip` 重新取得"
+                         f"（本报告只登记判定依据，不复制整段日志）")
+            lines.append("")
+            lines.append("</details>")
+        lines.append("")
+
     # --- 第 2 步：集群现场 ---
     lines.append("#### 集群侧现场（第 2 步）")
     lines.append("")
     cluster = case.get("cluster") or {}
+    if cluster.get("skipped"):
+        # 「按规则跳过」与「未取证」必须分开写：前者是日志已定性、规则上不必查，
+        # 后者是查了没查到。写成后者的措辞会把一个确定结论读成一次失败的取证。
+        lines.append(f"- 取证集群：**按规则跳过** —— {cluster.get('skip_reason')}")
+        lines.append("- 该 case 的判据来自日志里测试框架自己的输出（pytest 的收集结果/退出码），"
+                     "责任方已落在业务侧；集群侧的 pod/节点状态即便查到，也只能说明「容器当时活着」，"
+                     "给不出新信息——故**不**计入「集群侧取得 pod 实证」的分母")
     if cluster.get("candidate_note"):
         lines.append(f"- 集群归属判定：{cluster['candidate_note']}")
     if cluster.get("queried_labels"):
@@ -366,8 +467,9 @@ def render_case(case: dict, index: int) -> list:
                      f"　**未取得本 job 的 pod 实证**（详见下方未取证说明）")
     elif cluster.get("not_obtained"):
         lines.append("- 取证集群：**未取证**（详见下方未取证说明）")
-    else:
+    elif not cluster.get("skipped"):
         lines.append("- 取证集群：**未取证**（未解析出候选集群，详见上方判定说明）")
+    # 跳过的 case 到此不再输出「未取证」字样（它已在上面写明「按规则跳过」）——两者相反，不可混用
     if cluster.get("snapshot_from"):
         # 证据来源必须写明「什么时候取的」：快照是 job 还在跑时抢下的，
         # 与「事后补查」是两个不同时刻的现场，读者据此判断证据有多硬。
@@ -577,6 +679,13 @@ def render_report(cases: list, meta: dict, registry_plan: list, health: dict,
     lines.append("")
     lines.append(f"- 本次分析失败 job {meta.get('total_jobs', 0)} 个，"
                  f"选取 {len(cases)} 个进入集群取证与历史归因")
+    skipped_cases = [case for case in cases if (case.get("cluster") or {}).get("skipped")]
+    if skipped_cases:
+        # 跳过不是少查了：判据在日志里已经给全了。这句话同时解释了为什么下面的
+        # 「取得 pod 实证」的分母比 cases 少 —— 否则读者会以为有 case 被漏掉
+        lines.append(f"- 其中 {len(skipped_cases)} 个日志侧已定性为业务侧（"
+                     f"{'、'.join(sorted({case.get('bucket') or '未分类' for case in skipped_cases}))}），"
+                     f"**按规则跳过**集群取证（判据来自测试框架自身，集群侧给不出新信息）")
     owners: dict = {}
     needs_human = 0
     for case in cases:
@@ -592,7 +701,8 @@ def render_report(cases: list, meta: dict, registry_plan: list, health: dict,
     foreign_hits = sum(1 for case in cases
                        if (case.get("cluster") or {}).get("time_consistent") is False)
     snapshot_hits = sum(1 for case in cases if (case.get("cluster") or {}).get("snapshot_from"))
-    lines.append(f"- 集群侧取得 pod 实证：{cluster_hits} 个"
+    queried_total = len(cases) - len(skipped_cases)
+    lines.append(f"- 集群侧取得 pod 实证：{cluster_hits}/{queried_total} 个"
                  f"（其余 pod 多已回收，降级为标签可用性核查或未取证）")
     if snapshot_hits:
         # 快照与现场查询的证据强度不同，必须在汇总里分开计数：

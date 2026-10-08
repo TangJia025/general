@@ -62,13 +62,37 @@ BUCKET_KNOWLEDGE = {
                                    "pod 直接 Failed 终态，表现为等待就绪失败"},
         ],
     },
-    "分布式通信/网络(HCCL/Store)": {
+    # 以下两桶原为一个合并桶「分布式通信/网络(HCCL/Store)」，按机制拆开（见 npu_ci_failure_analysis.py 的
+    # BUCKETS 注释）：合并时两桶共用 leaf_hccl_port_bound，导致每次 Store 会合超时都被写成
+    # 「官方口径对齐：HCCL 通信端口被占用」。
+    "HCCL 集合通信失败": {
         "leaf": "leaf_hccl_port_bound", "owner": "infra",
         "action": ["先区分「端口被占用」与「网络不通」：报错含 bind/address already in use 属前者。",
                    "端口被占用：同节点上批任务共用固定 HCCL 端口，属平台侧隔离不足；确认是否有并发任务共用节点。",
-                   "若是 Connection reset / broken pipe / Store 超时：查节点间网络与集合通信超时配置。",
+                   "若只有 Connection reset / broken pipe：查节点间网络与集合通信超时配置"
+                   "（`HCCL_EXEC_TIMEOUT` / `HCCL_CONNECT_TIMEOUT` 是否与该用例规模匹配）。",
                    "反例警惕：error code 507035 曾被误判为平台硬件问题，实为业务方算子问题——"
                    "有 507xxx 不等于平台责任，务必先落 507 具体码值再定性。"],
+        "probe": "pod_node",
+    },
+    # 官方 19 个叶子里**没有**「会合超时」这一类，故 leaf 留空：硬套 leaf_running_hang
+    # （任务长时间卡住／引擎进程挂起）会把「对端 rank 根本没加入」误述成「引擎挂了」——
+    # 机制相反（前者是进程没起来，后者是起来了卡住）。宁可不对齐官方口径，也不再生成一句错的。
+    "Store 会合超时(TCPStore，对端 rank 未加入)": {
+        "leaf": None, "owner": "infra",
+        "action": ["先算差额：`Timed out after N seconds waiting for clients. X/Y clients joined.` 里"
+                   "Y-X 就是没加入的 rank 数；N 是会合超时阈值（实测 1801s ≈ 配置的 1800s）。",
+                   "再定位缺席的 rank 在**哪台机器**：多节点 job 里每个 rank 属于哪个 node 由拓扑决定"
+                   "（实测 DP 场景：node0 跑 DP0–DP3、node1 跑 DP4–DP7）。"
+                   "⚠️ job log 只覆盖 node0，对端节点的日志在 `<分支>-<yaml stem>-ascend-logs` 产物里"
+                   "（`collected-logs/node1/var/log/*_logs.txt`），必须取产物才能看到缺席方那一侧。",
+                   "客户端侧（对端节点）的典型形态是 `DistNetworkError: Failed to recv, got 0 bytes."
+                   " Connection was likely closed.` —— 这是**结果**不是原因：服务端等满超时先退出，"
+                   "客户端再去连就只连到已关闭的连接。不要把连接被拒读成网络故障。",
+                   "最后查那台节点的**启动延迟**：pod 调度慢、镜像拉取慢、上一轮任务未释放资源，"
+                   "都会让对端 rank 迟到而错过会合窗口；属平台侧资源调度问题。",
+                   "修法方向：平台侧缩短对端节点的调度/启动时间，或在用例侧提高会合超时阈值"
+                   "（后者只是掩盖，不能代替查延迟）。"],
         "probe": "pod_node",
     },
     "模型缓存未命中(离线模式 local_files_only)": {
@@ -178,7 +202,9 @@ BUCKET_KNOWLEDGE = {
         "action": ["区分「任务真卡住」与「任务正常但超阈值」：看日志停更位置。",
                    "集群侧确认 pod 是否仍在 Running、CPU/内存是否有活动。",
                    "若为引擎进程挂起：常见于 NPU 通信挂起，需采集 py-spy 栈（见 issue #187 定位手段）。",
-                   "**注意与「HCCL 通信端口被占用」互斥**：端口占用会表现为通信卡死，别只判超时。"],
+                   "**注意与「HCCL 集合通信失败」「Store 会合超时(TCPStore，对端 rank 未加入)」互斥**："
+                   "前者的端口占用会表现为通信卡死，后者是进程没凑齐就等满超时。"
+                   "该两桶排在【超时】之前，故真属那两类的日志不会落到本桶——落到本桶的才是「无更具体判据的超时」。"],
         "probe": "pod_container_state",
         "related_issues": [
             {"number": 187, "why": "同现象：任务长时间卡死。该 issue 给出了定位手段"
@@ -271,6 +297,31 @@ BUCKET_KNOWLEDGE = {
                    "**必须**走集群取证，日志侧看不到根因。"],
         "probe": "pod_scheduling",
     },
+    # ---- 日志侧已定性的桶（DECISIVE_BUCKETS）----
+    # 这两条的共同点：pytest 自己打印的判定行已给出责任方，**不需要集群侧旁证**，
+    # 故 probe 一律为 None，且 action 第一句就写明「不要再往下查基础设施」——
+    # 早先的实现把 `Stream logs` 归为「Runner 与 GitHub 通信问题」并去集群找 pod 是否被驱逐，
+    # 方向完全反了（实测历史样本里就有用例真失败被这么处理）。
+    "测试未执行(入口/用例集不存在，脚本与代码错配)": {
+        "leaf": "leaf_user_script", "owner": "code",
+        "action": ["确认方式：日志里 `ERROR: file or directory not found: <路径>` + `collected 0 items` "
+                   "+ `pytest exit code: ret=4` —— 一条用例都没跑，失败在**收集阶段**。",
+                   "根因是**测试脚本与被测代码版本错配**（实测：run.sh 取自 main、被测代码取自 PR 分支，"
+                   "main 刚改了用例入口路径而本分支尚未包含该改动），不是产品缺陷、也不是基础设施问题——"
+                   "容器起了、pytest 正常执行了。",
+                   "修法：让被测分支 rebase 到含该改动的提交；或让 CI 编排保证「脚本与代码同源」"
+                   "（两侧 ref 一致）。**无需**集群侧取证（按规则已跳过）。"],
+        "probe": None,
+    },
+    "测试用例失败(pytest ret=1)": {
+        "leaf": "leaf_user_script", "owner": "code",
+        "action": ["直接看日志里的 pytest 汇总行：`FAILED <文件>::<用例>` 与 `N failed, M passed in ...`，"
+                   "按用例定位业务代码。**无需**集群侧取证：判据来自测试进程自身的退出码，"
+                   "pod/节点状态即便查到也只能说明「容器当时活着」。",
+                   "若同一用例在多次运行中**随机**失败（非稳定复现），才转向资源/环境方向"
+                   "（此时再考虑集群侧或 runner 侧证据），并在本表补充该模式。"],
+        "probe": None,
+    },
 }
 
 # 步骤被直接定性（no_log 路径）时动态生成的桶名前缀 —— 这类桶不在 BUCKETS 里，
@@ -280,10 +331,13 @@ def knowledge_for(bucket_label: str) -> dict:
     if bucket_label in BUCKET_KNOWLEDGE:
         return BUCKET_KNOWLEDGE[bucket_label]
     if bucket_label.startswith("步骤直接定性:"):
+        # ⚠️ 本兜底**不再覆盖** `Stream logs`：它曾被视为「日志回传步骤」而落到 no_log，
+        #    实则多节点 job 里它就是跑测试的那一步，已改走 window_tail 读日志（见 STEP_ROUTES）。
+        #    新增步骤名时务必确认它真的属于「无需读日志即可定性」，否则会把真因挡在日志之外。
         step_name = bucket_label.split(":", 1)[1]
         return {
             "leaf": None, "owner": None,
-            "action": [f"失败步骤「{step_name}」属无需读日志即可定性的步骤（runner 初始化/日志上传类），"
+            "action": [f"失败步骤「{step_name}」属无需读日志即可定性的步骤（runner 初始化/产物上传类），"
                        f"此类步骤失败**位于测试通过之后或之前**，通常是平台侧收尾问题，不代表业务代码有问题。",
                        "集群侧确认 runner pod 是否被驱逐/重启；若测试步骤全绿而仅此步骤失败，测试结论仍有效。"],
             "probe": "pod_container_state",
