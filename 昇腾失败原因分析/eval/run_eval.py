@@ -64,6 +64,17 @@ def truth_of(truths, job_id):
     return row.get("truth_class"), row.get("truth_owner")
 
 
+def truth_expressible(truths, job_id):
+    """该案例的真值在闭集桶表里有没有正确的那只桶（True/False/None=未标注）。
+
+    取自真值行的 `closed_set_expressible`。**必须与真值行同名读**：字段名对不上时
+    （例如真值行写 `owner`、这里读 `truth_owner`）会静默取到 None，
+    于是 owner 准确率整列算在 None 上 —— 数字看着是出来了，但量的是空气。
+    """
+    row = truths.get(str(job_id))
+    return None if not row else row.get("closed_set_expressible")
+
+
 def _record(case, arm, *, pred_class, pred_owner, truths, cited=(), allowed=(),
             used=True, weak=False, reason=None, usage=None, elapsed=None,
             pred_class_llm_only=None, raw_response=None):
@@ -74,6 +85,7 @@ def _record(case, arm, *, pred_class, pred_owner, truths, cited=(), allowed=(),
         "pred_class": pred_class, "pred_owner": pred_owner,
         "pred_class_llm_only": pred_class_llm_only,
         "truth_class": truth_class, "truth_owner": truth_owner,
+        "truth_expressible": truth_expressible(truths, case["job_id"]),
         "stratum": case.get("stratum"), "chip": case.get("chip"),
         "step": case.get("step"),
         "cited": list(cited), "allowed": list(allowed),

@@ -30,9 +30,10 @@ PAIRS = [("A", "A"), ("A", "A"), ("B", "B"), ("A", "B"), ("C", None)]
 
 def _record(job_id="j1", pred="A", truth="A", owner=("code", "code"), stratum="normal",
             cited=(1, 2), allowed=(1, 2, 3), used=True, weak=False, reason=None,
-            usage=None, elapsed=0.0):
+            usage=None, elapsed=0.0, expressible=None):
     return {"job_id": job_id, "arm": "llm", "pred_class": pred, "truth_class": truth,
             "pred_owner": owner[0], "truth_owner": owner[1], "stratum": stratum,
+            "truth_expressible": expressible,
             "cited": list(cited), "allowed": list(allowed), "used": used,
             "weak_decisive": weak, "fallback_reason": reason,
             "usage": usage if usage is not None else {"prompt_tokens": 100,
@@ -154,6 +155,42 @@ def test_by_stratum_keeps_unadjudicated_in_n_but_not_in_rate():
         "「这一层有几条」与「其中算了几条」必须是两个数，合并会让未裁定悄悄进分母"
 
 
+# ---------------- 覆盖度分半：可表达 vs 不可表达 ----------------
+
+def test_coverage_split_separates_ordering_defects_from_coverage_gaps():
+    """可表达 3 对 1 错；不可表达全错 —— 两半必须各算各的。
+
+    不分半的话整体是 3/7 = 42.9%，读起来像「规则只有四成准」；
+    分开才看得出「闭集里有正确桶的那一半是 75%，没有正确桶的那一半是 0%」——
+    后者换判决器也修不好，得先加桶。
+    """
+    records = [
+        _record("e1", pred="A", truth="A", expressible=True),
+        _record("e2", pred="B", truth="B", expressible=True),
+        _record("e3", pred="A", truth="A", expressible=True),
+        _record("e4", pred="B", truth="A", expressible=True),
+        _record("n1", pred="C", truth="性能未达标(benchmark)", expressible=False),
+        _record("n2", pred="C", truth="性能未达标(benchmark)", expressible=False),
+        _record("n3", pred="C", truth="性能未达标(benchmark)", expressible=False),
+    ]
+    split = em.coverage_split(records)
+    assert split["expressible"] == {"n": 4, "agree": 3, "rate": 0.75,
+                                    "unadjudicated": 0}, split["expressible"]
+    assert split["not_expressible"] == {"n": 3, "agree": 0, "rate": 0.0,
+                                        "unadjudicated": 0}, split["not_expressible"]
+    assert split["unmarked"]["n"] == 0
+
+
+def test_coverage_split_never_files_an_unmarked_record_as_expressible():
+    """没标 closed_set_expressible 的记录必须落在 unmarked 里。
+
+    若默认归到「可表达」，覆盖缺口会被算成排序缺陷 —— 正是我们要分清的那两件事。
+    """
+    split = em.coverage_split([_record("x", pred="A", truth="A")])
+    assert split["expressible"]["n"] == 0
+    assert split["unmarked"] == {"n": 1, "agree": 1, "rate": 1.0, "unadjudicated": 0}
+
+
 # ---------------- 成本 ----------------
 
 def test_cost_summary_sums_tokens_and_reports_tail_latency():
@@ -176,9 +213,11 @@ def test_arm_metrics_has_every_documented_key():
     for key in ("n", "agreement", "agreement_ci", "owner_agreement", "owner_ci",
                 "confusion", "owner_confusion", "hallucination_rate",
                 "weak_decisive_rate", "degrade_rate", "fallback_reasons",
-                "by_stratum", "cost"):
+                "by_stratum", "coverage_split", "cost"):
         assert key in metrics, key
     assert abs(metrics["hallucination_rate"] - 1 / 3) < 1e-9
+    assert metrics["coverage_split"]["unmarked"]["n"] == 2, \
+        "没标可表达性的样本必须落在 unmarked，不能默认归到可表达"
 
 
 def test_arm_metrics_output_is_json_serializable():

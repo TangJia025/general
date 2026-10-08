@@ -1,0 +1,43 @@
+{
+  "name": "import_error_warning",
+  "why": "同一份证据上，朴素 prompt 会锚在「缺依赖 / 网络不可达」的 ERROR/WARNING 上（这正是规则层 32 桶中最大误判源的成因），带纪律的 prompt 必须落到 benchmark 吞吐判据行。这一组 A/B 是 prompt 纪律是否还在生效的回归钉子。",
+  "source_job_id": "112105762370",
+  "fixture": "eval/fixtures/112105762370.txt.gz",
+  "naive_system_prompt": "你是根因分析器，输出 JSON。",
+  "evidence_excerpt": [
+    "[2026-10-06 04:38:18] ERROR [repo_utils.py:119] Error retrieving safetensors: Cannot reach https://huggingface.co/RedHatAI/Qwen3-32B-speculator.eagle (HF_HUB_OFFLINE=1)",
+    "WARNING 10-06 04:38:20 [indexer_topk.py:29] Failed to import the DeepSelect extension (vllm._deepselect_C): No module named 'vllm._deepselect_C'",
+    "│ Output Token Throughput  │ total   │ 347.5679 token/s  │",
+    "[2026-10-06 04:49:44] [ERROR] [2/2] Benchmark failed: unknown, reason: Performance verification failed. The current Output Token Throughput is 347.5679  token/s, which is not greater than or equal to 0.97 * baseline 371.4166.",
+    "The following aisbench case failed: {'case_type': 'performance', 'dataset_path': 'vllm-ascend/GSM8K-in3500-bs400', 'baseline': 371.4166, 'threshold': 0.97}",
+    "E       AssertionError: some aisbench cases failed, info were shown above.",
+    "================== 1 failed, 14 warnings in 719.12s (0:11:59) =================="
+  ],
+  "truth": {
+    "verdict_class": "性能未达标(benchmark)",
+    "owner": "code",
+    "decisive_line": 4,
+    "note": "摘录行号（1-based）：第 4 行是性能门槛判据，第 1/2 行是两个陷阱。"
+  },
+  "naive_must_get_wrong": {
+    "verdict_class": "依赖/安装(ImportError)",
+    "owner": "infra",
+    "disagrees_with_rule": false
+  },
+  "disciplined_must_get_right": {
+    "verdict_class": "性能未达标(benchmark)",
+    "owner": "code",
+    "decisive_line": 4,
+    "disagrees_with_rule": true,
+    "evidence_lines_are_a_subset_of": [
+      1,
+      2,
+      3,
+      4,
+      5,
+      6,
+      7
+    ]
+  },
+  "how_to_run": "真跑需出网（DeepSeek）；不跑时由 tests/test_llm_prompt.py 守纪律条款在场。跑过一次后把原始响应写进 eval/runs/<ts>/verdicts.jsonl，用 --replay 即可 $0 复核。"
+}
