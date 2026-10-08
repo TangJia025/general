@@ -141,6 +141,13 @@ def synthesize(case: dict) -> dict:
         basis.append("日志侧：未能分类（正则无命中），需人工或集群侧补足")
     # 对端节点证据紧跟日志侧基线：它属同一层（容器 stdout），只是机器不同
     basis.extend(peer_basis_lines(case))
+    # 回显正则**命中的原文**：读者要能自己判断这个归类是不是关键词抢中的。实测误判的
+    # 命中片段长这样：`IFNAME=eth0 HCCL_BUFFSIZE=256 HCCL_CONNECT_TIMEOUT=400 ...`
+    # —— 一行环境变量转储被 `HCCL\w*(?:timeout)` 在 re.I 下命中了变量**名**。
+    # 只回显、不解释：它是证据，不是结论。sig 为空时不留悬空行。
+    signature = (case.get("sig") or "").strip()
+    if signature:
+        basis.append(f"日志侧正则命中行：{signature}")
 
     # --- 集群侧证据 ---
     cluster_owner_votes = []
@@ -339,19 +346,24 @@ def synthesize(case: dict) -> dict:
         needs_human = True
 
     # --- 根因描述 ---
+    # 这一行是给人读的**结论**，桶不是结论。规则层的桶是「正则表序首个命中」，实测在
+    # 冻结集上自报结论时 80% 是错的（6/30），而且同一种真因在不同噪声分布下会拿到两个
+    # 不同的桶（aisbench 性能未达标 → A1 判 HCCL/infra、B3 判 断言失败/code）。
+    # 所以这里只写**有实证支撑**的话；拿不出实证就不说结论 —— 比说一个大概率错的结论负责。
+    # 信息并没有丢：归类在「归类」行（render_case）、命中的原文在依据段。
     if pod_evidence and cluster_owner_votes:
-        root_cause = f"{bucket}；集群侧实证：" + "；".join(
+        root_cause = "集群侧实证：" + "；".join(
             item["verdict"] for item in interpret_pod_evidence(pod_evidence))
     elif strong_precedent and strong_precedent["evidence_strength"] == "强":
         # 措辞由**证据类型**决定，不由裸分数决定：命中带机制的签名（如 exitcode:137）
         # 几乎不会偶然撞上，才配得上「高度吻合」；分数高但只有通用词/桶名重叠的，
         # 只能说「主题相近」——两者对读者的含义差别很大，不能混为一谈。
-        root_cause = f"{bucket}；与历史先例 #{strong_precedent['issue']['number']} 高度吻合"
+        root_cause = f"与历史先例 #{strong_precedent['issue']['number']} 高度吻合"
     elif strong_precedent:
-        root_cause = (f"{bucket}；与历史先例 #{strong_precedent['issue']['number']} 主题相近"
+        root_cause = (f"与历史先例 #{strong_precedent['issue']['number']} 主题相近"
                       f"（可参考，但机制未必相同）")
     elif bucket != "未分类":
-        root_cause = bucket
+        root_cause = "未能定性（仅有日志侧归类，需人工介入）"
     else:
         root_cause = "未能定性（需人工介入）"
 
@@ -384,6 +396,20 @@ def synthesize(case: dict) -> dict:
                        "source": strong_precedent["issue"].get("root_cause_source")}
                       if strong_precedent else None),
     }
+
+
+def class_source(case: dict) -> str:
+    """归类是从哪儿来的 —— 证据强度差一个档，报告里必须区分开。
+
+    `peer_regex`：桶来自对端节点日志（产物的尾部粗切，与失败步骤没有时间窗对齐，
+    见 `peer_logs.adopt_peer_bucket`），比 node0 时间窗命中弱一档；
+    `rule_regex`：node0 失败步骤时间窗内的正则命中；
+    `none`：没有归类（未分类，或调用方压根没给 bucket）。
+    """
+    bucket = case.get("bucket")
+    if not bucket or bucket == "未分类":
+        return "none"
+    return "peer_regex" if case.get("sig_source") == "对端节点日志" else "rule_regex"
 
 
 def render_case(case: dict, index: int) -> list:
@@ -629,6 +655,10 @@ def render_case(case: dict, index: int) -> list:
     lines.append("#### 根因与修复建议（第 5 步）")
     lines.append("")
     lines.append(f"- **根因**：{verdict.get('root_cause')}")
+    # 归类与根因**分行**：桶是投影（只用于统计/去重/派活），根因是结论。二者曾经是同一行，
+    # 于是「正则首个命中」被当成了结论本身 —— 实测那正是误判率的主因。
+    lines.append(f"- **归类**：{case.get('bucket') or '未分类'}"
+                 f"（{class_source(case)}，仅供统计与派活，非结论）")
     lines.append(f"- **责任方（owner）**：`{verdict.get('owner')}`"
                  f"{'（含集群侧实证）' if verdict.get('owner_from_cluster') else '（仅日志侧判定）'}")
     leaf_title = official_leaf_title(verdict.get("official_leaf"))

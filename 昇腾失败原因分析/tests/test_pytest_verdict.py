@@ -300,6 +300,96 @@ def test_report_says_skipped_not_missing():
     assert "决定性判据" in case["verdict"]["confidence"], case["verdict"]["confidence"]
 
 
+def _conclusion_case(**overrides):
+    """结论段（第 5 步）的最小 case：只带 synthesize/render_case 真正会读的键。"""
+    from forensics.report import synthesize
+
+    case = {
+        "job_name": "Nightly-A3 (PR) 17618", "workflow": "schedule_nightly_test_a3.yaml",
+        "link": "https://example.invalid/job/1", "step": "Stream logs", "chip": "a3",
+        "labels": [], "runner_name": "runner-x", "bucket": ENTRY_MISSING_BUCKET,
+        "owner": "code", "sig": "file or directory not found",
+        "cluster": {"skipped": True, "skip_reason": "日志侧已定性为业务侧",
+                    "pod_evidence": None, "availability": None, "candidates": [],
+                    "not_obtained": [], "logs": []},
+        "history": [], "related_issues": [],
+    }
+    case.update(overrides)
+    case["verdict"] = synthesize(case)
+    return case
+
+
+def _conclusion_section(case):
+    """渲染 case，只取「根因与修复建议」那一节的结论行（到「判断依据」为止）。
+
+    必须切段：判断依据里也有桶名（`日志侧：命中桶【…】`），只看全文的话，
+    根因行即使整条退回桶名也照样变绿。
+    """
+    from forensics.report import render_case
+
+    text = "\n".join(render_case(case, 1))
+    start = text.index("#### 根因与修复建议（第 5 步）")
+    rest = text[start:]
+    nxt = rest.find("**判断依据：**")
+    return rest if nxt == -1 else rest[:nxt]
+
+
+def test_root_cause_line_is_not_the_bucket():
+    """给人读的「根因」行不得是桶名 —— 桶是投影，只用于统计/去重/派活。
+
+    那行曾经就是桶名本身，于是「正则表序首个命中」被当成了结论。实测代价：冻结集上
+    规则层自报结论时 80% 是错的（6/30），且同一种真因（aisbench 性能未达标）在不同
+    噪声分布下拿到两个不同的桶，连带把 owner 判错、把问题派给错的队伍。
+    """
+    section = _conclusion_section(_conclusion_case())
+    root_line = [line for line in section.splitlines() if line.startswith("- **根因**")]
+    assert len(root_line) == 1, section
+    assert ENTRY_MISSING_BUCKET not in root_line[0], f"根因行还是桶名：{root_line[0]}"
+    assert "未能定性" in root_line[0], root_line[0]
+
+
+def test_classification_line_exists_and_is_labelled_as_non_conclusion():
+    """桶要留在报告里（人工复核要看），但必须显式标成「非结论」。"""
+    section = _conclusion_section(_conclusion_case())
+    class_line = [line for line in section.splitlines() if line.startswith("- **归类**")]
+    assert len(class_line) == 1, section
+    assert ENTRY_MISSING_BUCKET in class_line[0], class_line[0]
+    assert "rule_regex" in class_line[0] and "非结论" in class_line[0], class_line[0]
+
+
+def test_classification_line_never_renders_a_bare_none():
+    """残缺 verdict stub 也会走 render_case（test_watch_state 就是这么用的）。"""
+    case = {"job_name": "j", "workflow": "w", "link": "l", "step": "s",
+            "labels": [], "cluster": {}, "history": [], "related_issues": [],
+            "verdict": {"owning": "code"}}
+    section = _conclusion_section(case)
+    class_line = [line for line in section.splitlines() if line.startswith("- **归类**")]
+    assert class_line and "None" not in class_line[0], class_line
+
+
+def test_class_source_separates_peer_fallback_from_windowed_hits():
+    """对端日志兜底来的桶是产物的尾部粗切、无时间窗对齐，证据强度低一档。"""
+    from forensics.report import class_source
+    assert class_source({"bucket": "X", "sig_source": "对端节点日志"}) == "peer_regex"
+    assert class_source({"bucket": "X", "sig_source": "失败步骤窗口"}) == "rule_regex"
+    assert class_source({"bucket": "X"}) == "rule_regex"
+    assert class_source({"bucket": "未分类", "sig_source": "失败步骤窗口"}) == "none"
+    assert class_source({}) == "none"
+
+
+def test_basis_echoes_the_matched_line_so_a_keyword_hit_is_visible():
+    """依据里要能看到正则**命中的原文** —— 读者才能自己判断是不是关键词抢中的。"""
+    verdict = _conclusion_case()["verdict"]
+    assert any("日志侧正则命中行：file or directory not found" in line
+               for line in verdict["basis"]), verdict["basis"]
+
+
+def test_empty_sig_leaves_no_dangling_evidence_line():
+    """合成 case 常常没有 sig；留一行空的「命中行：」比不写更糟。"""
+    verdict = _conclusion_case(bucket="未分类", sig="")["verdict"]
+    assert not any("正则命中行" in line for line in verdict["basis"]), verdict["basis"]
+
+
 def test_pipeline_end_to_end_only_queries_cluster_for_non_decisive():
     """端到端：真跑一遍 npu_ci_forensics.main()，断言集群取证**只**被待取证的 case 触发。
 
