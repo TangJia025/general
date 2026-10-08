@@ -7,6 +7,7 @@ npu_ci_reports/
 
 # Python 字节码缓存
 __pycache__/
+*.pyc
 
 # 取证用本地缓存（Cluster.md / issues.json / comments.json / analysis_handoff.json）：
 # 都是可重新拉取的下载物，且体积不小，不入库
@@ -18,3 +19,10 @@ __pycache__/
 
 # 本地 Claude 配置不入库
 .claude/
+
+# ===== 昇腾失败原因分析 · LLM 判决评测冻结集 =====
+# 冻结的日志窗口含内网集群名/节点名/镜像地址，而本仓库是 PUBLIC。
+# 入库的只有 cases.jsonl（job_id + sha256 + 分层），日志本身不入库：
+# 按 job_id 重取日志、重跑 eval/build_fixtures.py，scan_sha256 必须逐字节相同。
+昇腾失败原因分析/eval/fixtures/
+昇腾失败原因分析/eval/runs/
