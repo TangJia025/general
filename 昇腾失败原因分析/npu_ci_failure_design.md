@@ -558,11 +558,11 @@ node1..nodeN 的输出从来不进 job log。
 
 ```jsonc
 {
-  "root_cause": "一句话，含机制",
+  "root_cause": "一句话，含机制",                 // ← 结论就是这一段自由文本
   "owner": "code",                    // infra|code|mixed|unknown
   "confidence": "high",               // high|medium|low
-  "verdict_class": "测试用例失败(pytest ret=1)",  // 闭集：32 桶 + 其他 + 未分类
-  "phenomenon": "用例真失败（精度/逻辑）",         // 自由文本
+  "verdict_class": "测试用例失败(pytest ret=1)",  // 选填：闭集里贴合才填，不贴合留空串
+  "phenomenon": "用例真失败（精度/逻辑）",         // 自由文本，≤20 字名词短语
   "decisive_line": 4,                 // 必须是 evidence_lines 之一
   "evidence_lines": [2, 3, 4, 5],     // ⊆ 窗口行号集合，非空
   "missing_evidence": "缺用例级 traceback…"
@@ -572,6 +572,10 @@ node1..nodeN 的输出从来不进 job log。
 **为什么要两套**：只有自由文本 → 一致率算不出来、无法与基线比；只有闭集 → 把模型锁回桶粒度，
 而「桶粒度错了」正是要修的问题。故**指标用闭集类**（可算、可跨臂比），**报告显示自由文本**；
 `verdict_class == "其他"` 的样本按现象聚类，就是「该新增哪个桶」的数据驱动候选。
+
+> `verdict_class` 的「必填」已于 prompt v2 改为**选填**，顺序也改为「先写 `root_cause` 与
+> `phenomenon`，最后才看 `verdict_class`」。原因与后果见 **§13** —— 强迫模型在定性之前先落一个桶，
+> 会把「首个命中正则胜出」原样搬进模型。
 
 **不信任模型自报**：`disagrees_with_rule` 由服务端按 `verdict_class != rule_bucket` 计算；
 `evidence_lines ⊆ 窗口行号集合` 是抑制幻觉的核心闸门（模型可以编，编的行号过不了）。
@@ -602,11 +606,17 @@ system prompt 的六条纪律：
 5. **禁止外推**：不得补日志里没有的机制，缺什么写进 `missing_evidence`。
 6. 输出**只有一个 JSON 对象**，无解释文本。
 
-`eval/canaries/import_error_warning.json` 把上述 A/B 钉成回归：自包含 7 行摘录
-（陷阱是 `Error retrieving safetensors…` 与 `Failed to import the DeepSelect extension` 两条 WARNING，
-判据是吞吐量数值与 `not greater than or equal to 0.97 * baseline`），
-朴素 prompt 必错、纪律 prompt 必对。`PROMPT_VERSION` 进缓存键：改 prompt 必须改它，
-否则会静默复用旧口径的判决。
+`eval/canaries/` 把上述 A/B 钉成回归，三条自包含摘录（陷阱 → 判据）：
+
+| 金丝雀 | 陷阱 | 判据 | 真值是否在闭集内 |
+|---|---|---|---|
+| `import_error_warning` | `Error retrieving safetensors…` / `Failed to import the DeepSelect extension` 两条 WARNING | `not greater than or equal to 0.97 * baseline` | **否** → 纪律臂应留空 |
+| `keyerror_missing_config_fields` | cfg 字典 dump（含 `HCCL_BUFFSIZE` / `HCCL_CONNECT_TIMEOUT` 字样） | `KeyError: "Missing required config fields: ['deployment']"` | 是 → 纪律臂必须判出桶 |
+| `external_dp_rank_exit` | 打印 External DP 启动命令的 **INFO**（命令行里塞满 `HCCL_*`） | `RuntimeError: External DP rank process exited before ready` | **否** → 纪律臂应留空 |
+
+三条里两条的真值**闭集里没有**，所以「纪律臂必对」这个旧期望本身是错的（旧契约下它等于要求
+模型违反自己的输出契约）—— 正确的期望是「留空 + 把该取什么证据写进 `missing_evidence`」，
+详见 §13。`PROMPT_VERSION` 进缓存键：改 prompt 必须改它，否则会静默复用旧口径的判决。
 
 ### 12.5 评测口径（本阶段的核心交付）
 
@@ -686,3 +696,109 @@ python3 eval/run_eval.py --arms rule,deepseek-flash,deepseek-v4-pro
 30 例 × 2 模型臂 ≈ 2.8M 输入 token，一次评测在几毛钱量级。两个省钱的直觉**都不成立**：
 折叠重复行只省 1%；去掉噪声行窗口反而**变大 11%**（行数上限往回吃更多内容）。
 **上限才是约束，噪声不是** —— 要省就压输出或压样本量。
+
+---
+
+## 13. 判决改口径：结论走自由文本，桶降为投影
+
+§12 的设计把**桶当成了判决的入口**（`verdict_class` 必填、且是报告里给人看的结论本身）。
+第一批 7 个 job 的人工复核证明这个入口是错的：**桶应该是判决的产物、而且只是投影**。
+
+### 13.1 病灶：入口错了，不是判得不准
+
+| job | 真因 | 窗口里的东西 | 规则/旧契约判成 |
+|---|---|---|---|
+| A1 | `Performance verification failed`（业务侧，性能未达标） | 一行 `[INFO] … HCCL_CONNECT_TIMEOUT=400 …` 的环境变量转储 | `HCCL 集合通信失败` / infra |
+| A2 | `KeyError: Missing required config fields: ['deployment']`（业务侧） | 同一份 cfg 字典 dump | `HCCL 集合通信失败` / infra |
+| B2 | `RuntimeError: External DP rank process exited before ready` | `indexer_topk.py:29` 的 **WARNING**：`No module named 'vllm._deepselect_C'`（prompt 纪律里点名的良性兜底打印） | `依赖/安装(ImportError)` / code |
+| B3 | **与 A1 同一种真因** | 噪声分布不同 | `断言失败(代码或精度)` ← 与 A1 拿到**两个不同的桶** |
+
+最后一行是决定性的：**同一种真因，噪声换一换就落到不同的桶**。这不是「判得不准」，
+是「桶本身就不是一个稳定的判据」。
+
+`HCCL_CONNECT_TIMEOUT=400` 那一条尤其说明问题：`HCCL\w*(?:timeout)` 在 `re.I` 下命中的是
+**变量名**，与「集合通信失败」毫无关系，但它足以把 owner 从 code 派到 infra。
+**任何原因的失败，只要夹杂 hccl 关键词就会被误判** —— 关键词匹配作为判决入口，天花板就在这里。
+
+### 13.2 实测天花板：60% 的真值不在闭集里
+
+`eval/truths.jsonl` 30 条人工真值中 **18 条 `closed_set_expressible: false`**。
+即：无论换什么判决器，**闭集一致率的上限是 40%（12/30）**。
+故「把桶判得更准」这条路有 60% 的硬天花板；必须让**结论走自由文本**，桶只做统计投影。
+（这条与 §12.5 的「必须分半算」是同一件事，§13 把它推到了契约层。）
+
+### 13.3 改了什么
+
+**一、LLM 判决层（prompt v2）**
+- `verdict_class` 由**必填降为选填**：闭集里恰好贴合才填，**不贴合就留空**，不挑「最接近的」；
+- 输出契约里的顺序改为 **`root_cause` → `phenomenon` → 最后才 `verdict_class`**。
+  顺序很重要：先落桶，模型就会围绕那个桶去组织结论（实测 B3 与 A1 分叉的机制）；
+- 取值越界**不再作废整条判决**，只记 `verdict_class_in_closed_set: false`。
+  把「模型挑了个闭集外的名字」升级成「整条判决不可用」，代价与收益完全不成比例；
+- `projected_class(parsed)`：非空且闭集内才算数，否则一律投影成 `其他`；
+- `apply_llm_verdict` 的 `basis` 那行去掉桶名（改为 `LLM 判决：{root_cause}`），
+  桶只留机器可读字段；冲突行**只在模型真给了闭集内的桶时**产生 ——
+  把每条 `其他` 都报成证据冲突，冲突段就被噪声淹没，而它的价值就是「出现即要人看」。
+
+**二、产线报告渲染**
+- `synthesize` 的根因块改为**三档降级，且不再以桶名打头**：
+
+  | 条件 | `root_cause` |
+  |---|---|
+  | 有集群侧实证 | `集群侧实证：<interpret_pod_evidence 的结论句>` |
+  | 有先例（强/弱） | `与历史先例 #N 高度吻合` / `…主题相近（可参考，但机制未必相同）` |
+  | 都没有 | `未能定性（仅有日志侧归类，需人工介入）` |
+
+  理由：冻结集上规则层**自报结论时 80% 是错的**。没有硬证据时**不说结论**，比说一个 80% 错的结论更负责；
+  信息并没有丢 —— 归类行与依据行都还在，回显的命中行紧跟在结论下面；
+- 新增一行 `- **归类**：{bucket}（{source}，仅供统计与派活，非结论）`，
+  `source ∈ {rule_regex, peer_regex, none}` 由 `sig_source` 派生；
+- `basis` 追加 `日志侧正则命中行：{sig}`（`sig` 非空才加）。这一行是给人**当场核对**用的：
+  看到「未能定性」时，下面紧接着就是那条被判为命中、但不足以定性的行。
+
+**三、评测层**
+- `declined_rate()`：LLM 真判了、但**拒绝归类**（留空 → 投影成 `其他`）的比例。
+  与降级率**分列**：降级是「LLM 整条不可用」，留空是「闭集里没有贴合的那一格」——
+  合成一列会把「桶表不够用」读成「模型不好用」，正好读反；
+- `phenomenon_clusters()`：把归类为 `其他` 的按 `phenomenon` **归一化后**（去空白/标点/大小写）
+  聚类，`render_cluster_candidates()` 渲染成「该新增哪个桶」的候选表，进评测报告新一节。
+  不归一化，同一现象会碎成一簇一个 case，这份聚类就不可复核、也不能跨运行比较；
+- `eval/run_eval.py` 用 `projected_class` 把空串与越界值投影成 `其他` 并记 `verdict_class_source`；
+  **降级路径（`used=False` → 规则桶）的计分口径一字不改** —— 它等于「LLM 挂了线上会怎样」。
+
+### 13.4 明确不做
+
+- **不给 `npu_ci_watch.py` / `deploy/npu-ci-watch.service` / `--llm-judge` 接线**，阶段边界不变（§12.7）；
+- **不动 `is_decisive` / `DECISIVE_BUCKETS`**：B2 走的是 `decisive=True` 路径，
+  owner 因此跳过集群取证、永远拿不到反驳证据（`is_decisive → code → 跳过集群取证 → 无反驳`）——
+  这是同一条级联，但它是规则层核心，且改动会改变集群查询量，**单独评估**；
+- **不动 `classify_text` 的 32 桶正则表**：桶表是投影的闭集来源，改它会让冻结集真值失配；
+- **不做「按引用行跑 `classify_text`」的兜底投影**：实测反例 —— 最大的真值族
+  `性能未达标(benchmark)` 里模型会引用 `E AssertionError: some aisbench cases failed`
+  （那是 benchmark harness 自己抛的），兜底投影照样投出 `断言失败(代码或精度)`，
+  **原样复现规则层的错**。「不硬塞最近桶」包括不拿正则去硬塞。
+
+### 13.5 已知遗留（本阶段未修，需单独决策）
+
+**归档 7 个 job 的重跑结果符合设计**：7/7 的根因行都读作「未能定性（仅有日志侧归类，需人工介入）」，
+紧随其后是「归类」行与「日志侧正则命中行」的回显 —— 不再有把关键词当机制的那一行。
+
+**但有一条口径打架的路径**（构造用例复现，非归档里观测到的）：当 `cluster.skipped=True` 时
+（即日志侧已判为决定性判据、按规则跳过集群取证，`report.py:312`），置信度仍读
+**「中高（日志侧决定性判据：测试框架自身的判定行）」**，而根因行已改读「未能定性」。
+读者会看到「结论说定不了性 / 置信度说中高」并列在同一段里。
+根因是 `is_decisive` 的结论没跟着根因块一起降级 —— 这正是 §13.4 第二条要单独评估的那条级联
+（`is_decisive → code → 跳过集群取证 → 永远拿不到反驳证据`）。
+归档里 7 个 job 都走的 `cluster.skipped=False` 分支，**这条路径本阶段未经真实样本验证**，
+评审时需一并说明。
+
+### 13.6 验证
+
+- 18 个套件全绿（`test_pytest_verdict` 15→21、`test_llm_verdict_parse` 17→20、
+  `test_llm_prompt` 19→21、`test_llm_fallback` 14→20、`test_freeze_set` 13→16、
+  `test_eval_metrics` 31→40）；新增 `tests/test_eval_wiring.py`（7 例）——
+  投影自己是对的由 `test_llm_fallback` 守着，但**投影有没有真的接到 record 上**此前零覆盖；
+- 每条新断言逐个注入反向改动证伪（清 `__pycache__` + `python3 -B`，防止同秒复用旧字节码），
+  确认恰好对应那条红，复原后复绿；
+- `eval/run_eval.py --dry-run`（$0）：规则臂一致率仍为 **0.2**，冻结集口径未漂移；
+- 日志窗口与 fixture **不入库**（本仓 PUBLIC），金丝雀摘录里的内网 IP 一律替换为占位符。

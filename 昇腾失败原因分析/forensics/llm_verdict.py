@@ -11,19 +11,28 @@
 
 3. **降级必须显式。** 任何一步失败都退回规则判决，且把原因具名写进 `verdict.llm.fallback_reason`：
    静默退回等于把「AI 判的」和「规则判的」混成一种东西，报告读者无法分辨，比不接 LLM 更糟。
+
+4. **桶是事后归类，不是判决入口。** `verdict_class` 选填：闭集里没有贴合的就留空。
+   强迫模型在定性**之前**先落一个桶，等于把规则层「首个命中正则胜出」原样搬进模型 ——
+   实测那正是 60% 的真值根本不在 32 桶里、而模型仍被逼着挑一个最接近的成因。
+   投影结果只用于统计/去重/派活，**不进任何给人读的结论行**。
 """
 import json
 import re
 
 # 改了 prompt（含纪律条款、输出契约）必须改这里：它进判决缓存的键与报告，
 # 否则改完 prompt 会静默复用旧口径的判决，「评测证明改进了」而线上还是旧的。
-PROMPT_VERSION = "v1"
+PROMPT_VERSION = "v2"
 
 OWNER_ENUM = ("infra", "code", "mixed", "unknown")
 CONFIDENCE_ENUM = ("high", "medium", "low")
 # verdict_class 的闭集由调用方传入（桶表在流水线脚本里，测试无法 import 那个脚本），
 # 这里只放两个兜底类，避免调用方漏传时把闸门悄悄放宽。
 FALLBACK_CLASSES = ("其他", "未分类")
+# 归类投影里「闭集覆盖不到」的那一格。模型没给出合法桶时落在这里，它按 `phenomenon`
+# 聚类后就是「该新增哪个归类」的数据驱动候选 —— 所以这一格必须**有意义**，
+# 不能变成「模型懒得想」的垃圾桶。
+OTHER_CLASS = FALLBACK_CLASSES[0]
 
 MAX_ROOT_CAUSE_CHARS = 600
 
@@ -82,9 +91,14 @@ def _require(parsed, field, types):
 def parse_llm_verdict(text, *, allowed_classes):
     """解析并校验模型输出。字段缺失/类型错/枚举越界一律抛 VerdictParseError（→ 降级）。
 
-    必填：root_cause / owner / confidence / verdict_class / evidence_lines
-    选填：phenomenon / decisive_line / disagrees_with_rule / missing_evidence
+    必填：root_cause / owner / confidence / evidence_lines
+    选填：verdict_class / phenomenon / decisive_line / disagrees_with_rule / missing_evidence
       —— 诊断性字段不参与判决，缺了不该让整条判决作废（那会白白抬高降级率）。
+
+    `verdict_class` 是**事后归类**（见模块 docstring 第 4 条），因此选填、默认空串，且
+    **取值越界不再作废整条判决**：把「模型挑了个闭集里没有的桶」升级成「整条判决不可用」，
+    代价（丢掉一条本来可用的自由文本判决）与收益完全不成比例。越界与否记在
+    `verdict_class_in_closed_set` 里，供指标读取 —— 它本身就是闭集覆盖不足的读数。
     """
     parsed = extract_json(text)
 
@@ -97,9 +111,13 @@ def parse_llm_verdict(text, *, allowed_classes):
     confidence = _require(parsed, "confidence", str)
     if confidence not in CONFIDENCE_ENUM:
         raise VerdictParseError("bad_enum:confidence", confidence)
-    verdict_class = _require(parsed, "verdict_class", str)
-    if verdict_class not in tuple(allowed_classes) + FALLBACK_CLASSES:
-        raise VerdictParseError("bad_enum:verdict_class", verdict_class)
+    raw_class = parsed.get("verdict_class")
+    if raw_class is None:
+        verdict_class = ""
+    elif not isinstance(raw_class, str):
+        raise VerdictParseError("bad_type:verdict_class", type(raw_class).__name__)
+    else:
+        verdict_class = raw_class.strip()
 
     evidence_lines = _require(parsed, "evidence_lines", list)
     if not evidence_lines:
@@ -116,6 +134,9 @@ def parse_llm_verdict(text, *, allowed_classes):
         "owner": owner,
         "confidence": confidence,
         "verdict_class": verdict_class,
+        # 空串（模型没归类）与「归了个闭集外的名字」都记 False —— 两者对指标的含义不同，
+        # 靠 verdict_class 是否为空串区分，不靠这个布尔值。
+        "verdict_class_in_closed_set": verdict_class in tuple(allowed_classes) + FALLBACK_CLASSES,
         "phenomenon": str(parsed.get("phenomenon") or "").strip(),
         "evidence_lines": list(evidence_lines),
         "decisive_line": decisive_line,
@@ -183,6 +204,22 @@ class LLMOutcome:
         return block
 
 
+def projected_class(parsed):
+    """判决的**归类投影**：模型真给出了闭集内的桶才算数，否则落 `其他`。
+
+    投影只用于统计/去重/派活，**绝不进给人读的结论行**。模型留空（或填了个闭集外的
+    名字）都落 `其他` —— 不硬塞最近桶，这正是要修的病灶：闭集里没有的失败本来就该
+    显式记成「没归类」，而不是被塞进一个最接近的桶里冒充结论。
+
+    `verdict_class_in_closed_set` 缺席时（手工构造的 parsed，早于该字段引入）按
+    「非空即算数」处理；空串无论如何都不算模型给了归类。
+    """
+    label = str(parsed.get("verdict_class") or "").strip()
+    if not label:
+        return OTHER_CLASS
+    return label if parsed.get("verdict_class_in_closed_set", True) else OTHER_CLASS
+
+
 def apply_llm_verdict(rule_verdict, outcome, rule_bucket=None):
     """把 LLM 判决叠加到规则 verdict 上，返回新 verdict。
 
@@ -191,7 +228,10 @@ def apply_llm_verdict(rule_verdict, outcome, rule_bucket=None):
         与既有 synthesize 的纪律一致），只加一条 conflict 并降置信度；
       - `basis` 只**追加**不插队（既有测试断言 basis[0] 的前缀）；
       - `needs_human` 是**单向棘轮**：LLM 只能置真，不能清除规则/集群侧已判出的人工复核标记；
-      - `official_leaf` / `precedent` / `owner_from_cluster` / `suggestions` 原样保留。
+      - `official_leaf` / `precedent` / `owner_from_cluster` / `suggestions` 原样保留；
+      - **归类不出现在任何给人读的句子里**：给人看的是 `root_cause` 那段自由文本，
+        归类只落 `merged["llm_class"]`，供统计/去重/派活。桶曾经是结论本身，那正是
+        误判的来源（实测：同一种真因在不同噪声下拿到两个不同的桶）。
     """
     merged = dict(rule_verdict or {})
     basis = list(merged.get("basis") or [])
@@ -222,10 +262,15 @@ def apply_llm_verdict(rule_verdict, outcome, rule_bucket=None):
         merged["confidence"] = CONFIDENCE_TEXT[parsed["confidence"]]
     merged["root_cause"] = parsed["root_cause"]
 
-    if rule_bucket and parsed["verdict_class"] != rule_bucket:
-        conflicts.append(f"规则桶【{rule_bucket}】与 LLM 判决【{parsed['verdict_class']}】不一致"
+    class_label = projected_class(parsed)
+    merged["llm_class"] = class_label
+    # 只在模型**真的给了**闭集内的归类时才谈「与规则桶不一致」。投影成 `其他`（模型留空
+    # 或越界）不是冲突，是「闭集里没有这一格」—— 把每条 `其他` 都报成证据冲突，
+    # 会让冲突段被噪声淹没，而冲突段的存在价值就在于「出现即要人看」。
+    if rule_bucket and class_label != OTHER_CLASS and class_label != rule_bucket:
+        conflicts.append(f"规则桶【{rule_bucket}】与 LLM 归类【{class_label}】不一致"
                          f"（规则桶是正则首个命中，非最终结论）")
-    basis.append(f"LLM 判决（{parsed['verdict_class']}）：{parsed['root_cause']}")
+    basis.append(f"LLM 判决：{parsed['root_cause']}")
     if parsed["evidence_lines"]:
         cited = "、".join(f"L{n}" for n in parsed["evidence_lines"])
         basis.append(f"LLM 引用的证据行：{cited}")

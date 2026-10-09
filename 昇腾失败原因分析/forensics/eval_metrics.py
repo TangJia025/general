@@ -23,6 +23,9 @@ record / pair 的结构约定（全部是 dict / tuple，不定义类）：
         "used": bool,                             # 判决是否用了 LLM（False = 降级）
         "weak_decisive": bool,                    # 决定性行是 WARNING/INFO 或缺失
         "fallback_reason": str | None,
+        "phenomenon": str,                        # 模型给的现象短语（`其他` 聚类的键）
+        "verdict_class_source": str,              # "llm" / "none" / "rule_fallback"
+        "root_cause": str,                        # 自由文本结论（簇里给人看的那句）
         "usage": {"prompt_tokens": int, "completion_tokens": int},
         "elapsed": float,
     }
@@ -35,7 +38,7 @@ import pathlib
 import random
 import re
 
-from forensics.llm_verdict import weak_decisive_line
+from forensics.llm_verdict import OTHER_CLASS, weak_decisive_line
 
 DEFECT_STRATUM = "defect"
 NORMAL_STRATUM = "normal"
@@ -249,6 +252,58 @@ def coverage_split(records):
             for name, items in groups.items()}
 
 
+def declined_rate(records):
+    """LLM 判了、但**拒绝归类**（留空 → 投影为 `其他`）的比例。
+
+    与降级率不是一回事，混在一起读会得出相反的结论：降级是「LLM 整条不可用，退回规则」，
+    留空是「LLM 给了结论，只是闭集里没有贴合的那一格」。后者恰恰是**该往桶表里加桶**
+    的信号 —— 把它算进降级率，就会把「桶表不够用」误读成「模型不好用」。
+    """
+    judged = [record for record in records if record.get("used")
+              and record.get("verdict_class_source") in ("llm", "none")]
+    if not judged:
+        # 规则臂（`source == "rule"`）根本没跑 LLM，给它报 0.0% 会被读成「模型从不留空」。
+        # 没有读数时返回 None，渲染成「—」。
+        return None
+    return sum(1 for record in judged
+               if record.get("verdict_class_source") == "none") / len(judged)
+
+
+def _normalize_phenomenon(text):
+    """归一化 phenomenon：抹掉空白/标点/大小写。
+
+    模型每次的描述措辞都会略有差异，不归一化，同一现象会碎成一簇一个 case，
+    这份聚类就不可复核、也不可跨运行比较。
+    """
+    return re.sub(r'[\s，。、,.;；:：!！?？()（）\[\]【】{}"\'`]+', "", str(text or "")).lower()
+
+
+def phenomenon_clusters(records, *, min_count=1):
+    """把归类为 `其他` 的按 `phenomenon` 聚类 —— 这就是「该新增哪个桶」的候选清单。
+
+    `其他` 的价值全在这里：闭集里没有的失败被**显式**记成没归类（而不是硬塞进一个
+    最接近的桶冒充结论），聚出来的一簇簇就是桶表的数据驱动候选。
+    返回按 n 降序的簇；`phenomenon` 列保留首次出现的原文，便于人读。
+    """
+    groups = {}
+    for record in records:
+        if record.get("pred_class") != OTHER_CLASS:
+            continue
+        key = _normalize_phenomenon(record.get("phenomenon")) or "(未写 phenomenon)"
+        entry = groups.setdefault(key, {"phenomenon": "", "n": 0,
+                                        "job_ids": [], "sample_root_cause": ""})
+        entry["n"] += 1
+        if not entry["phenomenon"]:
+            entry["phenomenon"] = str(record.get("phenomenon") or "").strip() \
+                or "(未写 phenomenon)"
+            entry["sample_root_cause"] = str(record.get("root_cause") or "")[:200]
+        if record.get("job_id"):
+            entry["job_ids"].append(str(record["job_id"]))
+    clusters = [entry for entry in groups.values() if entry["n"] >= min_count]
+    clusters.sort(key=lambda entry: (-entry["n"], entry["phenomenon"]))
+    return clusters
+
+
 def arm_metrics(records, *, n=2000, seed=0):
     """一个臂的全部指标。三臂（规则 / 模型A / 模型B）走**同一个函数** ——
     口径差一点，比出来的差值就没有意义（而「规则臂复现 ~48%」正是靠这个函数校准的）。"""
@@ -266,9 +321,11 @@ def arm_metrics(records, *, n=2000, seed=0):
         "hallucination_rate": hallucination_rate(records),
         "weak_decisive_rate": weak_decisive_rate(records),
         "degrade_rate": degrade_rate(records),
+        "declined_rate": declined_rate(records),
         "fallback_reasons": fallback_reasons(records),
         "by_stratum": by_stratum(records),
         "coverage_split": coverage_split(records),
+        "other_clusters": phenomenon_clusters(records),
         "cost": cost_summary(records),
     }
 
@@ -298,9 +355,11 @@ def rule_weak_decisive(text, buckets):
 
 def render_arm_table(arms):
     """把多个臂渲染成一张 markdown 表 —— 评测报告的主体。"""
+    # 「降级率」与「留空率」必须相邻且分列：前者是「LLM 整条不可用」，后者是「LLM 判了但闭集
+    # 里没有贴合的那一格」—— 合成一列会把「桶表不够用」读成「模型不好用」，正好读反。
     header = ("| 臂 | n（已裁定） | 现象归因一致率（95% CI） | owner 准确率 | 缺陷层一致率 "
-              "| 幻觉率 | 弱决定性行率 | 降级率 | 输入 token |")
-    rule = "|---|---|---|---|---|---|---|---|---|"
+              "| 幻觉率 | 弱决定性行率 | 降级率 | 留空率 | 输入 token |")
+    rule = "|---|---|---|---|---|---|---|---|---|---|"
     lines = [header, rule]
     for name, metrics in arms.items():
         agreement = metrics.get("agreement") or {}
@@ -312,14 +371,40 @@ def render_arm_table(arms):
         owner = metrics.get("owner_agreement")
         defect_text = "—" if defect.get("rate") is None else \
             f"{defect['rate']:.1%}（n={defect.get('n')}）"
-        lines.append("| {} | {} | {} | {} | {} | {} | {} | {} | {} |".format(
+        lines.append("| {} | {} | {} | {} | {} | {} | {} | {} | {} | {} |".format(
             name, agreement.get("n", 0), rate_text,
             "—" if owner is None else f"{owner:.1%}", defect_text,
             _percent(metrics.get("hallucination_rate")),
             _percent(metrics.get("weak_decisive_rate")),
             _percent(metrics.get("degrade_rate")),
+            _percent(metrics.get("declined_rate")),
             (metrics.get("cost") or {}).get("prompt_tokens", "—")))
     return "\n".join(lines)
+
+
+def render_cluster_candidates(arms, *, min_count=2):
+    """渲染「该新增哪个桶」的候选清单：各臂里归类为 `其他` 的簇，按 n 降序。
+
+    `min_count=2` 是默认而非 1：只出现一次的簇多半是模型措辞抖动，够不上「新增一个桶」的
+    门槛；它是**候选**清单，不是待办清单 —— 要不要新增，人看 `sample_root_cause` 再定。
+    """
+    blocks = []
+    for name, metrics in arms.items():
+        clusters = [cluster for cluster in (metrics.get("other_clusters") or [])
+                    if cluster.get("n", 0) >= min_count]
+        if not clusters:
+            continue
+        blocks.append(f"### {name} —— 归类为「其他」的现象簇（共 {len(clusters)} 簇）")
+        blocks.append("")
+        blocks.append("| 现象 | n | job | 结论样例 |")
+        blocks.append("|---|---|---|---|")
+        for cluster in clusters:
+            jobs = "、".join(cluster.get("job_ids") or []) or "—"
+            sample = (cluster.get("sample_root_cause") or "").replace("|", "\\|")
+            blocks.append(f"| {cluster.get('phenomenon')} | {cluster.get('n')} "
+                          f"| {jobs} | {sample} |")
+        blocks.append("")
+    return "\n".join(blocks)
 
 
 def _percent(value):

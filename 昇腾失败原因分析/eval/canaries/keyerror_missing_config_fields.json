@@ -1,0 +1,43 @@
+{
+  "name": "keyerror_missing_config_fields",
+  "why": "与 import_error_warning 同一族误判的**另一个入口**：窗口里回显了一份 cfg 字典 dump，其中含 HCCL_BUFFSIZE / HCCL_CONNECT_TIMEOUT 字样，规则层的 `HCCL\\w*(?:timeout)` 在 re.I 下命中的是**变量名**，于是「配置缺字段」被判成「HCCL 集合通信失败 / infra」（派错队伍）。朴素 prompt 会跟着这份 dump 走；带纪律的 prompt 必须落到 KeyError 那一行。",
+  "source_job_id": "113187868800",
+  "fixture": "eval/fixtures/113187868800.txt.gz",
+  "naive_system_prompt": "你是根因分析器，输出 JSON。",
+  "evidence_excerpt": [
+    "cfg = {'benchmarks': {'acc_gpqa': {'baseline': 90.4, 'batch_size': 32, 'case_type': 'accuracy', ...}}, 'envs': {'VISIBLE_DEVICES': '${VISIBLE_DEVICES}', 'HCCL_BUFFSIZE': '1800', 'HCCL_CONNECT_TIMEOUT': '120', 'HCCL_EXEC_TIMEOUT': '204', ...}}",
+    ">           raise KeyError(f\"Missing required config fields: {missing}\")",
+    "E           KeyError: \"Missing required config fields: ['deployment']\"",
+    "FAILED tests/e2e/common/multi_node/test_multi_node.py::test_multi_node - KeyE...",
+    "======================== 1 failed, 14 warnings in 3.49s ========================"
+  ],
+  "truth": {
+    "verdict_class": "测试参数缺失(config未传入)",
+    "closed_set_expressible": true,
+    "owner": "code",
+    "decisive_line": 3,
+    "note": "摘录行号（1-based）：第 3 行是 KeyError 判据，第 1 行的 cfg dump 是陷阱（规则命中行就是它）。本条的**闭集里有正确的桶**，所以纪律臂必须真的判出 `测试参数缺失(config未传入)` —— 与 import_error_warning / external_dp_rank_exit 两条形成对照：闭集覆盖得到时不许留空。"
+  },
+  "naive_must_get_wrong": {
+    "verdict_class": "HCCL 集合通信失败",
+    "owner": "infra",
+    "disagrees_with_rule": false
+  },
+  "disciplined_must_get_right": {
+    "verdict_class": "测试参数缺失(config未传入)",
+    "projected_class": "测试参数缺失(config未传入)",
+    "projection_source": "llm",
+    "owner": "code",
+    "decisive_line": 3,
+    "disagrees_with_rule": true,
+    "missing_evidence": "",
+    "evidence_lines_are_a_subset_of": [
+      1,
+      2,
+      3,
+      4,
+      5
+    ]
+  },
+  "how_to_run": "真跑需出网（DeepSeek）；不跑时由 tests/test_llm_prompt.py 守纪律条款在场、tests/test_freeze_set.py 守本文件的口径自洽。跑过一次后把原始响应写进 eval/runs/<ts>/verdicts.jsonl，用 --replay 即可 $0 复核。"
+}

@@ -47,9 +47,11 @@ PARSED = {
     "missing_evidence": "",
 }
 
+# 每个 reason 都必须是**当前真的可能产生**的：`bad_enum:verdict_class` 已随
+# 「归类降为选填」消失，留着它只会让这份清单变成一串没人验证的字符串。
 ALL_REASONS = [
     "disabled", "timeout", "http_429", "http_5xx", "http_4xx", "network",
-    "empty_content", "not_json", "missing_field:owner", "bad_enum:verdict_class",
+    "empty_content", "not_json", "missing_field:owner", "bad_enum:owner",
     "cited_line_not_in_evidence:9999", "evidence_unavailable", "budget_exhausted",
 ]
 
@@ -113,6 +115,58 @@ def test_rule_bucket_disagreement_is_recorded_as_conflict():
     merged = lv.apply_llm_verdict(RULE_VERDICT, _used(), rule_bucket="依赖/安装(ImportError)")
     assert any("依赖/安装(ImportError)" in line and "不一致" in line
                for line in merged["conflicts"]), merged["conflicts"]
+
+
+# ---------------- 归类是投影，不是结论 ----------------
+
+def test_basis_never_carries_the_class_label():
+    """给人读的那一行只有自由文本：桶曾经就是结论本身，那正是误判的来源。"""
+    merged = lv.apply_llm_verdict(RULE_VERDICT, _used(), rule_bucket="依赖/安装(ImportError)")
+    judged = [line for line in merged["basis"] if line.startswith("LLM 判决：")]
+    assert judged == [f"LLM 判决：{PARSED['root_cause']}"], judged
+
+
+def test_blank_class_projects_to_other():
+    """模型留空 = 闭集里没有贴合的格子，落 `其他`（它是「该新增哪个桶」的候选来源）。"""
+    merged = lv.apply_llm_verdict(RULE_VERDICT, _used(verdict_class=""), rule_bucket="依赖/安装(ImportError)")
+    assert merged["llm_class"] == lv.OTHER_CLASS
+    assert merged["llm"]["verdict_class"] == "", "投影不覆盖模型原话，两者都要留"
+
+
+def test_out_of_set_class_projects_to_other_not_a_fallback():
+    merged = lv.apply_llm_verdict(RULE_VERDICT,
+                                  _used(verdict_class="模型自创的桶",
+                                        verdict_class_in_closed_set=False),
+                                  rule_bucket="依赖/安装(ImportError)")
+    assert merged["llm_class"] == lv.OTHER_CLASS
+    assert merged["root_cause"] == PARSED["root_cause"], "越界只影响归类，不许作废判决"
+
+
+def test_other_class_is_not_a_conflict():
+    """`其他` 不是「与规则桶冲突」，是「闭集里没有这一格」——
+
+    把每条 `其他` 都报成证据冲突，冲突段就被噪声淹没，而它的价值就是「出现即要人看」。
+    """
+    merged = lv.apply_llm_verdict(RULE_VERDICT, _used(verdict_class=""),
+                                  rule_bucket="依赖/安装(ImportError)")
+    assert merged["conflicts"] == [], merged["conflicts"]
+
+
+def test_missing_closed_set_flag_still_trusts_a_non_empty_label():
+    """手工构造的 parsed（早于该字段引入）没有 `verdict_class_in_closed_set`。
+
+    此时按「非空即算数」处理：否则所有老调用点会静默地把归类降级成 `其他`，
+    冲突检测跟着一起失效 —— 那是无声的行为变更，比显式报错危险。
+    """
+    parsed = {k: v for k, v in PARSED.items()}
+    assert "verdict_class_in_closed_set" not in parsed
+    assert lv.projected_class(parsed) == PARSED["verdict_class"]
+
+
+def test_projection_never_invents_a_class_for_an_unknown_case():
+    """闭集覆盖不到时唯一的出路是 `其他`：不挑「最接近的」桶。"""
+    assert lv.projected_class({"verdict_class": "性能未达标(benchmark)",
+                               "verdict_class_in_closed_set": False}) == lv.OTHER_CLASS
 
 
 def test_agreement_adds_no_conflict():
