@@ -138,9 +138,17 @@ def test_raw_response_is_kept_when_parsing_fails():
     assert outcome.meta["raw_response"] == "模型说这是依赖问题"
 
 
-def test_enum_violation_is_named():
+def test_out_of_set_verdict_class_is_not_a_fallback():
+    """桶是事后归类：越界只标记、不作废判决。
+
+    降级会把 `root_cause`/`owner` 逐字退回规则判决 —— 为了一个只影响统计的归类字段，
+    丢掉一条本来可用的自由文本判决，是拿最有价值的东西去换最不重要的。
+    """
     outcome, _ = _run(_payload(verdict_class="模型自创的桶"))
-    assert outcome.fallback_reason == "bad_enum:verdict_class"
+    assert outcome.used is True
+    assert outcome.parsed["verdict_class"] == "模型自创的桶"
+    assert outcome.parsed["verdict_class_in_closed_set"] is False
+    assert outcome.meta["raw_verdict_class"] == "模型自创的桶"
 
 
 def test_failed_outcome_has_no_parsed_payload():

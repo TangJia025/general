@@ -71,11 +71,37 @@ def test_json_with_surrounding_prose_is_recovered():
 
 
 def test_optional_diagnostic_fields_default_to_empty():
-    minimal = '{"root_cause":"x","owner":"code","confidence":"medium",' \
-              '"verdict_class":"未分类","evidence_lines":[3]}'
+    minimal = '{"root_cause":"x","owner":"code","confidence":"medium","evidence_lines":[3]}'
     parsed = lv.parse_llm_verdict(minimal, allowed_classes=ALLOWED)
     assert parsed["phenomenon"] == "" and parsed["decisive_line"] is None
     assert parsed["missing_evidence"] == ""
+
+
+def test_verdict_class_is_optional():
+    """桶是事后归类，不是判决入口：闭集里没有贴合的就该留空，且留空不是失败。"""
+    parsed = lv.parse_llm_verdict('{"root_cause":"x","owner":"code",'
+                                  '"confidence":"medium","evidence_lines":[3]}',
+                                  allowed_classes=ALLOWED)
+    assert parsed["verdict_class"] == ""
+    assert parsed["verdict_class_in_closed_set"] is False, \
+        "空串不是「在闭集内」—— 模型没归类与归类越界要靠它区分开"
+
+
+def test_out_of_set_verdict_class_is_kept_not_rejected():
+    """模型自创的桶名不再作废整条判决，只标记「不在闭集内」。
+
+    旧行为（抛 bad_enum:verdict_class）会把「挑了个不存在的桶」升级成「整条判决不可用」，
+    等于用丢掉一条可用的自由文本判决，去惩罚一个只影响统计的字段。
+    """
+    parsed = lv.parse_llm_verdict(_json(verdict_class="模型自创的桶"), allowed_classes=ALLOWED)
+    assert parsed["verdict_class"] == "模型自创的桶", "越界值要原样留着，供指标读取"
+    assert parsed["verdict_class_in_closed_set"] is False
+    assert lv.parse_llm_verdict(_json(), allowed_classes=ALLOWED)["verdict_class_in_closed_set"] is True
+
+
+def test_verdict_class_wrong_type_is_still_named():
+    """选填不等于放过类型错：结构性的坏输出仍要具名降级。"""
+    assert _reason(_json(verdict_class={"name": "桶"})) == "bad_type:verdict_class"
 
 
 def test_fallback_classes_always_allowed():
@@ -102,7 +128,7 @@ def test_not_json_reported():
 
 def test_missing_field_reported_by_name():
     import json
-    for field in ("root_cause", "owner", "confidence", "verdict_class", "evidence_lines"):
+    for field in ("root_cause", "owner", "confidence", "evidence_lines"):
         payload = dict(GOOD)
         del payload[field]
         try:
@@ -116,7 +142,6 @@ def test_missing_field_reported_by_name():
 def test_bad_enum_reported_per_field():
     assert _reason(_json(owner="backend")) == "bad_enum:owner"
     assert _reason(_json(confidence="very-high")) == "bad_enum:confidence"
-    assert _reason(_json(verdict_class="模型自创的桶")) == "bad_enum:verdict_class"
 
 
 def test_evidence_lines_empty_or_wrong_type_is_rejected():

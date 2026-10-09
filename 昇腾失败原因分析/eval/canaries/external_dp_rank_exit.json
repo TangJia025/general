@@ -1,0 +1,43 @@
+{
+  "name": "external_dp_rank_exit",
+  "why": "真因是 external DP 的 prefill rank 进程**启动即退出**（RuntimeError），而这个 rank 自己的日志不在本窗口里（在子进程 log 文件里）。窗口里唯一带 HCCL 字样的，是一行打印 External DP 启动命令的 **INFO** —— 命令行里塞满了 HCCL_* 环境变量，规则层于是判成「HCCL 集合通信失败 / infra」，而它其实连失败原因都不是。这条同时钉住两件事：不许锚在 INFO/WARNING 上；真因不在窗口里时，正确行为是**说清机制 + 留空归类**，不是挑最近的桶。",
+  "source_job_id": "112594081248",
+  "fixture": "eval/fixtures/112594081248.txt.gz",
+  "naive_system_prompt": "你是根因分析器，输出 JSON。",
+  "evidence_excerpt": [
+    "[2026-10-07 02:04:44] [INFO] External DP server command node=0 rank=0: ACL_OP_INIT_MODE=1 ASCEND_ENABLE_USE_FABRIC_MEM=1 ASCEND_RT_VISIBLE_DEVICES=0,1,2,3 GLOO_SOCKET_IFNAME=eth0 HCCL_BUFFSIZE=1800 HCCL_CONNECT_TIMEOUT=120 HCCL_EXEC_TIMEOUT=204 HCCL_IF_IP=<对端 IP> HCCL_OP_EXPANSION_MODE=AIV HCCL_SOCKET_IFNAME=eth0 LD_LIBRARY_PATH=/usr/local/Ascend/ascend-toolkit/latest/...",
+    "tests/e2e/common/multi_node/external_dp/runtime.py:494: in __enter__",
+    ">           raise RuntimeError(\"External DP rank process exited before ready: \" + \"; \".join(exited))",
+    "E           RuntimeError: External DP rank process exited before ready: node=0 rank=1 role=prefiller url=http://<对端 IP>:7101/health pid=6716 returncode=1 log=/tmp/external_dp_logs/node-0/rank-1.log; node=0 rank=2 role=prefiller returncode=1",
+    "FAILED tests/e2e/common/multi_node/test_multi_node.py::test_multi_node - Runt..."
+  ],
+  "truth": {
+    "verdict_class": "外部DP prefill rank 启动即退出(真因需看该 rank 日志)",
+    "closed_set_expressible": false,
+    "owner": "code",
+    "decisive_line": 4,
+    "note": "摘录行号（1-based）：第 4 行是 RuntimeError 判据，第 1 行是陷阱（INFO，规则命中行就是它）。真值类**不在 32 桶闭集里**（closed_set_expressible=false）—— 纪律臂的正确行为是留空（投影成「其他」）并把「该 rank 的日志不在本窗口」写进 missing_evidence，而不是挑一个最近的桶。摘录里的内网 IP 已用占位符替换（本仓是 PUBLIC）。"
+  },
+  "naive_must_get_wrong": {
+    "verdict_class": "HCCL 集合通信失败",
+    "owner": "infra",
+    "disagrees_with_rule": false
+  },
+  "disciplined_must_get_right": {
+    "verdict_class": "",
+    "projected_class": "其他",
+    "projection_source": "none",
+    "owner": "code",
+    "decisive_line": 4,
+    "disagrees_with_rule": true,
+    "missing_evidence": "node-0 rank=1/rank=2 这两个 prefill 子进程自己的日志（log=/tmp/external_dp_logs/node-0/rank-*.log，不在本窗口）；拿到才能区分是代码缺陷、配置错误还是显存不足。",
+    "evidence_lines_are_a_subset_of": [
+      1,
+      2,
+      3,
+      4,
+      5
+    ]
+  },
+  "how_to_run": "真跑需出网（DeepSeek）；不跑时由 tests/test_llm_prompt.py 守纪律条款在场、tests/test_freeze_set.py 守本文件的口径自洽。跑过一次后把原始响应写进 eval/runs/<ts>/verdicts.jsonl，用 --replay 即可 $0 复核。"
+}
