@@ -1,14 +1,16 @@
 """第 5 步：根因 + 修复建议的输出合成。
 
 合成纪律（本工具最容易被误用的地方）：
-  1. **三层证据并列，不互相覆盖**。日志侧（桶+owner）、集群侧（pod/容器/标签可用性）、
-     历史侧（issue 先例）各自独立呈现，谁也不能静默改写谁。
-  2. **冲突要显式标出**。当历史先例的根因指向的责任方与日志侧桶的 owner 不一致时
-     （实测常见：#238 桶判 code、先例证明是平台清理脚本），报告必须把冲突摆出来并降置信度，
+  1. **日志侧与集群侧两层证据并列，不互相覆盖**。日志侧（桶+owner）、集群侧
+     （pod/容器/标签可用性）各自独立呈现，谁也不能静默改写谁。
+     **历史先例不在这两层里** —— 它是线索，不是证据：它证明过「同类失败曾这样发生」，
+     推不出「本次就是这样」。故它既不进「根因」行，也不抬置信度（见根因描述处注释）。
+  2. **冲突要显式标出**。当先例的根因指向的责任方与日志侧桶的 owner 不一致时
+     （实测常见：#238 桶判 code、先例证明是平台清理脚本），报告必须把这条摆出来提示核对，
      而不是挑一个写进结论。
   3. **未取证就写未取证**。缺 kubeconfig、权限不足、pod 已回收都是正常结果，
      必须如实写，绝不用推测填充。
-  4. 置信度只在有把握时给高：集群侧实证 > 历史强先例 > 仅日志桶正则 > 未分类。
+  4. 置信度只在有把握时给高：集群侧实证 > 仅日志桶正则 > 未分类。
 """
 from __future__ import annotations
 
@@ -280,13 +282,15 @@ def synthesize(case: dict) -> dict:
     if strong_precedent and knowledge_owner and log_owner not in (knowledge_owner, "unknown"):
         conflicts.append(f"日志侧判 owner={log_owner}，但知识表对该桶的预置 owner 是 {knowledge_owner}")
     # 历史先例的根因若提到平台侧动作，而日志侧却判了 code，这是最危险的一类误归属
-    # （实测 #238：桶判 code，先例证明是平台老化脚本）——摆出来提示核对，但不自动改判。
+    # （实测 #238：桶判 code，先例证明是平台老化脚本）。
+    # 但先例**不是一层证据**（见根因描述处），所以这条只作「提示项」：不进 conflicts、
+    # 也不压置信度 —— 它值一次人工核对，不值一条把置信度打到「低」的「证据冲突」。
     if log_owner == "code" and strong_precedent:
         signals = strong_precedent["issue"].get("platform_signals") or []
         if signals:
-            conflicts.append(
-                f"日志侧判 owner=code，但历史先例 #{strong_precedent['issue']['number']} "
-                f"的根因提到平台侧动作（{'；'.join(signals)}）——"
+            hints_requiring_human.append(
+                f"另有线索指向平台侧动作（{'；'.join(signals)}；来自历史先例 "
+                f"#{strong_precedent['issue']['number']} 的根因，**未**采信为结论）——"
                 f"请核对是否属「错误信号所在层 ≠ 责任方所在层」的情形，勿直接采信 code")
     # 策展关联走的是另一条路：词面匹配连不上它们（见 step4_related），
     # 但它们恰恰是「同现象、责任方相反」的高价值判例，冲突判定必须一并覆盖。
@@ -314,14 +318,10 @@ def synthesize(case: dict) -> dict:
         # 但不给「高」：没有集群侧实证，且「改 CI 编排还是让分支 rebase」仍需人来定。
         confidence = "中高（日志侧决定性判据：测试框架自身的判定行；按规则未做集群取证）"
         needs_human = True
-    elif strong_precedent and strong_precedent["evidence_strength"] == "强":
-        confidence = "中高（命中同签名的历史先例，但缺集群侧实证）"
-        needs_human = False
-    elif strong_precedent:
-        # 同主题先例只是线索：它证明过「同类失败曾这样发生」，不证明「本次就是这样」。
-        # 因此不给「中高」，且要求人工过一眼。
-        confidence = "中（有同主题历史先例，机制未必相同，且缺集群侧实证）"
-        needs_human = True
+    # 这里**没有**「命中历史先例 → 提高置信度」这一档：先例是线索不是证据，它证明过
+    # 「同类失败曾这样发生」，推不出「本次就是这样」。留着它会造成措辞自相矛盾——
+    # 根因行已经（因缺实证而）写「未能定性」，置信度却说「中高（命中同签名的历史先例）」。
+    # 有先例的 case 自然落到下面的 bucket 分支，与无先例者同档。
     elif pod_evidence:
         confidence = "中（集群侧已定位 pod 但状态无异常，未能据此定性）"
         needs_human = True
@@ -350,30 +350,35 @@ def synthesize(case: dict) -> dict:
     # 冻结集上自报结论时 80% 是错的（6/30），而且同一种真因在不同噪声分布下会拿到两个
     # 不同的桶（aisbench 性能未达标 → A1 判 HCCL/infra、B3 判 断言失败/code）。
     # 所以这里只写**有实证支撑**的话；拿不出实证就不说结论 —— 比说一个大概率错的结论负责。
-    # 信息并没有丢：归类在「归类」行（render_case）、命中的原文在依据段。
+    #
+    # **历史先例不在此列**（曾经有两档「与历史先例 #N 高度吻合 / 主题相近」，已删）。
+    # 产线实测：588 份报告里 #227 一条先例被写成根因 241 次（41%），当前渲染的 118 条
+    # 根因行里 56% 用先例当根因、其中 94% 写最自信的「高度吻合」，而人工可核的样本 4/4
+    # 全错。原因是「检索到同现象的 issue」推不出「本次失败就是这个原因」：知识库是有偏
+    # 样本（只有值得写复盘的才进去），CI 失败有几千次，先验上撞上已归档复盘的概率远低于
+    # 报告给出的数字。这是**用先例代替取证**，换更好的检索器也修不掉。
+    # 先例并未消失：它在「历史问题定位（第 4 步）」节逐条列出（读 case["history"]）、
+    # 在依据段的 basis 行里、也仍在返回值的 precedent 键里 —— 只是不再冒充结论。
     if pod_evidence and cluster_owner_votes:
         root_cause = "集群侧实证：" + "；".join(
             item["verdict"] for item in interpret_pod_evidence(pod_evidence))
-    elif strong_precedent and strong_precedent["evidence_strength"] == "强":
-        # 措辞由**证据类型**决定，不由裸分数决定：命中带机制的签名（如 exitcode:137）
-        # 几乎不会偶然撞上，才配得上「高度吻合」；分数高但只有通用词/桶名重叠的，
-        # 只能说「主题相近」——两者对读者的含义差别很大，不能混为一谈。
-        root_cause = f"与历史先例 #{strong_precedent['issue']['number']} 高度吻合"
-    elif strong_precedent:
-        root_cause = (f"与历史先例 #{strong_precedent['issue']['number']} 主题相近"
-                      f"（可参考，但机制未必相同）")
     elif bucket != "未分类":
         root_cause = "未能定性（仅有日志侧归类，需人工介入）"
     else:
         root_cause = "未能定性（需人工介入）"
 
     # --- 修复建议：知识表 + 先例的修复小节 ---
+    # 先例的修复记录仍然列出（知识库里那些复盘正文是真实资产，扔掉可惜），但必须标出
+    # **未采信为结论** —— 否则读的人会把它当成「本次失败的推荐修复方案」，而它只是
+    # 「同类现象历史上怎么修的」。模块注释开头那句「比不给先例更糟」说的就是这个风险。
     suggestions = list(knowledge.get("action") or [])
     if strong_precedent and strong_precedent["issue"]["sections"].get("fix"):
-        suggestions.append(f"历史先例 #{strong_precedent['issue']['number']} 的修复记录："
+        suggestions.append(f"历史先例 #{strong_precedent['issue']['number']} 的修复记录"
+                           f"（**未**采信为结论，仅供人工比对）："
                            f"{strong_precedent['issue']['sections']['fix'][:400]}")
     if strong_precedent and strong_precedent["issue"]["sections"].get("prevention"):
-        suggestions.append(f"历史先例 #{strong_precedent['issue']['number']} 的防复发建议："
+        suggestions.append(f"历史先例 #{strong_precedent['issue']['number']} 的防复发建议"
+                           f"（**未**采信为结论，仅供人工比对）："
                            f"{strong_precedent['issue']['sections']['prevention'][:300]}")
 
     return {

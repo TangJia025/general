@@ -20,12 +20,17 @@ sys.path.insert(0, str(BASE_DIR))
 
 from forensics import llm_verdict as lv    # noqa: E402
 
-# 取自 synthesize() 的真实形态（含既有各个键，用来验证「没被误伤」）
+# 取自 synthesize() 的真实形态（含既有各个键，用来验证「没被误伤」）。
+#
+# ⚠️ 这是**手工维护**的快照，synthesize 改措辞它不会自动跟着变 —— 于是就烂过一次：
+# `root_cause` 曾经是 `依赖/安装(ImportError)`（桶名直接当结论），而 synthesize 早已把
+# 这档删掉（桶不是结论，见 report.py 根因描述处）；`confidence` 也少了个「，未经集群侧验证」。
+# 下面 `test_rule_verdict_snapshot_still_matches_synthesize` 就是防这件事的。
 RULE_VERDICT = {
-    "root_cause": "依赖/安装(ImportError)",
+    "root_cause": "未能定性（仅有日志侧归类，需人工介入）",
     "owner": "code",
     "owner_from_cluster": False,
-    "confidence": "中（仅日志侧正则定性）",
+    "confidence": "中（仅日志侧正则定性，未经集群侧验证）",
     "basis": ["日志侧：node0 失败步骤时间窗命中桶【依赖/安装(ImportError)】"],
     "conflicts": [],
     "hints_requiring_human": [],
@@ -90,6 +95,32 @@ def test_degraded_confidence_is_capped_regardless_of_rule_confidence():
 def test_degraded_keeps_rule_confidence_for_comparison():
     merged = lv.apply_llm_verdict(RULE_VERDICT, lv.LLMOutcome.degraded("timeout"))
     assert merged["confidence_rule"] == RULE_VERDICT["confidence"]
+
+
+def test_rule_verdict_snapshot_still_matches_synthesize():
+    """RULE_VERDICT 是手工快照，会腐烂（已经烂过一次，见文件头注释）。
+
+    这里就地把它的 `root_cause` / `confidence` 与 synthesize 的真实输出对一遍：措辞一改，
+    这条红，逼着同步 —— 否则整个文件是在用一份不存在的输入形态做验证，绿得没有意义。
+    """
+    from forensics.report import synthesize
+
+    case = {
+        "job_name": "Nightly-A2 调度失败", "workflow": "schedule_nightly_test_a2.yaml",
+        "link": "https://example.invalid/job/1", "step": "Run tests", "chip": "a2",
+        "labels": [], "runner_name": None, "bucket": "依赖/安装(ImportError)",
+        "owner": "code", "sig": "No module named 'xxx'",
+        "cluster": {"skipped": False, "skip_reason": None, "cluster_name": "EXAMPLE-CLUSTER",
+                    "kubeconfig_path": "/tmp/example.kubeconfig", "pod_evidence": None,
+                    "availability": None, "candidates": [], "not_obtained": [], "logs": []},
+        "history": [], "related_issues": [],
+    }
+    verdict = synthesize(case)
+    assert verdict["root_cause"] == RULE_VERDICT["root_cause"], \
+        f"synthesize 现在输出 `{verdict['root_cause']}`，快照还停在 `{RULE_VERDICT['root_cause']}`"
+    assert verdict["confidence"] == RULE_VERDICT["confidence"], \
+        f"synthesize 现在输出 `{verdict['confidence']}`，快照还停在 `{RULE_VERDICT['confidence']}`"
+    assert verdict["owner"] == RULE_VERDICT["owner"]
 
 
 # ---------------- 正常路径 ----------------
