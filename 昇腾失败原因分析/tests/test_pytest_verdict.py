@@ -390,6 +390,123 @@ def test_empty_sig_leaves_no_dangling_evidence_line():
     assert not any("正则命中行" in line for line in verdict["basis"]), verdict["basis"]
 
 
+# ---------------- 先例：是线索，不是结论 ----------------
+#
+# 这一组守的是「先例不得改写给人读的那一行」。产线实测：588 份报告里 #227 一条先例
+# 被写成根因 241 次（41%），当前渲染的 118 条根因行里 56% 用先例当根因、其中 94% 写
+# 最自信的「高度吻合」，而人工可核的样本 4/4 全错。原因不是检索质量，是结构：
+# 「检索到同现象的 issue」推不出「本次失败就是这个原因」—— 知识库是有偏样本
+# （只有值得写复盘的才进去），CI 失败有几千次。故此处**不许**再出现先例当结论；
+# 但同时要守住「先例信息没丢」（§4 节、依据段、建议区都还在），否则就是另一头出错。
+
+def _strong_precedent(number=227, strength="强"):
+    """一条「强证据」先例的最小形态（字段与 IssueIndex.match 的返回同构）。"""
+    return {
+        "issue": {
+            "number": number, "state": "OPEN", "url": f"https://example.invalid/issues/{number}",
+            "title": "华为云 pypi 镜像 CDN 节点 index 页撕裂（12h TTL）导致 CI 构建失败",
+            "is_postmortem": True, "root_cause_source": "body",
+            "sections": {"root_cause": "CDN 节点 index 页撕裂。",
+                         "fix": "重试取包", "prevention": "加长 TTL"},
+            "platform_signals": ["内网源/镜像仓库可用性相关"],
+        },
+        "score": 352.06,
+        "matched_signatures": ["vllm"],
+        "mechanism_signatures": ["vllm"],
+        "matched_keywords": ["vllm"],
+        "core_keywords": [],
+        "evidence_strength": strength,
+        "has_root_cause": True,
+    }
+
+
+def _precedent_case(**overrides):
+    overrides.setdefault("history", [_strong_precedent()])
+    overrides.setdefault("owner", "code")
+    # ⚠️ 这里**不能**沿用 _conclusion_case 的 skipped 集群：synthesize 的置信度 if/elif 链里
+    # `cluster.skipped and bucket != "未分类"` 排在先例档**之前**，skipped 的 case 永远进不到
+    # 先例那一档，于是「先例不抬置信度」这条断言会因为压根没走到那段代码而**假绿**
+    # （实测：把先例档注入回去，skipped 版本仍然 28/28 全绿）。必须用「未跳过、未取到 pod」
+    # 的形态，先例档才是可达的。
+    overrides.setdefault("cluster", {
+        "skipped": False, "skip_reason": None, "cluster_name": "EXAMPLE-CLUSTER",
+        "kubeconfig_path": "/tmp/example.kubeconfig", "pod_evidence": None,
+        "availability": None, "candidates": [], "not_obtained": [], "logs": [],
+    })
+    return _conclusion_case(**overrides)
+
+
+def test_a_strong_precedent_does_not_become_the_root_cause():
+    """「与历史先例 #N 高度吻合」不许再出现在根因行 —— 那是用先例代替取证。"""
+    case = _precedent_case()
+    root_line = [line for line in _conclusion_section(case).splitlines()
+                 if line.startswith("- **根因**")]
+    assert len(root_line) == 1, root_line
+    assert "先例" not in root_line[0], root_line[0]
+    assert "吻合" not in root_line[0], root_line[0]
+    assert "未能定性" in root_line[0], root_line[0]
+
+
+def test_a_precedent_does_not_raise_the_confidence_label():
+    """置信度描述「归类有多可信」，不是「先例有多像」。混进来会造成措辞自相矛盾：
+    根因行已写「未能定性」，置信度却说「中高（命中同签名的历史先例）」。"""
+    verdict = _precedent_case()["verdict"]
+    assert "先例" not in verdict["confidence"], verdict["confidence"]
+    assert verdict["needs_human"] is True, "先例不是证据，人工复核信号不得丢失"
+
+
+def test_the_precedent_survives_in_the_history_section_and_basis():
+    """降级 ≠ 删除：先例必须仍在第 4 步逐条列出、仍在依据段里。"""
+    from forensics.report import render_case
+
+    case = _precedent_case()
+    text = "\n".join(render_case(case, 1))
+    assert "#### 历史问题定位（第 4 步）" in text
+    assert "#227" in text, "先例从报告里整个消失了 —— 那是另一头出错"
+    assert any("历史先例：#227" in line for line in case["verdict"]["basis"]), \
+        case["verdict"]["basis"]
+    assert case["verdict"]["precedent"]["number"] == 227
+
+
+def test_the_precedents_fix_is_listed_but_labelled_as_not_adopted():
+    """先例的修复记录仍列出（复盘正文是真实资产），但必须标出未采信。"""
+    verdict = _precedent_case()["verdict"]
+    fix_lines = [s for s in verdict["suggestions"] if "修复记录" in s]
+    assert fix_lines, f"先例的修复记录整段丢了：{verdict['suggestions']}"
+    assert "未" in fix_lines[0] and "采信" in fix_lines[0], fix_lines[0]
+    assert "重试取包" in fix_lines[0], fix_lines[0]
+
+
+def test_the_platform_lead_is_a_hint_not_an_evidence_conflict():
+    """先例指向平台、日志侧判 code —— 这条值一次核对，不值一条把置信度打到「低」的
+    「证据冲突」（先例不是证据层，它压不动置信度）。"""
+    verdict = _precedent_case()["verdict"]
+    assert not any("先例" in item for item in verdict["conflicts"]), verdict["conflicts"]
+    assert any("平台侧动作" in item for item in verdict["hints_requiring_human"]), \
+        verdict["hints_requiring_human"]
+    assert "三层证据" not in verdict["confidence"], verdict["confidence"]
+
+
+def test_a_weak_precedent_also_stays_out_of_the_root_cause():
+    """「中」档（主题相近）同样不许进根因行 —— 两档一起删，不是只删强的那档。"""
+    case = _precedent_case(history=[_strong_precedent(strength="中")])
+    root_line = [line for line in _conclusion_section(case).splitlines()
+                 if line.startswith("- **根因**")]
+    assert "先例" not in root_line[0] and "未能定性" in root_line[0], root_line[0]
+    assert "先例" not in case["verdict"]["confidence"], case["verdict"]["confidence"]
+
+
+def test_a_precedent_below_the_score_floor_is_not_adopted_at_all():
+    """分数低于门槛的条目本就不该被采信（弱线索另有提示），根因行也不该提到它。"""
+    low = _strong_precedent(number=999)
+    low["score"] = 12.0
+    case = _precedent_case(history=[low])
+    root_line = [line for line in _conclusion_section(case).splitlines()
+                 if line.startswith("- **根因**")]
+    assert "999" not in root_line[0], root_line[0]
+    assert case["verdict"]["precedent"] is None, case["verdict"]["precedent"]
+
+
 def test_pipeline_end_to_end_only_queries_cluster_for_non_decisive():
     """端到端：真跑一遍 npu_ci_forensics.main()，断言集群取证**只**被待取证的 case 触发。
 
