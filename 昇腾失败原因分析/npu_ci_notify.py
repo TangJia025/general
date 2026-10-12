@@ -32,6 +32,16 @@ xlb_notify.py 已经犯过的那次凭据泄露。
 用法：
     npu_ci_notify.py <report.json> [job_id,job_id]   # 由 npu_ci_watch.py --notify-command 调用
     npu_ci_notify.py --dry-run <report.json>         # 只渲染不发信，且不要求凭据
+
+## owner=infra 的失败 job 会顺带建 issue
+
+默认对 `--issue-repo`（默认 TangJia025/general）里 owner=infra 的 case **一个 job 建一个
+issue**，链接写进邮件正文。脱敏与查重都在 forensics/gh_issue.py，不在本文件。
+`--no-issues` 关掉；`--dry-run` 永远不建，只列出将要建的标题。
+
+⚠️ 已知限制：**issue 链接不会出现在 WeLink 消息里**。消费端 xlb_notify.parse_alert
+把「含 http 的行」整行丢掉，且只有正文第一个 URL 能成为 `Runbook:` —— 按需求那个位置
+留给 CI 链接。所以 issue 链接只在邮件正文里可点，WeLink 那条消息看不到它。
 """
 
 import argparse
@@ -42,6 +52,8 @@ import re
 import smtplib
 import sys
 from email.mime.text import MIMEText
+
+from forensics import gh_issue
 
 SMTP_HOST_DEFAULT = "smtp.qq.com"
 SMTP_PORT_DEFAULT = 587
@@ -136,8 +148,12 @@ def build_message_id(cases):
     return "<npu-ci-%s-%s@npu-ci>" % (run_id, job_part)
 
 
-def build_body(report, cases):
-    """渲染 HTML 表格。标签与值落在相邻的 <th>/<td>，被 _html_to_text 展成分行文本。"""
+def build_body(report, cases, issue_urls=None):
+    """渲染 HTML 表格。标签与值落在相邻的 <th>/<td>，被 _html_to_text 展成分行文本。
+
+    issue_urls 按 job 顺序排在 CI 链接**之后** —— 消费端取正文第一个 URL 当 Runbook，
+    第一个必须还是 CI 链接（需求如此）。issue 链接只给读邮件的人看。
+    """
     meta = report.get("meta") or {}
     repo = _clean_value(meta.get("repo"), 80) or "昇腾CI"
     generated_at = _clean_value(meta.get("generated_at"), 40) or "时间未知"
@@ -173,11 +189,20 @@ def build_body(report, cases):
                 html.escape(run_url, quote=True), html.escape(run_url))
             break
 
+    # issue 链接排在 CI 链接之后（见 docstring：第一个 URL 必须仍是 CI 链接）
+    issue_block = ""
+    for url in issue_urls or []:
+        url = _plain(url, 300)
+        if url.startswith("http"):
+            issue_block += '\n  <p><a href="%s">%s</a></p>' % (
+                html.escape(url, quote=True), html.escape(url))
+
     return (
         '<!DOCTYPE html>\n<html><head><meta charset="UTF-8"></head>\n<body>\n<table>\n'
         + table_rows
         + "\n</table>\n"
         + link_block
+        + issue_block
         + "\n  <p>本邮件由昇腾 CI 失败分析工具自动发送，经小鲁班转发到 WeLink。</p>\n"
         + "</body></html>"
     )
@@ -220,6 +245,12 @@ def main():
     parser.add_argument("report_path", nargs="?", default="", help="分析报告 JSON 路径")
     parser.add_argument("job_ids", nargs="?", default="", help="逗号分隔的 job id，由 watcher 传入")
     parser.add_argument("--dry-run", action="store_true", help="只渲染不发信，且不要求凭据")
+    parser.add_argument("--no-issues", action="store_true",
+                        help="不建 issue（默认会给 owner=infra 的 job 各建一个）")
+    parser.add_argument("--issue-repo", default="TangJia025/general",
+                        help="建 issue 的目标仓，默认 TangJia025/general（PUBLIC，正文强制脱敏）")
+    parser.add_argument("--issue-state", default="",
+                        help="job_id → issue URL 的映射文件，默认 .forensics_state/issues.json")
     arguments = parser.parse_args()
 
     if not arguments.report_path:
@@ -244,16 +275,42 @@ def main():
         print("警告：按 job_ids 过滤后为空，已退回通知报告内全部用例", file=sys.stderr)
 
     subject = build_subject(cases)
-    body = build_body(report, cases)
     message_id = build_message_id(cases)
+    infra_cases = [case for case in cases
+                   if str(case.get("owner") or "").strip().lower() == "infra"]
 
     if arguments.dry_run:
+        # dry-run 不建 issue，只把「将要建哪些」列出来，方便肉眼核对标题与脱敏
         print("收件人    : %s" % (config["alert_to"] or "(未设置 ALERT_TO)"))
         print("主题      : %s" % subject)
         print("Message-ID: %s" % message_id)
+        print("将建 issue: %d 个（owner=infra，dry-run 不实际创建）" % len(infra_cases))
+        for case in infra_cases:
+            print("            %s" % gh_issue.build_issue_title(
+                case, gh_issue.harvest_sensitive(case)))
         print("-" * 60)
-        print(flatten_for_preview(body))
+        print(flatten_for_preview(build_body(report, cases)))
         return
+
+    # 建 issue 在发信之前 —— 链接要进正文。失败只警告，绝不因此不发邮件。
+    issue_urls = []
+    if infra_cases and not arguments.no_issues:
+        state = gh_issue.load_state(arguments.issue_state or None)
+        mapping, notes = gh_issue.ensure_infra_issues(
+            cases, arguments.issue_repo, state)
+        for note in notes:
+            print(note, file=sys.stderr)
+        try:
+            gh_issue.save_state(state, arguments.issue_state or None)
+        except OSError as error:
+            print("警告：issue 映射落盘失败（下轮可能重复建）：%s" % error, file=sys.stderr)
+        # 按 cases 顺序取，保证正文里链接与用例一一对应
+        issue_urls = [mapping[str(case.get("job_id"))] for case in cases
+                      if str(case.get("job_id")) in mapping]
+    elif infra_cases:
+        print("按 --no-issues 跳过建 issue（%d 个 infra case）" % len(infra_cases), file=sys.stderr)
+
+    body = build_body(report, cases, issue_urls)
 
     send_mail(config, subject, body, message_id)
     print("已投递到 %s：%s" % (config["alert_to"], subject))
