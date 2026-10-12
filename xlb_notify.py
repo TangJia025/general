@@ -100,7 +100,7 @@ def _parse_routes(raw):
 
     **返回顺序即优先级**（`get_receivers` 首个命中即返回），所以 JSON 里的顺序必须与原来
     一致。注意原来那条 `([''], [...])` 是靠「空串是任何字符串的子串」充当兜底的，已不再
-    需要：`get_receivers` 末尾的 `return [DEFAULT_RECEIVER]` 就是兜底，且挪不错位置。
+    需要：`get_receivers` 末尾的 `return list(DEFAULT_RECEIVERS)` 就是兜底，且挪不错位置。
 
     raw 既可以是 JSON 字符串（环境变量），也可以是已解析好的列表（配置文件）——
     在 JSON 文件里把路由表再写成一层转义字符串实在太难写对了。
@@ -162,6 +162,13 @@ CONFIG, MISSING_CONFIG = load_config()
 WELINK_URL = CONFIG['welink_url']
 WELINK_AUTH = CONFIG['welink_auth']
 DEFAULT_RECEIVER = CONFIG['default_receiver']
+# 兜底收件人也要按逗号/分号切开，跟下面的 ALERT_SENDER 一样处理。
+# 为什么必须切：`welink_post` 每次只发一个 receiver，`process()` 靠遍历列表逐个发。
+# 不切的话整个字符串会被当成**一个**收件人 ID 发出去 —— 小鲁班拿到
+# "个人id,群id" 这种畸形串，会投给个人、丢掉群，而且返回 200 不报错，
+# 日志里只留一行 `send ok to 个人id,群id`，看起来像发成功了。
+# 配置文件模板里早已写明「多个用逗号分隔」，缺的是这里这行切分。
+DEFAULT_RECEIVERS = [s.strip() for s in re.split(r'[,;]', DEFAULT_RECEIVER) if s.strip()]
 ALERT_SENDER = CONFIG['alert_sender']
 # 发件人白名单。逗号/分号分隔多个 —— 两条链路各自用不同 QQ 账号发信时，
 # 只填一个会让另一条的邮件被 IMAP 搜不到：`FROM <string>` 按 RFC 3501 是**子串**匹配，
@@ -214,11 +221,11 @@ log = logging.getLogger('alert')
 
 def get_receivers(alertname):
     if SINGLE_RECEIVER_TEST:
-        return [DEFAULT_RECEIVER]
+        return list(DEFAULT_RECEIVERS)
     for keywords, receivers in ALERT_ROUTES:
         if any(kw in alertname for kw in keywords):
             return receivers
-    return [DEFAULT_RECEIVER]
+    return list(DEFAULT_RECEIVERS)
 
 
 def welink_post(content, receiver, auth=WELINK_AUTH):
@@ -239,6 +246,20 @@ def welink_post(content, receiver, auth=WELINK_AUTH):
         # 异常时记录 receiver + 异常类型 + 信息
         log.error('send exception to %s: %s: %s', receiver, type(e).__name__, e)
         return False
+
+
+def welink_post_all(content, receivers):
+    """给每个收件人各发一条请求，任一失败即整体不算成功。
+
+    为什么要逐个发而不是拼成一个字符串：小鲁班的 receiver 收的是单个 ID。
+    把多个 ID 拼成 "a,b" 传过去会被当成一个畸形 ID —— 实测表现为只投给第一个、
+    其余的静默丢掉，且接口照样返回 200。多个收件人必须发多次。
+    """
+    all_ok = True
+    for receiver in receivers:
+        if not welink_post(content, receiver):
+            all_ok = False
+    return all_ok
 
 
 def load_snapshot():
@@ -448,7 +469,7 @@ def process():
         log.info('fetched %d emails in last %d days', len(ids), IMAP_SEARCH_DAYS)
     except Exception as e:
         log.error('imap connect/search failed: %s: %s', type(e).__name__, e)
-        welink_post(f'告警脚本连接失败: {type(e).__name__}: {e}', DEFAULT_RECEIVER)
+        welink_post_all(f'告警脚本连接失败: {type(e).__name__}: {e}', DEFAULT_RECEIVERS)
         return
 
     snapshot = load_snapshot()
@@ -495,10 +516,7 @@ def process():
             receivers = get_receivers(info['alertname'])
             log.info('alert=%s severity=%s receivers=%s',
                      info['alertname'], info['severity'], receivers)
-            all_ok = True
-            for receiver in receivers:
-                if not welink_post(format_message(info), receiver):
-                    all_ok = False
+            all_ok = welink_post_all(format_message(info), receivers)
 
             if all_ok:
                 counters['new'] += 1
@@ -523,9 +541,9 @@ def process():
              len(snapshot))
 
     if counters['parse_fail'] > 0 or counters['send_fail'] > 0:
-        welink_post(
+        welink_post_all(
             f'告警脚本异常: 解析失败 {counters["parse_fail"]} 封, 发送失败 {counters["send_fail"]} 次',
-            DEFAULT_RECEIVER,
+            DEFAULT_RECEIVERS,
         )
 
     if mail:
@@ -549,4 +567,4 @@ if __name__ == '__main__':
         process()
     except Exception as e:
         log.exception('script crashed')
-        welink_post(f'告警脚本崩溃: {type(e).__name__}: {str(e)[:200]}', DEFAULT_RECEIVER)
+        welink_post_all(f'告警脚本崩溃: {type(e).__name__}: {str(e)[:200]}', DEFAULT_RECEIVERS)
