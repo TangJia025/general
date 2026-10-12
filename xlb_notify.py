@@ -530,10 +530,19 @@ def process():
             counters['parse_fail'] += 1
 
     if snapshot_add:
-        now = datetime.now().isoformat()
-        for mid, _name in snapshot_add:
-            snapshot.append({'id': mid, 'sent_at': now})
-        save_snapshot(snapshot)
+        # 快照的语义是「这封已处理」，而 dry-run 下什么都没真发出去 —— 一律不落盘。
+        # 落盘的后果是：正式跑时这些信会命中 dup 被静默跳过（表现为 new=0 dup=N），
+        # 而它们从没被通知过。dry-run 的本意是预览，不能污染正式发送的状态。
+        if DRY_RUN:
+            log.info('[DRY-RUN] 不写快照，本轮 %d 封按「未处理」对待，下次正式跑会重新处理',
+                     len(snapshot_add))
+            for mid, name in snapshot_add:
+                log.info('[DRY-RUN]   未落盘 alert=%s msgid=%s', name, mid)
+        else:
+            now = datetime.now().isoformat()
+            for mid, _name in snapshot_add:
+                snapshot.append({'id': mid, 'sent_at': now})
+            save_snapshot(snapshot)
 
     log.info('done: fetched=%d new=%d skip=%d dup=%d non_alert=%d parse_fail=%d send_fail=%d snapshot=%d',
              len(ids), counters['new'], counters['skip'], counters['dup'],
