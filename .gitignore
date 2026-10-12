@@ -20,6 +20,16 @@ __pycache__/
 # 本地 Claude 配置不入库
 .claude/
 
+# ===== xlb_notify.py 的本机凭据与运行态 =====
+# 本仓库是 PUBLIC。xlb_notify.config.json 里是小鲁班发送凭据 + 邮箱密码，
+# 一旦入库就是 commit 098d6e5 那次泄露的重演。
+# 入库的是 xlb_notify.config.example.json（值全是占位符），凭据只填在 config.json 里。
+xlb_notify.config.json
+
+# 去重快照与日志：含告警名与邮箱 Message-ID（本机运行时产物，无协同价值）
+email_alert_snapshot.json
+alert.log
+
 # ===== 昇腾失败原因分析 · LLM 判决评测冻结集 =====
 # 冻结的日志窗口含内网集群名/节点名/镜像地址，而本仓库是 PUBLIC。
 # 入库的只有 cases.jsonl（job_id + sha256 + 分层），日志本身不入库：

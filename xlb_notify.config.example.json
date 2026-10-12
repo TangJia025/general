@@ -1,0 +1,27 @@
+{
+  "_readme": [
+    "xlb_notify.py 的本机配置模板。用法：拷成同目录的 xlb_notify.config.json 再填值。",
+    "xlb_notify.config.json 已在 .gitignore 里 —— 填完别 force add，本仓是 PUBLIC。",
+    "取值优先级：环境变量 > 本文件 > 脚本内置默认值。两个来源可以混用，",
+    "比如端点用本文件、凭据走系统环境变量。",
+    "本文件（.example）入库，值必须全是占位符。"
+  ],
+
+  "welink_url": "http://xiaoluban.rnd.huawei.com:80/",
+  "welink_auth": "<填小鲁班发送凭据>",
+
+  "imap_server": "imailcn56.email.huawei.com",
+  "imap_user": "<填告警邮箱账号，注意必须是中间邮箱那个账号，否则读不到信>",
+  "imap_password": "<填该邮箱的密码/授权码>",
+
+  "_imap_folder_note": "文件夹名必须写 IMAP 的修改版 UTF-7，不能写明文中文 —— imaplib 在 _command 里按 ascii 编码，写中文会直接 UnicodeEncodeError（实测）。INBOX/&WRaQ6JCuTvY- 就是 INBOX/外部邮件。要换别的文件夹得自己转码，别凭感觉改。",
+  "imap_folder": "INBOX/&WRaQ6JCuTvY-",
+
+  "alert_sender": "<填中间邮箱的发件地址，IMAP 只在 FROM 里精确搜它>",
+  "default_receiver": "<填收件人工号，多个用逗号分隔，如 w0012345,w0067890>",
+
+  "alert_routes": [],
+
+  "dry_run": false,
+  "single_receiver_test": false
+}

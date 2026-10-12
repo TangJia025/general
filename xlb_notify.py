@@ -21,18 +21,27 @@ if sys.stdout.encoding and sys.stdout.encoding.lower().startswith('gbk'):
 BASE_DIR = os.path.dirname(os.path.abspath(__file__))
 SNAPSHOT_FILE = os.path.join(BASE_DIR, 'email_alert_snapshot.json')
 LOG_FILE = os.path.join(BASE_DIR, 'alert.log')
+# 本机凭据文件（不入库，见 .gitignore）。放在脚本同目录而不是用户目录：本脚本的部署形态
+# 是「整包拷到内网 Windows 机上跑」，同目录最省事，也不用管 %APPDATA% 之类的差异。
+# 模板见同目录 xlb_notify.config.example.json —— 那个是入库的，值全是占位符。
+CONFIG_FILE = os.path.join(BASE_DIR, 'xlb_notify.config.json')
 
 SNAPSHOT_TTL_DAYS = 7
 IMAP_SEARCH_DAYS = 3
-DRY_RUN = False
+# DRY_RUN / SINGLE_RECEIVER_TEST 不在这里定值 —— 见下面 CONFIG 加载后那两行
 
-# ========== 凭据与收件人（一律从环境变量读，不入仓库）=========
+# ========== 凭据与收件人（环境变量优先，其次 xlb_notify.config.json）=========
 # 为什么一个默认值都不留：`TangJia025/general` 是 **PUBLIC** 仓。本文件此前把 WELINK_AUTH
 # 与邮箱密码硬编码在第 30/36 行，两个凭据已明文推到公开远端（commit 098d6e5），必须按
 # 「已泄露」处理（轮换 + 清历史），不是删掉这几行就算完。
 # 为什么缺凭据要**硬失败**而不是降级：静默降级会把「没读到凭据」表现成「发送失败」，
 # 排查方向直接跑偏；而告警脚本静默失效等于监控静默停摆。同款纪律见 LLM 判决层
 # （`npu_ci_forensics.py` 没读到 DEEPSEEK_API_KEY 就 SystemExit）。
+#
+# 两个来源，按序取值（环境变量 → 配置文件 → 内置默认值）。**值只填在环境变量或
+# xlb_notify.config.json 里，代码里永远不填** —— 见上面那段泄露历史。
+# Windows 上配持久环境变量要开「系统属性 → 高级 → 环境变量」或敲 setx，改 JSON 更省事；
+# Linux/systemd 上反过来，EnvironmentFile 更顺手。两边都支持，不用二选一。
 #
 #   XLBN_WELINK_AUTH       必填  小鲁班发送凭据
 #   XLBN_IMAP_USER         必填  告警邮箱账号
@@ -42,6 +51,7 @@ DRY_RUN = False
 #   XLBN_ALERT_ROUTES      选填  JSON：[[["Runner"], ["z123", "l456"]], ...]，顺序即优先级
 #                                （关键词也可写成裸字符串：["Runner", [...]]）
 #   XLBN_WELINK_URL / XLBN_IMAP_SERVER / XLBN_IMAP_FOLDER  选填（服务端点，用默认值）
+#   XLBN_DRY_RUN           选填  设 1/true 则只打日志不发 WeLink（首次联调用）
 
 REQUIRED_ENV = (
     ('XLBN_WELINK_AUTH', 'welink_auth'),
@@ -52,23 +62,56 @@ REQUIRED_ENV = (
 )
 
 
-def _env(name, default=''):
-    return os.environ.get(name, '').strip() or default
+def _load_config_file():
+    """读同目录下的 xlb_notify.config.json。文件不存在就返回空字典（不算错误）。
+
+    读失败**不吞**：JSON 写错、或不小心把带注释的 JSONC 存成 .json，都必须当场报出来。
+    否则表现是「凭据全都读不到」→ 报「缺少必需的环境变量」，人会去查环境变量而查不到真因。
+    """
+    if not os.path.exists(CONFIG_FILE):
+        return {}
+    try:
+        with open(CONFIG_FILE, 'r', encoding='utf-8') as f:
+            data = json.load(f)
+    except ValueError as exc:
+        raise SystemExit('%s 不是合法 JSON：%s' % (CONFIG_FILE, exc))
+    except OSError as exc:
+        raise SystemExit('读取 %s 失败：%s' % (CONFIG_FILE, exc))
+    if not isinstance(data, dict):
+        raise SystemExit('%s 顶层必须是 JSON 对象（键名见 xlb_notify.config.example.json）' % CONFIG_FILE)
+    return data
+
+
+FILE_CONFIG = _load_config_file()
+
+
+def _setting(name, key, default=''):
+    """按「环境变量 → 配置文件 → 默认值」取值。空串视为未设置，以便配置文件兜底。"""
+    value = os.environ.get(name, '').strip()
+    if not value:
+        value = str(FILE_CONFIG.get(key, '') or '').strip()
+    return value or default
 
 
 def _parse_routes(raw):
-    """路由表从环境变量读 JSON —— 表里全是同事工号，而本仓是公开的，故不入代码。
+    """路由表从环境变量或配置文件读 —— 表里全是同事工号，而本仓是公开的，故不入代码。
 
     **返回顺序即优先级**（`get_receivers` 首个命中即返回），所以 JSON 里的顺序必须与原来
     一致。注意原来那条 `([''], [...])` 是靠「空串是任何字符串的子串」充当兜底的，已不再
     需要：`get_receivers` 末尾的 `return [DEFAULT_RECEIVER]` 就是兜底，且挪不错位置。
+
+    raw 既可以是 JSON 字符串（环境变量），也可以是已解析好的列表（配置文件）——
+    在 JSON 文件里把路由表再写成一层转义字符串实在太难写对了。
     """
     if not raw:
         return []
-    try:
-        parsed = json.loads(raw)
-    except ValueError as exc:
-        raise SystemExit('XLBN_ALERT_ROUTES 不是合法 JSON：%s' % exc)
+    if isinstance(raw, str):
+        try:
+            parsed = json.loads(raw)
+        except ValueError as exc:
+            raise SystemExit('XLBN_ALERT_ROUTES 不是合法 JSON：%s' % exc)
+    else:
+        parsed = raw
     if not isinstance(parsed, list):
         raise SystemExit('XLBN_ALERT_ROUTES 必须是列表：[[关键词...], [收件人...]]')
     routes = []
@@ -88,13 +131,26 @@ def _parse_routes(raw):
 def load_config():
     """读凭据、账号与收件人。返回 (config, 缺失的必填变量名列表)。"""
     config = {
-        'welink_url': _env('XLBN_WELINK_URL', 'http://xiaoluban.rnd.huawei.com:80/'),
-        'imap_server': _env('XLBN_IMAP_SERVER', 'imailcn56.email.huawei.com'),
-        'imap_folder': _env('XLBN_IMAP_FOLDER', 'INBOX/&WRaQ6JCuTvY-'),
+        'welink_url': _setting('XLBN_WELINK_URL', 'welink_url', 'http://xiaoluban.rnd.huawei.com:80/'),
+        'imap_server': _setting('XLBN_IMAP_SERVER', 'imap_server', 'imailcn56.email.huawei.com'),
+        'imap_folder': _setting('XLBN_IMAP_FOLDER', 'imap_folder', 'INBOX/&WRaQ6JCuTvY-'),
     }
     for name, key in REQUIRED_ENV:
-        config[key] = _env(name)
-    config['alert_routes'] = _parse_routes(_env('XLBN_ALERT_ROUTES'))
+        config[key] = _setting(name, key)
+    # 文件夹名含非 ASCII 就当场拦下：imaplib 在 _command 里用 bytes(arg, self._encoding)
+    # 而默认 _encoding 是 ascii，明文中文会抛 UnicodeEncodeError（实测）。不拦的话报错长这样
+    # 「'ascii' codec can't encode characters…」，看不出是文件夹名的问题。
+    if any(ord(ch) > 127 for ch in config['imap_folder']):
+        raise SystemExit(
+            'XLBN_IMAP_FOLDER 含非 ASCII 字符：%r\n'
+            'IMAP 文件夹名必须写**修改版 UTF-7**，例如「外部邮件」写 INBOX/&WRaQ6JCuTvY-。'
+            % config['imap_folder'])
+    # 路由表：环境变量是 JSON 字符串，配置文件里是已解析的列表，两者都交给 _parse_routes
+    routes_raw = os.environ.get('XLBN_ALERT_ROUTES', '').strip() or FILE_CONFIG.get('alert_routes') or ''
+    config['alert_routes'] = _parse_routes(routes_raw)
+    config['dry_run'] = _setting('XLBN_DRY_RUN', 'dry_run').lower() in ('1', 'true', 'yes', 'on')
+    config['single_receiver_test'] = str(
+        FILE_CONFIG.get('single_receiver_test', '') or '').strip().lower() in ('1', 'true', 'yes', 'on')
     missing = [name for name, key in REQUIRED_ENV if not config[key]]
     return config, missing
 
@@ -111,11 +167,13 @@ IMAP_PASSWORD = CONFIG['imap_password']
 IMAP_FOLDER = CONFIG['imap_folder']
 ALERT_ROUTES = CONFIG['alert_routes']
 
+# 两个开关也支持从配置文件/环境变量读 —— 首次联调时不必改代码（改代码就有顺手 commit 的风险）
+DRY_RUN = CONFIG['dry_run']
+SINGLE_RECEIVER_TEST = CONFIG['single_receiver_test']
+
 SKIP_ALERTS = ('Watchdog', 'CloudAccount', 'CloudAccountUnreachable')
 SKIP_DESCRIPTION_KEYWORDS = ('BSS 账号', '云账号', 'AK/SK')
 ALERT_SUBJECT_KEYWORDS = ('FIRING', 'RESOLVED', 'CRITICAL', 'WARNING', 'INFO', 'RECOVERED')
-
-SINGLE_RECEIVER_TEST = False
 
 
 # ========== 日志配置 ==========
@@ -455,9 +513,12 @@ if __name__ == '__main__':
     # 缺凭据硬失败：此时 welink_post 自己也没有凭据可用，连「崩溃告警」都发不出去，
     # 所以必须在进入 process() 之前就拦住，并说清缺哪几个变量。
     if MISSING_CONFIG:
-        sys.exit('缺少必需的环境变量：%s\n'
-                 '（本仓是 PUBLIC，凭据不入库；见文件头「凭据与收件人」注释。'
-                 '缺凭据时脚本拒绝开跑，不静默降级）' % ', '.join(MISSING_CONFIG))
+        sys.exit('缺少必需的配置：%s\n'
+                 '（两个来源都没给：环境变量 %s，或配置文件 %s。'
+                 '本仓是 PUBLIC，凭据不入库；模板见 xlb_notify.config.example.json。'
+                 '缺凭据时脚本拒绝开跑，不静默降级）'
+                 % (', '.join(MISSING_CONFIG),
+                    '/'.join(name for name, _key in REQUIRED_ENV), CONFIG_FILE))
     try:
         process()
     except Exception as e:
