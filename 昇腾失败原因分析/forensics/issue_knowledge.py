@@ -67,6 +67,13 @@ STOPWORDS = {
     "the", "and", "for", "with", "not", "this", "that", "from", "have", "has",
     "问题", "失败", "错误", "原因", "修复", "建议", "现象", "集群", "任务", "运行",
     "job", "runner", "ci", "github", "action", "workflow", "npu", "ascend",
+    # `vllm` 与上面这些同类：它是本仓所有 issue 的**共同背景**，不是判别特征。
+    # 实测 df=108/190（57%）—— 几乎每条 issue 都提它，留着只会把「同为 vllm-ascend 的
+    # 失败」冒充成「同一个现象」。实测它正是把 #227（pypi 镜像 CDN）顶到 41% 报告根因位的
+    # 那个词。**注意不要顺手把 torch_npu / CANN / HCCL 一起加进来**：实测它们的 df 是
+    # 6 / 10 / 4，属稀有且有判别力的词，加了会把真信号也掐掉（tests/test_issue_knowledge.py
+    # 有反例守卫钉住这一条）。
+    "vllm",
     # 2 字滑窗引入的虚词/泛用词：这些几乎出现在每篇 issue 里，留着只会稀释 IDF 信号。
     # 只加**无实义**的连接/泛化词，像「参数」「配置」「结果」这类有判别力的保留。
     "我们", "这个", "那个", "一个", "可以", "没有", "需要", "进行", "使用", "当前",
@@ -266,6 +273,12 @@ def extract_sections(body: str) -> dict:
 #
 # 反例对照（**不在**本清单里，属真机制证据）：exitcode:137（退出码）、errorcode:507035（错误码）、
 # FailedScheduling/FailedMount（k8s 具体原因）、IP:PORT、runner 标签、集群标识。
+#
+# ⚠️ 本清单有**两个**生效点，缺一不可（曾经只有后者，于是白名单形同虚设）：
+#   ① `IssueIndex.match` 的**打分**环节：签名路与关键词路都不给分（见那里的注释）；
+#   ② `match` 组装结果时的 `mechanism_signatures` / `core_keywords` 过滤。
+# 只做 ② 不做 ① 的话，这些词照样拿满权重把无关 issue 顶到第一名，只是最后被标成「弱」——
+# 而「弱」的条目仍会进 weak_leads 提示、并靠分数挤掉真正同现象的候选。
 GENERIC_SIGNATURES = {
     "valueerror", "typeerror", "keyerror", "indexerror", "attributeerror",
     "runtimeerror", "importerror", "assertionerror", "oserror",
@@ -399,6 +412,10 @@ class IssueIndex:
         并给出 `evidence_strength`（强/中/弱），供报告决定该不该写「高度吻合」。
         其中「强」还要求签名**带机制**——`valueerror` 这类异常类名只说明「都报错」，
         不说明「同现象」，故单列在 GENERIC_SIGNATURES 里排除。
+
+        **注意 `evidence_strength` 不是唯一的排除点**：GENERIC_SIGNATURES 在打分环节
+        就已经不给分（签名路与关键词路各一处），否则这些词会先靠 IDF 把无关 issue
+        顶到第一，再由本字段把它标成「弱」——排名已经错了，标弱救不回来。
         """
         total = len(self.issues) or 1
         scores: dict = {}
@@ -409,6 +426,13 @@ class IssueIndex:
         core_df_limit = max(3, int(total * 0.02))
 
         for signature in signatures or set():
+            # 通用异常名不给分。它们只说明「都报错了」，而且 IDF 恰恰会奖励它们：
+            # 实测 `importerror` 在本库 df=1，单项就拿 3.0×IDF≈288 分 —— 足以把一条
+            # 毫不相干的复盘（#227 pypi 镜像 CDN）顶到第一名，再被第 5 步写成
+            # 「高度吻合」。原先 GENERIC_SIGNATURES 只在下面的 evidence_strength 处
+            # 排除，打分环节照给 —— 那是本模块最贵的一处不一致。
+            if signature in GENERIC_SIGNATURES:
+                continue
             for index in self.signature_index.get(signature, []):
                 # IDF：稀有签名权重高
                 idf = 1.0 + (total / (1 + len(self.signature_index[signature])))
@@ -416,6 +440,10 @@ class IssueIndex:
                 matched_sigs.setdefault(index, set()).add(signature)
 
         for keyword in keywords or set():
+            # 通用异常名经分词后也从这条路进来（`importerror` 是合法 token），同样不给分：
+            # 实测它在这一条路上又贡献 0.4×96≈38 分，是签名路被堵后的第二条升格路径。
+            if keyword in GENERIC_SIGNATURES:
+                continue
             for index in self.token_index.get(keyword, []):
                 idf = 1.0 + (total / (1 + len(self.token_index[keyword])))
                 scores[index] = scores.get(index, 0.0) + 0.4 * idf

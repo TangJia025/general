@@ -26,27 +26,94 @@ SNAPSHOT_TTL_DAYS = 7
 IMAP_SEARCH_DAYS = 3
 DRY_RUN = False
 
-WELINK_URL = 'http://xiaoluban.rnd.huawei.com:80/'
-WELINK_AUTH = '***REMOVED***'
-DEFAULT_RECEIVER = '***REMOVED***'
+# ========== 凭据与收件人（一律从环境变量读，不入仓库）=========
+# 为什么一个默认值都不留：`TangJia025/general` 是 **PUBLIC** 仓。本文件此前把 WELINK_AUTH
+# 与邮箱密码硬编码在第 30/36 行，两个凭据已明文推到公开远端（commit 098d6e5），必须按
+# 「已泄露」处理（轮换 + 清历史），不是删掉这几行就算完。
+# 为什么缺凭据要**硬失败**而不是降级：静默降级会把「没读到凭据」表现成「发送失败」，
+# 排查方向直接跑偏；而告警脚本静默失效等于监控静默停摆。同款纪律见 LLM 判决层
+# （`npu_ci_forensics.py` 没读到 DEEPSEEK_API_KEY 就 SystemExit）。
+#
+#   XLBN_WELINK_AUTH       必填  小鲁班发送凭据
+#   XLBN_IMAP_USER         必填  告警邮箱账号
+#   XLBN_IMAP_PASSWORD     必填  告警邮箱密码
+#   XLBN_ALERT_SENDER      必填  告警邮件来源地址（IMAP 只在 FROM 里搜它）
+#   XLBN_DEFAULT_RECEIVER  必填  兜底收件人
+#   XLBN_ALERT_ROUTES      选填  JSON：[[["Runner"], ["z123", "l456"]], ...]，顺序即优先级
+#                                （关键词也可写成裸字符串：["Runner", [...]]）
+#   XLBN_WELINK_URL / XLBN_IMAP_SERVER / XLBN_IMAP_FOLDER  选填（服务端点，用默认值）
 
-ALERT_SENDER = '***REMOVED***'
-IMAP_SERVER = 'imailcn56.email.huawei.com'
-IMAP_USER = '***REMOVED***'
-IMAP_PASSWORD = '***REMOVED***'
-IMAP_FOLDER = 'INBOX/&WRaQ6JCuTvY-'
+REQUIRED_ENV = (
+    ('XLBN_WELINK_AUTH', 'welink_auth'),
+    ('XLBN_IMAP_USER', 'imap_user'),
+    ('XLBN_IMAP_PASSWORD', 'imap_password'),
+    ('XLBN_ALERT_SENDER', 'alert_sender'),
+    ('XLBN_DEFAULT_RECEIVER', 'default_receiver'),
+)
+
+
+def _env(name, default=''):
+    return os.environ.get(name, '').strip() or default
+
+
+def _parse_routes(raw):
+    """路由表从环境变量读 JSON —— 表里全是同事工号，而本仓是公开的，故不入代码。
+
+    **返回顺序即优先级**（`get_receivers` 首个命中即返回），所以 JSON 里的顺序必须与原来
+    一致。注意原来那条 `([''], [...])` 是靠「空串是任何字符串的子串」充当兜底的，已不再
+    需要：`get_receivers` 末尾的 `return [DEFAULT_RECEIVER]` 就是兜底，且挪不错位置。
+    """
+    if not raw:
+        return []
+    try:
+        parsed = json.loads(raw)
+    except ValueError as exc:
+        raise SystemExit('XLBN_ALERT_ROUTES 不是合法 JSON：%s' % exc)
+    if not isinstance(parsed, list):
+        raise SystemExit('XLBN_ALERT_ROUTES 必须是列表：[[关键词...], [收件人...]]')
+    routes = []
+    for entry in parsed:
+        if not isinstance(entry, list) or len(entry) != 2:
+            raise SystemExit('XLBN_ALERT_ROUTES 每项必须是 [关键词, 收件人列表]：%r' % (entry,))
+        keywords, receivers = entry[0], entry[1]
+        # 单个关键词允许写成裸字符串，省得为双层方括号（关键词也要包一层 list）踩坑
+        if isinstance(keywords, str):
+            keywords = [keywords]
+        if not isinstance(keywords, list) or not isinstance(receivers, list):
+            raise SystemExit('XLBN_ALERT_ROUTES 每项必须是 [关键词列表, 收件人列表]：%r' % (entry,))
+        routes.append((list(keywords), list(receivers)))
+    return routes
+
+
+def load_config():
+    """读凭据、账号与收件人。返回 (config, 缺失的必填变量名列表)。"""
+    config = {
+        'welink_url': _env('XLBN_WELINK_URL', 'http://xiaoluban.rnd.huawei.com:80/'),
+        'imap_server': _env('XLBN_IMAP_SERVER', 'imailcn56.email.huawei.com'),
+        'imap_folder': _env('XLBN_IMAP_FOLDER', 'INBOX/&WRaQ6JCuTvY-'),
+    }
+    for name, key in REQUIRED_ENV:
+        config[key] = _env(name)
+    config['alert_routes'] = _parse_routes(_env('XLBN_ALERT_ROUTES'))
+    missing = [name for name, key in REQUIRED_ENV if not config[key]]
+    return config, missing
+
+
+CONFIG, MISSING_CONFIG = load_config()
+
+WELINK_URL = CONFIG['welink_url']
+WELINK_AUTH = CONFIG['welink_auth']
+DEFAULT_RECEIVER = CONFIG['default_receiver']
+ALERT_SENDER = CONFIG['alert_sender']
+IMAP_SERVER = CONFIG['imap_server']
+IMAP_USER = CONFIG['imap_user']
+IMAP_PASSWORD = CONFIG['imap_password']
+IMAP_FOLDER = CONFIG['imap_folder']
+ALERT_ROUTES = CONFIG['alert_routes']
 
 SKIP_ALERTS = ('Watchdog', 'CloudAccount', 'CloudAccountUnreachable')
 SKIP_DESCRIPTION_KEYWORDS = ('BSS 账号', '云账号', 'AK/SK')
 ALERT_SUBJECT_KEYWORDS = ('FIRING', 'RESOLVED', 'CRITICAL', 'WARNING', 'INFO', 'RECOVERED')
-
-ALERT_ROUTES = [
-    (['Runner'],         ['***REMOVED***', '***REMOVED***', '***REMOVED***']),
-    (['NodeFilesystem'], ['***REMOVED***', '***REMOVED***', '***REMOVED***', '***REMOVED***']),
-    (['NPUCard'],        ['***REMOVED***', '***REMOVED***', '***REMOVED***', '***REMOVED***']),
-    (['Listener'],       ['***REMOVED***', '***REMOVED***', '***REMOVED***', '***REMOVED***']),
-    ([''],               ['***REMOVED***', '***REMOVED***', '***REMOVED***', '***REMOVED***']),
-]
 
 SINGLE_RECEIVER_TEST = False
 
@@ -385,6 +452,12 @@ def process():
 
 
 if __name__ == '__main__':
+    # 缺凭据硬失败：此时 welink_post 自己也没有凭据可用，连「崩溃告警」都发不出去，
+    # 所以必须在进入 process() 之前就拦住，并说清缺哪几个变量。
+    if MISSING_CONFIG:
+        sys.exit('缺少必需的环境变量：%s\n'
+                 '（本仓是 PUBLIC，凭据不入库；见文件头「凭据与收件人」注释。'
+                 '缺凭据时脚本拒绝开跑，不静默降级）' % ', '.join(MISSING_CONFIG))
     try:
         process()
     except Exception as e:
