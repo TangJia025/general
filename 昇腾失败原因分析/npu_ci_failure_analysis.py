@@ -41,7 +41,7 @@ NPU CI workflow 失败分析工具（三步法取证，当前实现第 1、3 步
 依赖: gh CLI 已认证（可读目标仓库）。工作流文件会自动下载到临时目录，可用 --workflow-dir 复用缓存。
       第 2 步集群取证需专用只读 kubeconfig（环境变量 KUBECONFIG 指定），未配置时自动跳过。
 """
-import argparse, subprocess, json, re, os, gzip, sys, tempfile, base64, datetime
+import argparse, subprocess, json, re, os, gzip, sys, tempfile, base64, datetime, hashlib, time
 from collections import Counter, defaultdict
 
 # 脚本自身所在目录：报告/快照等产物默认与该脚本同目录存放，
@@ -120,6 +120,14 @@ def parse_args():
     ap.add_argument("--infra-store", default=os.path.join(BASE_DIR, "npu_ci_reports", "infra_snapshot.json"),
                     help="跨仓基础设施信号（排队/cancelled 统计）持久化文件，供报告自动聚合跨仓表格"
                          "（默认 <脚本目录>/npu_ci_reports/infra_snapshot.json）")
+    ap.add_argument("--scan-dir", default=os.path.join(BASE_DIR, ".forensics_state", "scans"),
+                    help="扫描窗 sidecar 目录：把每条失败 job 的扫描窗文本按 job 落盘，"
+                         "供第 2 步的 LLM 判决层读取（它判的就是这段文本，而 handoff 里只有"
+                         "结构化结论、没有日志正文）。默认 <脚本目录>/.forensics_state/scans，"
+                         "该目录已被仓库根 .gitignore 覆盖（日志含内网信息，绝不入库）")
+    ap.add_argument("--scan-retention-days", type=float, default=14.0,
+                    help="扫描窗 sidecar 的保留天数（默认 14）：启动时清理更早的文件。"
+                         "不清理的话每天几十个文件会无限增长")
     ap.add_argument("--emit-json", default=None, metavar="PATH",
                     help="把本次分析的结构化结果（失败 job 全量记录 + 逐条分类 + 待集群取证队列）"
                          "导出为 JSON，供第 2 步集群取证/历史归因程序（npu_ci_forensics.py）消费。"
@@ -939,7 +947,65 @@ def build_scan_window(text, *, failed_step, route, tail_lines, no_step_window=Fa
     return window[-tail_lines:], True
 
 
+def scan_sidecar_path(scan_dir, job_id):
+    return os.path.join(scan_dir, f"job_{job_id}.txt.gz")
+
+
+def write_scan_sidecar(scan_dir, job_id, scan_text):
+    """把一条 job 的扫描窗写到 sidecar，返回 (文件名, 内容 sha256)；写失败返回 (None, None)。
+
+    为什么需要它：第 2 步的 LLM 判决层（forensics/llm_judge.py）判的就是**这段文本**，
+    而 handoff 里只有结构化结论（桶/owner/sig），日志正文不落盘 —— 不写出来，下游无从调用。
+    离线评测能跑是因为 eval/build_fixtures.py 事先用同一个 build_scan_window 预生成了 fixture。
+
+    落盘目录必须是被 .gitignore 覆盖的（默认 .forensics_state/scans）：日志含内网集群名/IP，
+    本仓是 PUBLIC。写失败不致命（只是这一条没有 LLM 判决），故吞掉异常但留下痕迹。
+    """
+    try:
+        os.makedirs(scan_dir, exist_ok=True)
+        raw = scan_text.encode("utf-8")
+        name = f"job_{job_id}.txt.gz"
+        path = os.path.join(scan_dir, name)
+        # gzip.mtime=0：让内容相同的 sidecar 逐字节相同，便于比对/去重
+        with gzip.GzipFile(path, "wb", mtime=0) as fh:
+            fh.write(raw)
+        return name, hashlib.sha256(raw).hexdigest()
+    except OSError as exc:
+        print(f"  ⚠️ 扫描窗 sidecar 写入失败（job {job_id}）：{exc}", file=_orig_stdout)
+        return None, None
+
+
+def prune_scan_sidecars(scan_dir, retention_days):
+    """清理超过保留期的扫描窗 sidecar。返回删除个数。
+
+    只删本函数命名规则内的 `job_*.txt.gz`，不递归、不碰别的文件 ——
+    这个目录未来可能被别的东西共用，越权清理比不清理更糟。
+    """
+    if retention_days <= 0 or not os.path.isdir(scan_dir):
+        return 0
+    cutoff = time.time() - retention_days * 86400
+    removed = 0
+    for name in os.listdir(scan_dir):
+        if not (name.startswith("job_") and name.endswith(".txt.gz")):
+            continue
+        path = os.path.join(scan_dir, name)
+        try:
+            if os.path.getmtime(path) < cutoff:
+                os.remove(path)
+                removed += 1
+        except OSError:
+            continue
+    return removed
+
+
 classified = Counter(); detail = []
+# job_id -> (sidecar 文件名, 内容 sha256)：扫描窗落盘的账，--emit-json 时并进 handoff。
+# 只有**真的扫到了窗口**的 job 才有条目（no_log 路径、假失败兜底、scan_lines 为空的都没有）。
+scan_refs = {}
+_pruned = prune_scan_sidecars(ARGS.scan_dir, ARGS.scan_retention_days)
+if _pruned:
+    print(f"扫描窗 sidecar：清理过期文件 {_pruned} 个（保留 {ARGS.scan_retention_days:g} 天）",
+          file=_orig_stdout)
 bucket_link = defaultdict(list)   # 桶 -> [(样例 run 链接, 是否 NPU job)]，每桶最多3条
 by_owner = defaultdict(Counter)   # owner -> 桶计数
 step_owner = Counter()            # 由失败步骤直接定性（未读日志）的步骤计数
@@ -1031,6 +1097,15 @@ for rec in failed_jobs:
     if windowed:
         window_hits += 1
     text_scan = "\n".join(scan_lines) or text
+
+    # 扫描窗落盘：下游 LLM 判决层判的就是这段文本（handoff 里没有日志正文）。
+    # ⚠️ 必须在**对端节点兜底之前**取：peer 文本是产物尾部粗切、无时间窗对齐，只作兜底，
+    # 不该当成「现场」喂给模型。⚠️ scan_lines 为空时 text_scan 会回退成**整份日志**，
+    # 这种 case 不落 sidecar（模型会吃到一份远超 token 预算的文本），下游也就没有 LLM 判决。
+    if scan_lines:
+        _ref, _sha = write_scan_sidecar(ARGS.scan_dir, rec["job_id"], text_scan)
+        if _ref:
+            scan_refs[rec["job_id"]] = (_ref, _sha)
 
     bucket, sig = classify_text(text_scan)
     if bucket == "未分类":
@@ -1443,13 +1518,17 @@ if ARGS.emit_json:
         job = _jobs_by_id.get(int(m.group(1)))
         if not job:
             return dict(item)
+        # 扫描窗 sidecar 的引用（可能没有：no_log 路径/窗口切不出来/写盘失败）。
+        # 下游据此决定「这一条能不能交给 LLM 判」——没有 ref 就退回规则结论。
+        _scan_ref, _scan_sha = scan_refs.get(job["job_id"], (None, None))
         return {**item,
                 "job_id": job["job_id"], "run_id": job["run_id"],
                 "runner_name": job["runner_name"], "labels": job["labels"],
                 "is_npu": job["is_npu"], "chip": job["chip"],
                 "job_started_at": job["started_at"], "job_completed_at": job["completed_at"],
                 "failed_step_started_at": (job["failed_step"] or {}).get("started_at"),
-                "failed_step_completed_at": (job["failed_step"] or {}).get("completed_at")}
+                "failed_step_completed_at": (job["failed_step"] or {}).get("completed_at"),
+                "scan_ref": _scan_ref, "scan_sha256": _scan_sha}
 
     _payload = {
         "meta": {

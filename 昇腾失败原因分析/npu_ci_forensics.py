@@ -30,10 +30,13 @@
 """
 import argparse
 import datetime
+import gzip
+import hashlib
 import json
 import os
 import subprocess
 import sys
+import time
 
 BASE_DIR = os.path.dirname(os.path.abspath(__file__))
 sys.path.insert(0, BASE_DIR)
@@ -44,6 +47,10 @@ from forensics.cluster_registry import (ClusterRegistry, fetch_cluster_md,  # no
 from forensics.issue_knowledge import (IssueIndex, extract_signatures,  # noqa: E402
                                        fetch_comments, fetch_issues, keywords_for)
 from forensics.knowledge_tables import knowledge_for           # noqa: E402
+from forensics.llm_client import DEFAULT_BASE_URL, DEFAULT_MODEL, DeepSeekClient  # noqa: E402
+from forensics.llm_judge import judge_case, render_summary_line, summarize_outcomes  # noqa: E402
+from forensics.llm_verdict import (FALLBACK_CLASSES, PROMPT_VERSION,  # noqa: E402
+                                   LLMOutcome, apply_llm_verdict)
 from forensics.report import render_report, synthesize         # noqa: E402
 
 ANALYSIS_SCRIPT = os.path.join(BASE_DIR, "npu_ci_failure_analysis.py")
@@ -132,6 +139,26 @@ def parse_args():
                         help="报告输出目录")
     parser.add_argument("--offline", action="store_true", help="只用本地缓存，不发起任何网络请求")
     parser.add_argument("--max-age-hours", type=float, default=24.0, help="缓存有效期（小时）")
+    # LLM 判决层（第 5 步）：把「未能定性」的根因行交给模型判。不传 --llm-judge 时
+    # 输出与接线前**逐字节相同**（apply_llm_verdict 是 synthesize 之后的纯后处理）。
+    parser.add_argument("--llm-judge", action="store_true",
+                        help="开启 LLM 判决：对本轮**规则层未能定性**的 case 调模型给根因，"
+                             "并并列保留规则结论（root_cause_rule）。需 DEEPSEEK_API_KEY")
+    parser.add_argument("--llm-model", default=os.environ.get("LLM_MODEL") or DEFAULT_MODEL,
+                        help=f"模型 id（默认 {DEFAULT_MODEL}，可用环境变量 LLM_MODEL 覆盖）")
+    parser.add_argument("--llm-timeout", type=float, default=120.0, help="单次调用超时（秒）")
+    parser.add_argument("--llm-max-tokens", type=int, default=4000, help="输出 token 上限")
+    parser.add_argument("--llm-budget-tokens", type=int, default=60_000, help="输入证据 token 预算")
+    parser.add_argument("--llm-budget-seconds", type=float, default=900.0,
+                        help="整批 LLM 判决的 wall-clock 预算（默认 900s）：超预算的 case 直接"
+                             "降级退回规则结论，不发请求。存在的意义是 stage B 被监听器用"
+                             "subprocess 超时硬卡着（见 npu_ci_watch.py），撞穿会整批标记失败")
+    parser.add_argument("--scan-dir", default=os.path.join(BASE_DIR, ".forensics_state", "scans"),
+                        help="扫描窗 sidecar 目录（由第 1 步 --scan-dir 写出），默认 <脚本目录>"
+                             "/.forensics_state/scans")
+    parser.add_argument("--llm-cache-dir",
+                        default=os.path.join(BASE_DIR, ".forensics_state", "llm_verdicts"),
+                        help="LLM 判决缓存目录，默认 <脚本目录>/.forensics_state/llm_verdicts")
     return parser.parse_args()
 
 
@@ -149,8 +176,12 @@ def step1_get_handoff(args, cache_dir: str) -> dict:
 
     handoff_path = os.path.join(cache_dir, "analysis_handoff.json")
     os.makedirs(cache_dir, exist_ok=True)
+    # ⚠️ `--scan-dir` 必须透传：不带 `--handoff` 单跑时，第 1 步在这里被本脚本拉起，
+    # 少了它，阶段 A 写进默认目录而阶段 B 从别处读 → **每个 case 都静默降级成
+    # evidence_unavailable**，一条都判不了，且没有任何报错。
     command = [sys.executable, ANALYSIS_SCRIPT, "--repo", args.repo, "--chips", args.chips,
-               "--samples", str(args.samples), "--emit-json", handoff_path]
+               "--samples", str(args.samples), "--scan-dir", args.scan_dir,
+               "--emit-json", handoff_path]
     if args.since:
         command += ["--since", args.since]
     print(f"[第1步] 运行分析脚本导出结构化结果……\n        {' '.join(command)}")
@@ -746,6 +777,176 @@ def select_cases(payload: dict, max_cases: int) -> list:
     return decided + picked
 
 
+# ---------------- 第 5 步：LLM 判决层（可选，--llm-judge） ----------------
+
+# 范围门：**只判规则层「未能定性」的** case。已有集群侧实证的直接不碰（连 `llm` 块都不会有）——
+# 实证比模型推断硬，这也是 synthesize 既有纪律的延续。
+LLM_RULE_GATE_PREFIX = "未能定性"
+
+
+def llm_allowed_classes(payload: dict) -> tuple:
+    """判决闭集 = 第 1 步发来的桶标签 + 两个兜底类。
+
+    `其他` / `未分类` 必须补进去：桶表盖不住的失败，唯一诚实的出口是「没归类」，
+    不能逼模型在闭集里挑一个最近的桶 —— 那正是本仓要修的病灶。
+    """
+    labels = [row.get("label") for row in (payload.get("buckets") or []) if row.get("label")]
+    for extra in FALLBACK_CLASSES:
+        if extra not in labels:
+            labels.append(extra)
+    return tuple(labels)
+
+
+def llm_cache_path(cache_dir: str, job_id) -> str:
+    return os.path.join(cache_dir, f"job_{job_id}.json")
+
+
+def read_llm_cache(cache_dir: str, job_id, *, prompt_version, scan_sha256, model):
+    """命中返回 `LLMOutcome`，否则 None。
+
+    缓存键是 **job_id + prompt_version + scan_sha256 + model** 四元组，任一不符即视为未命中：
+      - `prompt_version` 变了 → 旧判决是另一套提示词的产物，必须重判（设计文档 §12.7 点名要求）；
+      - `scan_sha256` 变了 → 拿的是另一个 job/另一段时间窗的证据，判决对不上；
+      - `model` 变了 → 换了模型的结论不能冒充同一个模型的输出。
+    文件名只按 job_id：**同一 job 的旧键值必须被覆盖**，留着多份等于让「命中哪一份」取决于遍历顺序。
+    """
+    path = llm_cache_path(cache_dir, job_id)
+    try:
+        with open(path, encoding="utf-8") as handle:
+            cached = json.load(handle)
+    except (OSError, ValueError):
+        return None
+    if (cached.get("prompt_version") != prompt_version
+            or cached.get("scan_sha256") != scan_sha256
+            or cached.get("model") != model):
+        return None
+    parsed = cached.get("parsed")
+    if not parsed:
+        return None
+    return LLMOutcome(True, parsed=parsed, meta=cached.get("meta") or {})
+
+
+def write_llm_cache(cache_dir: str, job_id, *, prompt_version, scan_sha256, model, outcome):
+    """成功判决落盘（原子写：tmp + os.replace，读到的要么是完整旧值要么是完整新值）。
+
+    **降级不缓存**：网络抖动/限流/超时都是暂时性的，把一次瞬时故障永久钉在某一个 job 上，
+    比不缓存坏得多（那一条会永远退回规则结论，且再也看不出来为什么）。
+    """
+    if not outcome.used or not outcome.parsed:
+        return
+    try:
+        os.makedirs(cache_dir, exist_ok=True)
+        # 原始响应不进缓存：那一份是评测 `--replay` 的产物（$0 重算指标），生产缓存只需要
+        # 「结论 + 可比的元数据」，何况 raw_response 是整份模型输出，体积占大头。
+        meta = {key: value for key, value in (outcome.meta or {}).items() if key != "raw_response"}
+        body = {"job_id": job_id, "prompt_version": prompt_version,
+                "scan_sha256": scan_sha256, "model": model,
+                "parsed": outcome.parsed, "meta": meta}
+        path = llm_cache_path(cache_dir, job_id)
+        tmp = f"{path}.tmp"
+        with open(tmp, "w", encoding="utf-8") as handle:
+            json.dump(body, handle, ensure_ascii=False, indent=2)
+        os.replace(tmp, path)
+    except OSError as exc:
+        print(f"  ⚠️ LLM 判决缓存写入失败（job {job_id}）：{exc}")
+
+
+def load_scan_text(item: dict, scan_dir: str):
+    """读回第 1 步落盘的扫描窗，返回 `(text, None)` 或 `(None, 降级原因)`。
+
+    sha 必须对得上：sidecar 目录有保留期清理、也可能被别的轮次写到同名文件，
+    拿一份与本次判决无关的文本喂给模型，比不判更坏（结论看着像真的，证据却是别人的）。
+    """
+    ref = item.get("scan_ref")
+    expected = item.get("scan_sha256")
+    if not ref or not expected:
+        # 第 1 步就没落盘（no_log 路径/窗口切不出来/写盘失败）→ 这一条没有可判的现场。
+        return None, "evidence_unavailable"
+    path = os.path.join(scan_dir, ref)
+    try:
+        with gzip.open(path, "rb") as handle:
+            raw = handle.read()
+    except OSError:
+        return None, "evidence_unavailable"
+    if hashlib.sha256(raw).hexdigest() != expected:
+        return None, "evidence_unavailable"
+    return raw.decode("utf-8", errors="ignore"), None
+
+
+def llm_outcome_for(item: dict, *, client, allowed_classes, scan_dir, cache_dir,
+                    budget_tokens, max_tokens, timeout, deadline=None,
+                    clock=time.monotonic):
+    """取一个 case 的 LLM 判决：缓存 → 预算 → 读取证据 → 调用 → 落缓存。
+
+    顺序有讲究：缓存排最前（命中连证据都不用读），预算检查排在**发起请求之前**
+    —— 预算的全部意义就是卡住花费，超预算时一个 token 都不该发出去。
+    """
+    job_id = item.get("job_id")
+    scan_sha256 = item.get("scan_sha256")
+    model = getattr(client, "model", None)
+
+    cached = read_llm_cache(cache_dir, job_id, prompt_version=PROMPT_VERSION,
+                            scan_sha256=scan_sha256, model=model)
+    if cached is not None:
+        return cached
+
+    if deadline is not None and clock() > deadline:
+        return LLMOutcome.degraded("budget_exhausted",
+                                   {"job_id": job_id, "model": model})
+
+    scan_text, reason = load_scan_text(item, scan_dir)
+    if scan_text is None:
+        return LLMOutcome.degraded(reason, {"job_id": job_id, "model": model})
+
+    # 不传 rule_hint：门内这些 case 的规则桶恰恰是**刚刚判不出结论**的那一档，
+    # 把它塞进提示词等于把模型往「我们刚说不可信的那个桶」上引。
+    outcome = judge_case(scan_text, client=client, allowed_classes=allowed_classes,
+                         budget_tokens=budget_tokens, max_tokens=max_tokens,
+                         timeout=timeout, job_id=job_id,
+                         job_name=item.get("job_name"), step_name=item.get("step"),
+                         chip=item.get("chip"))
+    write_llm_cache(cache_dir, job_id, prompt_version=PROMPT_VERSION,
+                    scan_sha256=scan_sha256, model=model, outcome=outcome)
+    return outcome
+
+
+def merge_llm_verdict(case, verdict, item, *, llm_client, allowed_classes, scan_dir, cache_dir,
+                      budget_tokens, max_tokens, timeout, deadline=None):
+    """范围门 + 判决 + 合并。返回 `(verdict, outcome 或 None)`。
+
+    单独抽成函数是为了**能被证伪**：这段逻辑原先内联在 main() 的循环里，而 main() 要跑
+    完整的集群取证才走得到 —— 于是「把范围门拆掉」这种注入没有任何测试会红。
+    """
+    if llm_client is None or not verdict["root_cause"].startswith(LLM_RULE_GATE_PREFIX):
+        return verdict, None
+    outcome = llm_outcome_for(item, client=llm_client, allowed_classes=allowed_classes,
+                              scan_dir=scan_dir, cache_dir=cache_dir,
+                              budget_tokens=budget_tokens, max_tokens=max_tokens,
+                              timeout=timeout, deadline=deadline)
+    # ⚠️ 必须在合并**之前**留对照：`apply_llm_verdict` 会把 root_cause 换成模型那句。
+    verdict["root_cause_rule"] = verdict["root_cause"]
+    return apply_llm_verdict(verdict, outcome, rule_bucket=case.get("bucket")), outcome
+
+
+def build_llm_client(args):
+    """构造共享的 LLM 客户端。**启动即硬失败**：开关打开却没有 key 时直接退出。
+
+    不静默降级是有意的：否则整轮每个 case 都变成「LLM 判决不可用（原因：http_4xx），
+    已退回规则判决」，白跑一轮还从报告上看不出来 —— 这与 `llm_client.py` 拒绝读全局
+    配置是同一个理由。
+    """
+    api_key = os.environ.get("DEEPSEEK_API_KEY")
+    if not api_key:
+        raise SystemExit(
+            "--llm-judge 已打开，但 DEEPSEEK_API_KEY 未设置。\n"
+            "  请在 ~/.config/npu-ci-watch/deepseek.env 里填好 DEEPSEEK_API_KEY=...（权限 600），\n"
+            "  并确保 systemd unit 里有 EnvironmentFile=-%h/.config/npu-ci-watch/deepseek.env。\n"
+            "  （拒绝逐案静默降级：那会跑完一整轮、花掉钱、还看不出来没判。）")
+    return DeepSeekClient(api_key=api_key,
+                          base_url=os.environ.get("DEEPSEEK_BASE_URL") or DEFAULT_BASE_URL,
+                          model=args.llm_model)
+
+
 def main():
     args = parse_args()
     started = datetime.datetime.now()
@@ -778,6 +979,18 @@ def main():
     print(f"[第1步] 失败 job {len(payload.get('failed_jobs') or [])} 个，"
           f"分类 {len(payload.get('classifications') or [])} 条，"
           f"待集群取证 {len(payload.get('cluster_todo') or [])} 条")
+
+    # ---- 第 5 步的接线（可选）：不打开时下面的判决循环与接线前逐字节相同 ----
+    llm_client = None
+    llm_allowed = ()
+    llm_deadline = None
+    llm_outcomes: list = []
+    if args.llm_judge:
+        llm_client = build_llm_client(args)
+        llm_allowed = llm_allowed_classes(payload)
+        llm_deadline = time.monotonic() + args.llm_budget_seconds
+        print(f"[第5步] LLM 判决已启用：model={args.llm_model} 闭集 {len(llm_allowed)} 类，"
+              f"只判规则层「未能定性」的 case；墙钟预算 {args.llm_budget_seconds:g}s")
 
     # ---- 第 2 步 ----
     registry = step2_load_registry(args, args.cache_dir)
@@ -845,12 +1058,24 @@ def main():
             "history": history,
             "related_issues": step4_related(item, index),
         }
-        case["verdict"] = synthesize(case)
+        verdict, outcome = merge_llm_verdict(
+            case, synthesize(case), item, llm_client=llm_client, allowed_classes=llm_allowed,
+            scan_dir=args.scan_dir, cache_dir=args.llm_cache_dir,
+            budget_tokens=args.llm_budget_tokens, max_tokens=args.llm_max_tokens,
+            timeout=args.llm_timeout, deadline=llm_deadline)
+        if outcome is not None:
+            llm_outcomes.append(outcome)
+        case["verdict"] = verdict
         rendered_cases.append(case)
         mark = ("⏭️ " if cluster_result.get("skipped")
                 else "🅿️" if cluster_result.get("pod_evidence") else "🔎")
         print(f"  {mark} {str(item.get('job_name'))[:40]:40s} → {case['verdict']['owner']:8s} "
               f"| {case['verdict']['confidence'][:24]}")
+
+    llm_summary = None
+    if llm_client is not None:
+        llm_summary = summarize_outcomes(llm_outcomes)
+        print(f"[第5步] {render_summary_line(llm_summary)}")
 
     # ---- 各集群现场快照（给 infra 类归因提供旁证）----
     health: dict = {}
@@ -864,6 +1089,9 @@ def main():
         "handoff_source": meta.get("handoff_source"),
         "total_jobs": len(payload.get("failed_jobs") or []),
     }
+    if llm_summary is not None:
+        run_meta["llm"] = {"enabled": True, "model": args.llm_model,
+                           "prompt_version": PROMPT_VERSION, "summary": llm_summary}
     integrity = {"limitations": LIMITATIONS, "errors": errors}
     report_text = render_report(rendered_cases, run_meta, registry_plan, health, integrity)
 

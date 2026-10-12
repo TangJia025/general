@@ -34,6 +34,13 @@ Environment=PATH=%h/.local/bin:/usr/local/bin:/usr/bin:/bin
 # 不缓冲：否则 journalctl 要等缓冲满才看得到日志，而监听器的价值恰恰在「近实时」。
 Environment=PYTHONUNBUFFERED=1
 
+# LLM 判决层的凭据（可选，见 deploy/README.md §5.1）。前缀 `-` = 文件缺失也不报错：
+# 先接线、后放凭据，服务不会因为还没建这个文件就起不来。格式是 systemd 的
+# EnvironmentFile（`变量=值`，不支持 export/引号转义），权限保持 600，不入任何仓库。
+EnvironmentFile=-%h/.config/npu-ci-watch/deepseek.env
+# 判决总开关。不设/设 0 时，阶段 B 的输出与不装这一层时**逐字节相同**。
+Environment=LLM_ENABLED=1
+
 ExecStart=/usr/bin/python3 %h/work/general/昇腾失败原因分析/npu_ci_watch.py --interval 30 --idle-interval 300
 
 # gh 未登录 / 内网 VPN 断开 / 集群 API 不可达都属于「本轮失败」，进程本身要活着继续等。

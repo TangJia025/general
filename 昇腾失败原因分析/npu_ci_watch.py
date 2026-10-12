@@ -222,10 +222,20 @@ class Watcher:
         self.snapshot_dir = os.path.join(self.state_dir, "snapshots")
         self.handoff_dir = os.path.join(self.state_dir, "handoffs")
         self.analysis_log_dir = os.path.join(self.state_dir, "analysis_logs")
+        # 第 5 步（LLM 判决）的两个落盘目录。**必须显式传给两个阶段**：阶段 A 写扫描窗、
+        # 阶段 B 读回来判 + 写判决缓存，两边路径不一致的表现是「一条都判不了」且不报错。
+        self.scan_dir = os.path.join(self.state_dir, "scans")
+        self.llm_cache_dir = os.path.join(self.state_dir, "llm_verdicts")
+        # 判决总开关走环境变量（unit 里写 Environment=LLM_ENABLED=1），而不是命令行：
+        # 关掉它不需要改 unit 里那一长串 argv，且**不设置时行为与接线前完全一致**。
+        self.llm_enabled = (os.environ.get("LLM_ENABLED") or "").strip().lower() \
+            in ("1", "true", "yes", "on")
+        self.llm_model = os.environ.get("LLM_MODEL") or None
         if not self.dry_run:
-            # 三个子目录都要**先建好**：第 1 步脚本直接 open(emit_json, "w")，不会替我们建目录，
+            # 子目录都要**先建好**：第 1 步脚本直接 open(emit_json, "w")，不会替我们建目录，
             # 少建一个 handoffs/ 的后果是一次失败分析从头再跑（实测 FileNotFoundError）。
-            for directory in (self.state_dir, self.snapshot_dir, self.handoff_dir, self.analysis_log_dir):
+            for directory in (self.state_dir, self.snapshot_dir, self.handoff_dir,
+                              self.analysis_log_dir, self.scan_dir, self.llm_cache_dir):
                 os.makedirs(directory, exist_ok=True)
         self.log_path = os.path.join(self.state_dir, "watch.log")
         self.pattern = re.compile(args.path_pattern) if args.path_pattern else None
@@ -413,6 +423,7 @@ class Watcher:
             command = [sys.executable, ANALYSIS_SCRIPT, "--repo", self.args.repo,
                        "--chips", self.args.chips, "--run-id", str(run_id),
                        "--report-dir", self.analysis_log_dir,
+                       "--scan-dir", self.scan_dir,
                        "--emit-json", handoff_path]
             for jid in job_ids:
                 command += ["--job-id", str(jid)]
@@ -459,10 +470,18 @@ class Watcher:
                    "--repo", self.args.repo, "--chips", self.args.chips,
                    "--cluster-snapshot", self.snapshot_dir,
                    "--report-dir", self.args.report_dir, "--cache-dir", self.args.cache_dir,
-                   "--max-age-hours", str(self.args.max_age_hours)]
+                   "--max-age-hours", str(self.args.max_age_hours),
+                   "--scan-dir", self.scan_dir, "--llm-cache-dir", self.llm_cache_dir]
         if self.args.cluster_md:
             command += ["--cluster-md", self.args.cluster_md]
-        completed = run_command(command, timeout=1800)
+        if self.llm_enabled:
+            command += ["--llm-judge"]
+            if self.llm_model:
+                command += ["--llm-model", self.llm_model]
+        # 阶段 B 有整批 LLM 的墙钟预算（默认 900s）叠在集群取证之上，1800s 有撞穿风险；
+        # 撞穿的后果不是「慢」，是 run_command 返回 None → **本批所有 job 一律标记失败且不重试**。
+        # 只在开了 LLM 时放宽，关掉时候死与今天一致。
+        completed = run_command(command, timeout=2700 if self.llm_enabled else 1800)
         if completed is None or completed.returncode != 0:
             detail = (completed.stderr.decode("utf-8", errors="ignore")[-400:]
                       if completed is not None else "超时")

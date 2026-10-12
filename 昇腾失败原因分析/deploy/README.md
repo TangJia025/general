@@ -79,11 +79,45 @@ systemctl --user disable --now npu-ci-watch # 停并取消开机自启
 | `ledger.json` | 台账：每个 job 的状态、尝试次数、报告路径 | **会重新分析已处理过的失败**（多花日志 API 调用，重复出报告）。快照字段没了也不会重抢 |
 | `snapshots/job_<id>.json` | 失败时刻的集群快照（pod 状态 + 容器日志） | **不可重建**：pod 是一次性的，事后无法再取。这是最该备份的东西 |
 | `handoffs/handoff_run_<id>.json` | 第 1 步的结构化交接面 | 阶段 B 会重跑第 1 步（再花一次日志下载） |
+| `scans/job_<id>.txt.gz` | 失败步骤时间窗的日志正文（LLM 判决的输入；按 `--scan-retention-days` 保留 14 天） | 保留期内该 job 的 LLM 判决做不了，退回规则结论 |
+| `llm_verdicts/job_<id>.json` | LLM 判决缓存（键 = job_id + prompt_version + scan_sha256 + model） | 只是重判一次（要花钱），无正确性问题 |
 | `watch.log` | 轮询与动作日志（同 journalctl，但独立留存） | 仅丢日志 |
 | `analysis_logs/` | 每次调流水线的 stdout/stderr | 出问题时少一条排查线索 |
 
 只想「重新分析某个 job」：把 `ledger.json` 里那条记录删掉（或改 state 为 `seen`），
 **别删 snapshots**，否则集群侧证据就永久丢了。
+
+## 5.1 LLM 判决层（可选，`LLM_ENABLED=1`）
+
+把规则层「未能定性」的 case 交给模型判根因，规则结论并列保留在报告里
+（设计口径与实测数据见 `npu_ci_failure_design.md` §15）。**默认关闭**：不设 `LLM_ENABLED`
+时，输出与不装这一层时逐字节相同。
+
+开启步骤：
+
+```bash
+mkdir -p ~/.config/npu-ci-watch && chmod 700 ~/.config/npu-ci-watch
+cat > ~/.config/npu-ci-watch/deepseek.env <<'EOF'
+DEEPSEEK_API_KEY=sk-...
+# 选填：
+#DEEPSEEK_BASE_URL=
+#LLM_MODEL=deepseek-flash
+EOF
+chmod 600 ~/.config/npu-ci-watch/deepseek.env
+# unit 里已有 EnvironmentFile=-%h/.config/npu-ci-watch/deepseek.env 与 Environment=LLM_ENABLED=1
+systemctl --user daemon-reload && systemctl --user restart npu-ci-watch
+```
+
+那个文件是 **systemd 的 EnvironmentFile，不是 shell 脚本**：每行一条 `变量=值`，
+不支持 `export`、不支持引号转义、值里**不要加引号**。**它不入任何 Git 仓库。**
+
+| 现象 | 原因 | 动作 |
+|---|---|---|
+| 日志里 `--llm-judge 已打开，但 DEEPSEEK_API_KEY 未设置`，台账里 job 连续 `error` 最终变 `gave_up` | 凭据没读到 | 这是**故意**的硬失败（逐案静默降级会跑完一轮、花了钱、报告上还看不出来）。⚠️ 代价要知道：阶段 B 每失败一次，本批 job 就 `record_error` 一次，**3 次（`--max-attempts`）后变 `gave_up`（终态，不再重试）**，得手工把 `ledger.json` 里那些记录的 state 改回 `seen`。所以填好凭据后先看一行 `journalctl --user -u npu-ci-watch \| grep 第5步`，确认有 `[第5步] LLM 判决已启用：…` 再放心跑 |
+| 报告里出现 `规则判断：…（以上为 LLM 判决，此行仅作对照）` | 正常：模型判了，规则结论并列保留 | 无需处理。**注意这一层的判决质量目前没有真值核验**（§15.5），当线索读 |
+| 报告里全是 `LLM 判决不可用（原因：…）已退回规则判决` | 限流/超时/网络 | 看 `journalctl --user -u npu-ci-watch \| grep 第5步` 的那行汇总（`N 成功 / M 降级（原因分布）`）。降级**不会被缓存**，下轮会重判 |
+| 想临时关掉判决 | — | `Environment=LLM_ENABLED=0`（或注释掉）后 `daemon-reload && restart`；不用删凭据 |
+| 想强制重判某个 job | — | 删 `llm_verdicts/job_<id>.json`；改了提示词（`PROMPT_VERSION`）则会**全部**自动作废重判 |
 
 ## 6. 排障
 
