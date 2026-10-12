@@ -103,7 +103,8 @@ def parse_args():
     parser.add_argument("--once", action="store_true", help="只跑一轮就退出")
     parser.add_argument("--dry-run", action="store_true", help="只打印将要做什么，不写台账/快照/报告")
     parser.add_argument("--notify-command", default="",
-                        help="报告生成后执行的命令（默认空=不外发）；会把报告路径作为最后一个参数传入")
+                        help="报告生成后执行的命令（默认空=不外发）；追加两个参数：报告 .json 路径、"
+                             "逗号分隔的 job_id。传的是 .json 不是 .md —— 消费方要结构化数据")
     # 集群侧（阶段 A）
     parser.add_argument("--kubeconfig-dir", default=DEFAULT_KUBECONFIG_DIR)
     parser.add_argument("--cluster-md", default=None,
@@ -499,12 +500,35 @@ class Watcher:
             self.notify(report_path, pending)
 
     def notify(self, report_path, job_ids):
-        """执行用户自备的通知命令。失败只记日志 —— 通知是附属动作，不该影响台账状态。"""
+        """执行用户自备的通知命令。失败只记日志 —— 通知是附属动作，不该影响台账状态。
+
+        但「失败只记日志」不等于「失败不记日志」：以前这里不看返回码，而
+        capture_output=True 又把 stderr 吞掉且从不打印，于是消费方 sys.exit(1) 了
+        监听器照样打「通知命令已执行」—— 通知整条链路静默失效，排查时完全看不出来。
+        现在返回码非 0 / 超时 / 起不来，都记下退出码与 stderr 末行。
+        """
+        target = report_json_path(report_path)
+        if target is None:
+            self.log(f"⚠️ 通知未执行：{report_path or '(无报告路径)'} 找不到同名 .json，"
+                     f"而消费方要的是结构化数据")
+            return
+        if target != report_path:
+            self.log(f"通知改用 JSON 报告（消费方要结构化数据）：{os.path.basename(target)}")
         try:
-            command = shlex.split(self.args.notify_command) + [report_path or "", ",".join(map(str, job_ids))]
-            subprocess.run(command, capture_output=True, timeout=60)
-            self.log(f"通知命令已执行：{self.args.notify_command}")
-        except (OSError, ValueError, subprocess.TimeoutExpired) as exc:
+            command = shlex.split(self.args.notify_command) + [target, ",".join(map(str, job_ids))]
+            # 固定 utf-8 + replace：消费方打印的是中文，若 locale 不是 utf-8，
+            # text=True 会按 locale 解码而在**上报错误的这段代码里**再抛一个解码异常。
+            result = subprocess.run(command, capture_output=True, timeout=60,
+                                    encoding="utf-8", errors="replace")
+            if result.returncode != 0:
+                lines = (result.stderr or result.stdout or "").strip().splitlines()
+                detail = lines[-1] if lines else "（无输出）"
+                self.log(f"⚠️ 通知命令失败（exit={result.returncode}，不影响报告）：{detail}")
+            else:
+                self.log(f"通知命令已执行：{self.args.notify_command}")
+        except subprocess.TimeoutExpired:
+            self.log("⚠️ 通知命令超时（60s，不影响报告）")
+        except (OSError, ValueError) as exc:
             self.log(f"⚠️ 通知命令失败（不影响报告）：{exc}")
 
     # ---------- 主循环 ----------
@@ -668,6 +692,26 @@ def extract_report_path(stdout: str):
         if stripped.startswith("报告:"):
             return stripped.split("报告:", 1)[1].strip()
     return None
+
+
+def report_json_path(report_path):
+    """把报告路径换成同名的 .json。
+
+    分析工具对同一个 stamp 同时写两个文件：.md（给人看）和 .json（给机器读），
+    但 stdout 里 `报告:` 那行打印的是 .md。而 --notify-command 的消费方要的是
+    结构化数据 —— npu_ci_notify.py 的用法注释就写着 `<report.json>`，喂 .md 进去
+    会在 json.load 处 sys.exit(1)，且失败是静默的（见 notify()）。
+
+    返回 None 表示找不到同名 .json —— 正常不该发生（两个文件由同一 stamp 一起写），
+    此时宁可明说不通知，也不要把一个明知消费方读不了的路径递过去。
+    """
+    if not report_path:
+        return None
+    stem, ext = os.path.splitext(report_path)
+    if ext.lower() == ".json":
+        return report_path if os.path.exists(report_path) else None
+    candidate = stem + ".json"
+    return candidate if os.path.exists(candidate) else None
 
 
 def write_json_atomic(path: str, payload: dict):
