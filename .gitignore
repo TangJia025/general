@@ -36,3 +36,12 @@ alert.log
 # 按 job_id 重取日志、重跑 eval/build_fixtures.py，scan_sha256 必须逐字节相同。
 昇腾失败原因分析/eval/fixtures/
 昇腾失败原因分析/eval/runs/
+
+# ===== 第三方技能仓与无关素材（不入库）=====
+# .agents/ 是整包下载的第三方技能仓（guizang-ppt-skill，5MB+ / 60 余文件），
+# skills-lock.json 是它的锁文件。都是可重新获取的下载物，与 NPU CI 分析无关。
+.agents/
+skills-lock.json
+
+# 与 NPU CI 分析无关的本地素材（PPT 二进制）
+白盒评价规则/
