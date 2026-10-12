@@ -417,6 +417,30 @@ def class_source(case: dict) -> str:
     return "peer_regex" if case.get("sig_source") == "对端节点日志" else "rule_regex"
 
 
+def flat_excerpt(text: str, limit: int = 300) -> str:
+    """把历史 issue 的正文压成**单行**摘要，安全地拼进 markdown 列表项。
+
+    为什么必须压平（实测缺陷，2026-10-12）：这些正文里常带 ``` 围栏的日志摘录，而原先的
+    写法是按**字符数**硬切（`text[:300]`）—— 闭合围栏落在第 300 字之后就被切掉，留下一根
+    悬空的 ```，其后整份报告（含「根因与修复建议」标题、修复建议、能力边界）全被渲染成
+    同一个代码块，读者看到的是「根因和上面的日志糊在一起、没有独立章节」。
+    实测 586 份报告里 40 份中招（6.8%），当天占比过半。反方向同样会坏：只留下闭合围栏时会
+    关掉文档里本该开着的块。
+
+    故这里三重处理：
+      ① 反引号一律降级为单引号 —— 围栏与行内代码同时被中和，摘录再也不可能改变文档的
+         围栏/行内代码状态（比替换 ``` 更彻底，且不依赖渲染器的转义规则）；
+      ② 换行与连续空白压成单个空格 —— 避免摘录逃出列表项，也避免正文里的 `####` 变成真标题；
+      ③ 超长时显式标 `…（截断）`，不切在半个单词上。
+    摘录只是**线索指针**（分数高不等于同现象，见模块注释），不是要原样呈现的正文，
+    故压平不损失用途。
+    """
+    flat = " ".join(text.split()).replace("`", "'")
+    if len(flat) > limit:
+        flat = flat[:limit].rstrip() + "…（截断）"
+    return flat
+
+
 def render_case(case: dict, index: int) -> list:
     """渲染单个失败 job 的完整取证过程。"""
     lines = []
@@ -627,7 +651,7 @@ def render_case(case: dict, index: int) -> list:
             if match["matched_keywords"]:
                 lines.append(f"  - 命中关键词：{', '.join(match['matched_keywords'][:6])}")
             if issue["sections"].get("root_cause"):
-                lines.append(f"  - 历史根因：{issue['sections']['root_cause'][:300]}")
+                lines.append(f"  - 历史根因：{flat_excerpt(issue['sections']['root_cause'])}")
     related = case.get("related_issues") or []
     if related:
         matched_numbers = {match["issue"]["number"] for match in history}
@@ -652,7 +676,7 @@ def render_case(case: dict, index: int) -> list:
             if item.get("why"):
                 lines.append(f"  - 为何关联：{item['why']}")
             if item.get("root_cause"):
-                lines.append(f"  - 历史根因：{item['root_cause'][:300]}")
+                lines.append(f"  - 历史根因：{flat_excerpt(item['root_cause'])}")
     lines.append("")
 
     # --- 第 5 步：结论 ---
@@ -660,6 +684,11 @@ def render_case(case: dict, index: int) -> list:
     lines.append("#### 根因与修复建议（第 5 步）")
     lines.append("")
     lines.append(f"- **根因**：{verdict.get('root_cause')}")
+    # 并列保留规则结论：上面那行是 LLM 判决（或规则判决，未开 LLM 时），这一行是**同一个 case
+    # 的规则层说法**，给读者对照。只在真的走了 LLM 判决时才有 —— 没走就没有这一行，
+    # 这也是「不开 --llm-judge 输出逐字节相同」的一部分。
+    if verdict.get("root_cause_rule"):
+        lines.append(f"- **规则判断**：{verdict['root_cause_rule']}（以上为 LLM 判决，此行仅作对照）")
     # 归类与根因**分行**：桶是投影（只用于统计/去重/派活），根因是结论。二者曾经是同一行，
     # 于是「正则首个命中」被当成了结论本身 —— 实测那正是误判率的主因。
     lines.append(f"- **归类**：{case.get('bucket') or '未分类'}"

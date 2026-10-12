@@ -684,7 +684,13 @@ python3 eval/run_eval.py --arms rule --job-id <id> …      # 或 --dry-run 验 
 python3 eval/run_eval.py --arms rule,deepseek-flash,deepseek-v4-pro
 ```
 
-### 12.7 第二阶段（本次未做）与阶段边界
+### 12.7 第二阶段（**已于 §15 落地**）与阶段边界
+
+> ✅ **本节描述的「第二阶段」已经做完了 —— 见 §15。** 下面这段原文保留，因为它记录了
+> 当初划的边界（尤其「阶段 A 绝不引入 LLM」与「缓存键必须含 prompt_version」两条硬要求，
+> §15 的实现逐条照办）。当时唯一被低估的是「扫描窗写 sidecar」：它不是一行落盘，
+> 而是**阶段 A 从此要多维护一份带保留期的文件、handoff 要多发一个 sha**（§15.2）。
+
 
 第二阶段才动服务：`forensics/report.py` 新增 `apply_llm_verdict()`（**`synthesize()` 一个字不改**，
 `--llm-judge` 关闭时输出与今天逐字节相同）；扫描窗写 sidecar + handoff 加 `scan_ref`（sha 钉住）；
@@ -931,3 +937,131 @@ aisbench 性能未达标；另核一条 job（失败步骤 `Stream logs`、其�
 
 **已知遗留**：§13.5 记的那条口径打架（`cluster.skipped=True` 时置信度读「中高（日志侧决定性判据）」
 而根因行读「未能定性」）**本次未修**，它属于 `is_decisive` 那条级联，与先例无关。
+
+---
+
+## 15. LLM 判决层接入生产
+
+把 §12 写好但**从未执行过**的那一层真正接上（`--llm-judge` 此前在生产入口里连开关都不存在，
+`apply_llm_verdict` 的生产调用者 0 个，4 次评测全部 `arms=rule` / `verdicts=0`）。
+
+### 15.1 口径（三条，都是产品决策不是实现细节）
+
+1. **结论进根因行，规则结论并列保留。** 模型判出来的是 `root_cause`；规则层那句留在
+   `root_cause_rule`，报告里紧随其后渲染成
+   `- **规则判断**：…（以上为 LLM 判决，此行仅作对照）`。读者永远看得见两句话。
+2. **只判规则层「未能定性」的**（范围门 = `root_cause.startswith("未能定性")`）。
+   已有集群侧实证的 case **完全不碰**：连 `llm` 块都不会有，模型也不发请求。
+   理由是实证比推断硬 —— 与 `synthesize()` 既有的「集群侧为准」是同一条纪律。
+3. **不管 `eval/truths.jsonl` 那 30 条人工裁定。** 本层没有质量真值（见 §15.5）。
+
+### 15.2 阶段 A 从此要落一份扫描窗（这是本次最大的一块新工作）
+
+`judge_case(scan_text, …)` 判的是**扫描窗**，而阶段 A 的 handoff 只有结构化结论、**日志正文不落盘**。
+评测里它有得判，是因为 `eval/build_fixtures.py` 事先调生产的 `build_scan_window` 造好了 fixture。
+生产侧没有这个环节 —— 不补上，阶段 B 拿不到 `scan_text`，一次也调不动。
+
+- 位置：`--scan-dir`（默认 `<脚本目录>/.forensics_state/scans`，**已被仓库根 `.gitignore` 覆盖**）；
+  监听器显式传 `<state-dir>/scans`，**两个阶段用同一个路径**（不一致的表现是「一条都判不了」且不报错）。
+- 内容是 `text_scan`（node0 失败步骤时间窗），**取在对端节点兜底之前**：
+  peer 文本是产物尾部粗切、无时间窗对齐，只作兜底，不该当「现场」喂给模型。
+- `scan_lines` 为空时 `text_scan` 会回退成**整份日志**，这种 case **不落 sidecar**
+  （否则模型会吃到一份远超 token 预算的文本），下游自然没有 LLM 判决。
+- handoff 每条补 `scan_ref` + `scan_sha256`；阶段 B 读回来**必须校验 sha** ——
+  目录有保留期清理、也可能有同名残留，拿一份与本次判决无关的文本喂给模型，
+  比不判更坏（结论看着像真的，证据却是别人的）。
+- `--scan-retention-days`（默认 14）在阶段 A 启动时清理过期 sidecar，否则每天几十个文件无限增长。
+- `gzip` 用 `mtime=0`：内容相同的 sidecar 逐字节相同，便于比对与去重。
+
+### 15.3 阶段 B：调用点、缓存、预算
+
+**判决调用点在 `merge_llm_verdict()` 里**（原先内联在 `main()` 循环中，抽出来是因为
+那段逻辑要跑完整套集群取证才走得到，**「把范围门拆掉」这种注入没有任何测试会红**）：
+
+```python
+if llm_client is None or not verdict["root_cause"].startswith(LLM_RULE_GATE_PREFIX):
+    return verdict, None
+outcome = llm_outcome_for(item, …)
+verdict["root_cause_rule"] = verdict["root_cause"]   # ⚠️ 必须在合并之前取
+return apply_llm_verdict(verdict, outcome, rule_bucket=case.get("bucket")), outcome
+```
+
+- **启动即硬失败**：开关打开但 `DEEPSEEK_API_KEY` 为空 → `SystemExit`。
+  不静默降级是有意的：否则整轮每个 case 都变成「LLM 判决不可用（原因：http_4xx）」，
+  跑完一轮、花掉钱、报告上还看不出来。
+- **缓存**：`.forensics_state/llm_verdicts/job_<job_id>.json`，键 =
+  `job_id + PROMPT_VERSION + scan_sha256 + model`（§12.7 点名要求 `prompt_version` 进键；
+  `model` 是本实现补的 —— 换了模型不能让另一个模型的结论冒充命中）。
+  原子写（tmp + `os.replace`）。**只缓存成功**：降级是暂时性的（限流/超时/抖动），
+  把一次瞬时故障永久钉在某个 job 上，比不缓存坏得多。缓存不存 `raw_response`
+  （那是评测 `--replay` 的产物，生产缓存只要结论 + 可比元数据）。
+- **预算**：循环外记 `deadline`，每次调用前检查，超预算**不发请求**、记 `budget_exhausted`。
+  循环结束打一行 `summarize_outcomes` / `render_summary_line`，并落进 `run_meta.llm`。
+- **不传 `rule_hint`**：门内这些 case 的规则桶恰恰是「刚判不出结论」那一档，
+  塞进提示词等于把模型往我们刚说不可信的那个桶上引。
+
+### 15.4 常驻服务接线
+
+`npu_ci_watch.py` 读 `LLM_ENABLED`（unit 里 `Environment=LLM_ENABLED=1`），
+truthy 时给阶段 B 追加 `--llm-judge` [和 `--llm-model`]；两个阶段都传 `--scan-dir`，
+阶段 B 另传 `--llm-cache-dir`。**阶段 B 子进程超时从 1800s 提到 2700s（仅开启时）** ——
+900s 的 LLM 预算叠在集群取证之上有撞穿风险，而撞穿的后果不是「慢」，
+是 `run_command` 返回 `None` → **本批所有 job 一律标记失败且不重试**。
+
+unit 两行（`deploy/` 与 `~/.config/systemd/user/` 两份，改动前逐字节相同）：
+
+```
+EnvironmentFile=-%h/.config/npu-ci-watch/deepseek.env
+Environment=LLM_ENABLED=1
+```
+
+前缀 `-` = 文件缺失也不报错：先接线、后放凭据，服务不会因此起不来。
+凭据文件 `~/.config/npu-ci-watch/deepseek.env`（`chmod 600`，**不入任何仓库**），
+格式是 systemd 的 EnvironmentFile（无 `export`、无引号转义）。
+
+### 15.5 成本、延时，与**质量无人验证**
+
+实测（`npu_ci_reports/` 全量 556 份报告、561 条根因行，按日落）：
+
+| 日期 | 根因行 | 门内 | 门内占比 |
+|---|---|---|---|
+| 2026-10-05 | 62 | 3 | 5% |
+| 2026-10-07 | 43 | 5 | 12% |
+| 2026-10-09 | 51 | 19 | 37% |
+| 2026-10-10 | 120 | 49 | 41% |
+
+**门内占比从约 3% 跳到约 40%，是 §14 的直接后果**：先例退出根因行之后，
+原本写「与历史先例 #N 高度吻合」的那些 case 全部落到了「未能定性」。
+也就是说，这一层实际要覆盖的面**比 §12 当初设想的大一个量级** —— 40% × 全量，
+而不是「少数判不出来的疑难杂症」。
+
+- **成本**：峰值 49 例/天 × 47K 输入 token ≈ **2.3M 输入 token/天**，几毛钱量级。便宜；
+- **延时**：49 例 × 单次 30~60s **串行** ≈ 25~50 分钟，而 `npu_ci_watch.py` 是
+  **单线程同步**等待阶段 B 的，这期间整个监控循环停摆。900s 预算能自限，
+  但意味着**当轮超预算的 case 会降级退回规则**。这一条建议先观察一轮真实耗时再调。
+
+**⚠️ 已知缺口：这一层的判决质量没有任何真值。** `eval/truths.jsonl` 30/30 还是 `proposed`，
+用户已明确裁决本次不填（模型给自己打分的循环论证）。所以：
+**上线的可验证部分是「接线正确」（§15.6 的注入证伪），不是「判得准」。**
+在有人工裁定之前，本层只应被当作**线索**与规则结论并列呈现 —— 它现在也确实是这样渲染的。
+
+### 15.6 验证
+
+- **关开关等价性**（安全底线）：`--llm-judge` 不传时，用存档 handoff 跑阶段 B，
+  `cases` / `cluster_availability` / `cluster_health` / `limitations` / `errors`
+  与改动前**逐字节相同**，markdown 正文也只差 `generated_at` 时间戳
+  （带集群查询的那条路径另有一处差异，全部是 `matched_pods` / `runners_online` 这类
+  **实时集群读数**，与本次改动无关）；
+- **开开关（不出网）**：patch 掉 `build_llm_client` 返回 `FakeLLMClient`，跑真实 `main()` ——
+  `root_cause` = 模型那句、`root_cause_rule` = 规则那句、`llm.used=True`、
+  `llm_class` = 投影桶、报告里「仅作对照」行出现 1 次、缓存文件落盘、`call_count=1`
+  （只有门内那 1 个 case 被发出去）；
+- **新增 `tests/test_llm_integration.py`（17 例）**：接线层此前**零覆盖**。
+  ⚠️ 其中两条 fixture 踩坑：`parsed` 必须过**真实解析器**（手拼 dict 会因 `missing_evidence`
+  缺字段直接 KeyError）；有集群实证的 case 的 `pod_evidence` 必须带
+  `containers[].last_terminated_reason`（形状不对会退化成「未能定性」，门又开了 ——
+  测试会在**自证一个不存在的防线**而不报错）；
+- **逐条反向注入证伪**（清 `__pycache__` + `python3 -B`）：拆掉范围门 → 1 红、
+  缓存键去掉 `prompt_version` → 1 红、去掉无 key 的硬失败 → 1 红、
+  `root_cause_rule` 取在合并之后 → 1 红；复原后 **20 套件 345 例全绿**；
+- `eval/run_eval.py --dry-run`：规则臂一致率仍为 **0.2**，冻结集口径未漂移。
