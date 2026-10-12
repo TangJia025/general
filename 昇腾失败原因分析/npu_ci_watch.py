@@ -59,6 +59,11 @@ PHASE_B_STATES = {ws.STATE_SEEN, ws.STATE_SNAPSHOT_OK, ws.STATE_SNAPSHOT_MISSED,
 # 整轮失败（如 gh 未登录、网络不通）时的退避上限（秒）
 MAX_BACKOFF_SECONDS = 600
 
+# 通知命令的墙钟预算。定 300s 而不是 60s：消费方（npu_ci_notify.py）现在还要顺带给
+# owner=infra 的 job 逐个建 issue，每个要走一次 gh（1~3s）+ 查重。超时的后果不只是
+# 「通知没发」—— 调用点在此之前已把 job 标成 REPORTED，**不会重试**，所以宁可放宽。
+NOTIFY_TIMEOUT = 300.0
+
 # 停止信号标志：systemd 停服务时置位，主循环在下一轮开始时干净退出（而不是被 SIGTERM 打断落盘）
 _STOP_REQUESTED = [False]
 
@@ -518,7 +523,7 @@ class Watcher:
             command = shlex.split(self.args.notify_command) + [target, ",".join(map(str, job_ids))]
             # 固定 utf-8 + replace：消费方打印的是中文，若 locale 不是 utf-8，
             # text=True 会按 locale 解码而在**上报错误的这段代码里**再抛一个解码异常。
-            result = subprocess.run(command, capture_output=True, timeout=60,
+            result = subprocess.run(command, capture_output=True, timeout=NOTIFY_TIMEOUT,
                                     encoding="utf-8", errors="replace")
             if result.returncode != 0:
                 lines = (result.stderr or result.stdout or "").strip().splitlines()
@@ -527,7 +532,7 @@ class Watcher:
             else:
                 self.log(f"通知命令已执行：{self.args.notify_command}")
         except subprocess.TimeoutExpired:
-            self.log("⚠️ 通知命令超时（60s，不影响报告）")
+            self.log(f"⚠️ 通知命令超时（{NOTIFY_TIMEOUT:.0f}s，不影响报告）")
         except (OSError, ValueError) as exc:
             self.log(f"⚠️ 通知命令失败（不影响报告）：{exc}")
 
