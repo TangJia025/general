@@ -17,7 +17,8 @@
   "_imap_folder_note": "文件夹名必须写 IMAP 的修改版 UTF-7，不能写明文中文 —— imaplib 在 _command 里按 ascii 编码，写中文会直接 UnicodeEncodeError（实测）。INBOX/&WRaQ6JCuTvY- 就是 INBOX/外部邮件。要换别的文件夹得自己转码，别凭感觉改。",
   "imap_folder": "INBOX/&WRaQ6JCuTvY-",
 
-  "alert_sender": "<填中间邮箱的发件地址，IMAP 只在 FROM 里精确搜它>",
+  "_alert_sender_note": "IMAP 的 FROM 搜索是子串匹配（RFC 3501 §6.4.4），地址不同就互不命中。两条链路（backlog 的 workflow-analysis、昇腾失败分析）各用不同 QQ 账号发信时，两个都要填、逗号分隔 —— 只填一个，另一条链路的邮件会被静默漏掉。",
+  "alert_sender": "<填中间邮箱的发件地址，多个用逗号分隔>",
   "default_receiver": "<填收件人工号，多个用逗号分隔，如 w0012345,w0067890>",
 
   "alert_routes": [],

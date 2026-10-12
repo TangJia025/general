@@ -46,7 +46,9 @@ IMAP_SEARCH_DAYS = 3
 #   XLBN_WELINK_AUTH       必填  小鲁班发送凭据
 #   XLBN_IMAP_USER         必填  告警邮箱账号
 #   XLBN_IMAP_PASSWORD     必填  告警邮箱密码
-#   XLBN_ALERT_SENDER      必填  告警邮件来源地址（IMAP 只在 FROM 里搜它）
+#   XLBN_ALERT_SENDER      必填  告警邮件来源地址（IMAP 只在 FROM 里搜它）。
+#                                多个用逗号分隔 —— 当前有两条链路：backlog 的
+#                                workflow-analysis 与昇腾失败分析，各自用不同的 QQ 账号发信。
 #   XLBN_DEFAULT_RECEIVER  必填  兜底收件人
 #   XLBN_ALERT_ROUTES      选填  JSON：[[["Runner"], ["z123", "l456"]], ...]，顺序即优先级
 #                                （关键词也可写成裸字符串：["Runner", [...]]）
@@ -161,6 +163,11 @@ WELINK_URL = CONFIG['welink_url']
 WELINK_AUTH = CONFIG['welink_auth']
 DEFAULT_RECEIVER = CONFIG['default_receiver']
 ALERT_SENDER = CONFIG['alert_sender']
+# 发件人白名单。逗号/分号分隔多个 —— 两条链路各自用不同 QQ 账号发信时，
+# 只填一个会让另一条的邮件被 IMAP 搜不到：`FROM <string>` 按 RFC 3501 是**子串**匹配，
+# 而 `1079854335@qq.com` 与 `574451426@qq.com` 互不为子串，所以只写前者搜不到后者。
+# 单个值的行为与加这层之前逐字节一致（已实测）。
+ALERT_SENDERS = [s.strip() for s in re.split(r'[,;]', ALERT_SENDER) if s.strip()]
 IMAP_SERVER = CONFIG['imap_server']
 IMAP_USER = CONFIG['imap_user']
 IMAP_PASSWORD = CONFIG['imap_password']
@@ -389,9 +396,26 @@ def is_alert_subject(subject):
     return any(k in subject for k in ALERT_SUBJECT_KEYWORDS)
 
 
+def _sender_search(senders):
+    """把多个发件人拼成 IMAP 的 OR 表达式。
+
+    OR 只接受两个操作数，所以 N 个发件人要靠右嵌套：
+        OR FROM "a" OR FROM "b" FROM "c"
+    最外层 OR 吃 `FROM "a"` 和「剩下的整个 OR」，最后一个发件人是内层第二操作数。
+    实测这串里的分隔符不能少：`OR`、关键字、字面量之间必须有空格。
+    """
+    expression = 'FROM "%s"' % senders[-1]
+    for sender in reversed(senders[:-1]):
+        expression = 'OR FROM "%s" %s' % (sender, expression)
+    return expression
+
+
 def fetch_alert_emails(mail):
     since = (datetime.now() - timedelta(days=IMAP_SEARCH_DAYS)).strftime('%d-%b-%Y')
-    status, data = mail.search(None, f'(FROM "{ALERT_SENDER}" SENTSINCE "{since}")')
+    # SENTSINCE 与前面那串 OR 之间是隐式 AND（IMAP 里并列的搜索键就是 AND），
+    # 这样能写成单层括号，不必给 OR 再套一层。
+    criteria = '(%s SENTSINCE "%s")' % (_sender_search(ALERT_SENDERS), since)
+    status, data = mail.search(None, criteria)
     if status != 'OK' or not data or not data[0]:
         return []
     return data[0].split()
@@ -413,8 +437,8 @@ def imap_connect():
 
 def process():
     log.info('=' * 60)
-    log.info('start; sender=%s folder=%s dry_run=%s log=%s',
-             ALERT_SENDER, IMAP_FOLDER, DRY_RUN, LOG_FILE)
+    log.info('start; senders=%s folder=%s dry_run=%s log=%s',
+             ALERT_SENDERS, IMAP_FOLDER, DRY_RUN, LOG_FILE)
     mail = None
     try:
         mail = imap_connect()
