@@ -437,8 +437,10 @@ def imap_connect():
 
 def process():
     log.info('=' * 60)
-    log.info('start; senders=%s folder=%s dry_run=%s log=%s',
-             ALERT_SENDERS, IMAP_FOLDER, DRY_RUN, LOG_FILE)
+    # 把 imap_server / imap_user 一并打出来：「扫不到告警」的第一个诊断问题就是
+    # 「我到底在读哪个邮箱」，而这两个值此前只在配置里、日志里看不见。
+    log.info('start; imap=%s user=%s senders=%s folder=%s dry_run=%s log=%s',
+             IMAP_SERVER, IMAP_USER, ALERT_SENDERS, IMAP_FOLDER, DRY_RUN, LOG_FILE)
     mail = None
     try:
         mail = imap_connect()

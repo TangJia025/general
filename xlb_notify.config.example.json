@@ -11,7 +11,8 @@
   "welink_auth": "<填小鲁班发送凭据>",
 
   "imap_server": "imailcn56.email.huawei.com",
-  "imap_user": "<填告警邮箱账号，注意必须是中间邮箱那个账号，否则读不到信>",
+  "_imap_user_note": "必须是「中间邮箱」那个账号 —— 也就是告警邮件实际落地的邮箱。填错的表现是「邮箱里明明有信、脚本却说没有告警」，且不报错。登录名可能是工号也可能是别名，以实际能登进去的为准；启动日志会打印 imap=<server> user=<账号>，跑起来先核对这两项。",
+  "imap_user": "<填中间邮箱的登录账号>",
   "imap_password": "<填该邮箱的密码/授权码>",
 
   "_imap_folder_note": "文件夹名必须写 IMAP 的修改版 UTF-7，不能写明文中文 —— imaplib 在 _command 里按 ascii 编码，写中文会直接 UnicodeEncodeError（实测）。INBOX/&WRaQ6JCuTvY- 就是 INBOX/外部邮件。要换别的文件夹得自己转码，别凭感觉改。",
