@@ -70,6 +70,7 @@
 import os
 import re
 import sys
+import html
 import json
 import email
 import hashlib
@@ -378,28 +379,52 @@ def _tidy_lines(text, strip_leading=True, max_blank=0):
     return '\n'.join(kept)
 
 
+# 结构性断行：这些标签本身就表示「这里确实换行」，浏览器渲染出来也是换行。
+# 与「源码里的换行」必须区别对待 —— 后者按 HTML 规范只是普通空白，见 _html_to_text。
+_HARD_BREAK_PATTERN = (r'<br\s*/?>|</p\s*>|</div\s*>|</tr\s*>|</li\s*>'
+                       r'|</h[1-6]\s*>|</table\s*>')
+
+
 def _html_to_text(raw):
+    """HTML 转纯文本，口径是「按浏览器渲染的样子」。
+
+    分三步，顺序不能换：**先切结构性断行，再在每段内部压掉源码空白**。
+
+    关键的一条：HTML 源码里的换行和缩进按规范就是普通空白，浏览器渲染时会折成一个
+    空格。模板引擎普遍把一句话分写在多行，比如
+    `尊敬的\\n  <span>华为云用户</span>\\n  ，您好！`，渲染出来是**一行**；
+    但早先的实现把这些源码换行当成了真换行，于是正文被拆成一词一行 ——
+    实测一封 LTS 告警邮件，「尊敬的 华为云用户 ，您好！」被拆成三行。
+    所以：结构标签 → 换行，源码空白 → 一个空格。
+
+    同理，标签要**删掉**而不是换成空格：换成空格会把 `<span>紧急</span>` 变成
+    「告警级别: 紧急 ;」，而邮件里显示的是「告警级别:紧急;」。表格单元格是例外，
+    `</td>`/`</th>` 换成一个空格，否则 `<td>a</td><td>b</td>` 会粘成 `ab`。
+    """
     if not raw:
         return ''
     s = re.sub(r'<style[^>]*>.*?</style>', '', raw, flags=re.I | re.S)
     s = re.sub(r'<script[^>]*>.*?</script>', '', s, flags=re.I | re.S)
+    # 注释要先整段去掉：`<[^>]+>` 碰到 `<!-- … -->` 只吃到第一个 `>`，注释正文里
+    # 一带 `>`（如「集群 A -> 集群 B」这种内部备注，或 Outlook 的 mso 条件注释）
+    # 剩下的文字就整段漏进正文了。放在切段之前还有个好处：注释里的 `<br>` 不算断行。
+    s = re.sub(r'<!--.*?-->', ' ', s, flags=re.S)
     # href 的引号两种都要认。原来的正则只认双引号，单引号写法（合法 HTML，不少
     # 邮件模板就是这么生成）会**整条 URL 丢掉**、只留下一段锚文本，且不报错 ——
     # 实测确认过。在这个「原样转发」的口径下，丢链接比丢格式严重。
     s = re.sub(r'<a[^>]+href=(["\'])(.*?)\1[^>]*>([^<]*)</a>', r' \3 (\2) ', s, flags=re.I)
-    s = re.sub(r'</?th\s*>', '\n', s, flags=re.I)
-    s = re.sub(r'</?td\s*>', '\n', s, flags=re.I)
-    s = re.sub(r'</?tr\s*>', '\n', s, flags=re.I)
-    s = re.sub(r'<br\s*/?>', '\n', s, flags=re.I)
-    s = re.sub(r'</?p\s*>', '\n', s, flags=re.I)
-    s = re.sub(r'</?div\s*>', '\n', s, flags=re.I)
-    # HTML 注释要先去掉再走通用标签剥离：`<[^>]+>` 碰到 `<!-- … -->` 只吃到第一个 `>`，
-    # 注释里剩下的文字会整段漏进正文
-    s = re.sub(r'<!--.*?-->', ' ', s, flags=re.S)
-    s = re.sub(r'<[^>]+>', ' ', s)
-    s = s.replace('&nbsp;', ' ').replace('&amp;', '&')
-    s = s.replace('&lt;', '<').replace('&gt;', '>')
-    return _tidy_lines(s, strip_leading=True, max_blank=0)
+
+    lines = []
+    for piece in re.split(_HARD_BREAK_PATTERN, s, flags=re.I):
+        piece = re.sub(r'</t[dh]\s*>', ' ', piece, flags=re.I)
+        piece = re.sub(r'<[^>]+>', '', piece)
+        # 实体放在剥标签之后解：反过来会把正文里转义写出的 `&lt;b&gt;` 变成一个真标签剥掉。
+        # `&nbsp;` 解出来是 \xa0，下面一并当空白压掉（实测源里常直接就是 \xa0 字符）。
+        # \ufeff（BOM）和 \u200b（零宽空格）也当空白：模板常塞 `&#65279;` 当占位，
+        # 留着会变成一行看不见的「空行」，是肉眼查不出来的那种噪声。
+        piece = html.unescape(piece)
+        lines.append(re.sub(r'[ \t\r\n\f\v\xa0\ufeff\u200b]+', ' ', piece))
+    return _tidy_lines('\n'.join(lines), strip_leading=True, max_blank=0)
 
 
 def _decode_part(part):

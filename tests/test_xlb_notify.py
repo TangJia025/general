@@ -215,13 +215,66 @@ print(repr(m.decode_subject(email.message_from_string(
            must_contain=("'中文主题'", "'(无主题)'"))
 
 
+def test_html_source_newlines_do_not_shred_prose():
+    """HTML 源码里的换行是**软换行**，不能当成真换行。
+
+    这是 LTS 告警邮件的真实形态：模板把一句话分写在多行（每个着色/加粗的片段
+    单独一行），浏览器渲染时折成一个空格。早先的实现把源码换行原样保留，于是
+    「尊敬的 华为云用户 ，您好！」被拆成三行、「您在 亚太-香港 区域设置的…」被拆成
+    八行 —— 这是用户实测反馈的那次「换行还是有些问题」。
+
+    同时钉住另一半：标签要**删掉**而不是换成空格。换成空格会把
+    `<span>紧急</span>` 变成「告警级别: 紧急 ;」，而邮件里是「告警级别:紧急;」。
+    """
+    _drop(CONFIG)
+    _check("源码软换行不拆句",
+           _run(r"""
+import email, xlb_notify as m
+HTML = '''<html><head><style>td{font-size:12px}</style></head>
+<body>
+<table width="600"><tr><td>
+尊敬的
+<span style="color:#333">华为云用户</span>
+，您好！<br>
+您在
+<span style="color:#333">亚太-香港</span>
+区域设置的告警通知规则
+<strong>openeuler-hk-defect-manager错误日志告警</strong>
+触发
+<span>1 条运维通知</span>
+，事件类告警规则为
+<strong>openeuler-hk-defect-manager错误日志告警</strong>
+。更多信息请登录LTS。<br>
+详细信息如下，请您查阅：<br>
+<div>告警级别:<span>紧急</span>;</div>
+<div>触发条件:$0.err_cnt &gt; 10;</div>
+</td></tr></table>
+</body></html>'''
+body = m.get_email_body(email.message_from_bytes(
+    'Content-Type: text/html; charset=utf-8\n\n'.encode('utf-8') + HTML.encode('utf-8')))
+print('行数:', len(body.splitlines()))
+print('句子没被拆:', '尊敬的 华为云用户 ，您好！' in body)
+print('长句没被拆:', '您在 亚太-香港 区域设置的告警通知规则 openeuler-hk-defect-manager错误日志告警 '
+      '触发 1 条运维通知 ，事件类告警规则为 openeuler-hk-defect-manager错误日志告警 '
+      '。更多信息请登录LTS。' in body)
+print('标签没换成空格:', '告警级别:紧急;' in body)
+print('实体照常解:', '$0.err_cnt > 10;' in body)
+print('真换行还在:', body.splitlines()[0] == '尊敬的 华为云用户 ，您好！'
+      and body.splitlines()[1].startswith('您在'))
+""", {"PYTHONIOENCODING": "utf-8"}),
+           must_contain=("行数: 5", "句子没被拆: True", "长句没被拆: True",
+                         "标签没换成空格: True", "实体照常解: True",
+                         "真换行还在: True"))
+
+
 def test_html_body_has_no_blank_line_swamp():
     """通知类邮件转出来必须没有成片的空行。
 
     实测一封普通通知邮件（嵌套 table + `&nbsp;` 占位行 + 缩进空白）原来出来 29 行、
     其中 22 行是纯空白。根因是原来那句 `\\n[ \\t]*\\n+ -> \\n` 压不掉**只含一个空格的行**
     —— 空格在换行之前，模式得先看到换行才匹配。这条用例就是钉这个：
-    空白行必须为 0，且表格的标签与值必须相邻（留空行会把它们拆开）。
+    空白行必须为 0，且表格的标签与值必须在同一行（`</td>` 不能当断行 —— 单元格是并排
+    的两列，不是两行；断行会把「集群 / 空行 / ascend-x」竖过来，一屏几十处）。
     """
     _drop(CONFIG)
     _check("HTML 无空行泛滥",
@@ -249,7 +302,7 @@ body = m.get_email_body(email.message_from_bytes(
 lines = body.splitlines()
 print('行数:', len(lines))
 print('空白行数:', sum(1 for line in lines if not line.strip()))
-print('标签值相邻:', '集群\nascend-x' in body and '级别\nCRITICAL' in body)
+print('标签值同行:', '集群 ascend-x' in body and '级别 CRITICAL' in body)
 # 注释必须整段消失，而不是「吃到第一个 `>` 为止」——后者的漏法是：注释正文里
 # 一旦出现 `>`（这条模拟的是 `集群 A -> 集群 B` 这种内部备注，也等价于 Outlook 的
 # mso 条件注释），`<[^>]+>` 只吃到那个 `>`，**后面的注释正文就当成正文留下了**。
@@ -257,7 +310,7 @@ print('注释没漏出:', '内部备注' not in body and '集群 B' not in body)
 print('没有残留标签:', '<' not in body and '>' not in body)
 print('样式没漏出:', 'font-size' not in body)
 """),
-           must_contain=("行数: 6", "空白行数: 0", "标签值相邻: True",
+           must_contain=("行数: 4", "空白行数: 0", "标签值同行: True",
                          "注释没漏出: True", "没有残留标签: True",
                          "样式没漏出: True"))
 
