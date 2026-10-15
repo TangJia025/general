@@ -23,16 +23,32 @@
 全部发给 `DEFAULT_RECEIVER`（多个用逗号/分号分隔，逐个发）。不再有地址映射，
 也不再按告警名路由。
 
-## 两个安全阀，都是为了让「首次运行」不至于闯祸
+## 三个安全阀
 
 1. **时间窗**：只搜最近 `XLBN_SEARCH_DAYS` 天（默认 3）。**不设这条，首次运行会把
    整个文件夹的历史邮件一次性群发出去。** 要真的全量就把天数调大。
-2. **去重快照**：按 Message-ID 记已发过的，7 天 TTL。发送失败的**不记**，下轮重试。
-   少数发件人不带 Message-ID，那种信按正文 sha256 做 key（不能用 IMAP 序号 ——
-   序号每轮重新编号，会漏判重也会误判重，见 process() 里的注释）。
+2. **单轮上限**：一轮最多**尝试**发 `XLBN_MAX_PER_RUN` 封（默认 20）。小鲁班有频率
+   限制，一轮把整个文件夹打完（每封还要乘以收件人数）会从某一封开始**尾部全失败**；
+   而失败的邮件按其定义不记快照，于是下一轮从头再来、又在同一位置撞上限制 ——
+   尾部那批**永远发不出去**，前面那批每轮重发。有上限就变成「分多轮慢慢排空」：
+   已发的都记了快照会判重跳过，未发的就排到了前面。**判据是「尝试数」不是「成功数」**
+   —— 要限的正是请求量，只数成功就等于没限住。
+3. **去重快照**：按 Message-ID 记已发过的，7 天 TTL；**每发成功一封就立刻落盘**
+   （原子换名写），不是攒到最后一起写 —— 进程中途被杀也不会丢掉这一轮的成绩。
+   发送失败的**不记**，下轮重试。少数发件人不带 Message-ID，那种信按正文 sha256
+   做 key（不能用 IMAP 序号 —— 序号每轮重新编号，会漏判重也会误判重）。
 
-⚠️ 即便如此，首次运行仍可能一次发出大量邮件 —— 这个文件夹收的是**所有外部来信**，
-没有内容过滤。上线前先 `dry_run` 跑一轮看数量（[DRY-RUN] 日志会逐条打出收件人与正文摘要）。
+⚠️ 即便如此，首次上线仍可能一次发出大量邮件（上限 20 封封顶）—— 这个文件夹收的是
+**所有外部来信**，没有内容过滤。上线前先 `dry_run` 跑一轮看数量（[DRY-RUN] 日志会逐条
+打出收件人与正文摘要）。
+
+## 快照写不进去 = 全量重发
+
+去重完全依赖 `email_alert_snapshot.json`。它读不出来或写不进去，等价于「一封都没发过」，
+下一轮会把整批重发一遍 —— 这是「每轮都全量重发」最容易被忽略的机制。所以：
+
+  * 读失败：坏文件**改名留证**（`*.corrupt-<时间戳>`）并打 error 级日志，然后按空快照继续；
+  * 写失败：**不吞**。计入 `save_fail`，写进 `done:` 行，并**发一条 WeLink 告警**。
 
 ## 凭据
 
@@ -47,6 +63,7 @@
     XLBN_IMAP_PASSWORD     必填  该邮箱密码/授权码
     XLBN_DEFAULT_RECEIVER  必填  收件人，多个用逗号分隔
     XLBN_WELINK_URL / XLBN_IMAP_SERVER / XLBN_IMAP_FOLDER / XLBN_SEARCH_DAYS  选填
+    XLBN_MAX_PER_RUN       选填  一轮最多尝试发几封，默认 20（见上面第 2 条安全阀）
     XLBN_DRY_RUN           选填  设 1/true 则只打日志不发 WeLink（首次联调用）
 """
 
@@ -83,6 +100,16 @@ SNAPSHOT_TTL_DAYS = 7
 # 只搜最近 N 天。这是**安全阀**：去掉它，首次运行会把整个文件夹的历史邮件全部群发。
 # 要真全量就把 XLBN_SEARCH_DAYS 调大（或设成 3650）。
 DEFAULT_SEARCH_DAYS = 3
+# 单次运行最多**尝试**发几封邮件（不是几个 HTTP 请求 —— 实际请求数还要乘以收件人数）。
+#
+# 为什么必须有这个上限：小鲁班有频率限制。一轮把整个文件夹的信（每封再乘以收件人数）
+# 一口气打完，超出配额之后**尾部**全部失败。而失败的邮件按设计不记进快照（好让它下轮重投），
+# 于是下一轮从头再来一遍、又在同一位置撞上限制 —— 尾部那批信**永远发不出去**，
+# 而前面那批每轮都重发一遍。加个上限就把「一次打爆」换成「分多轮慢慢排空」。
+#
+# 为什么默认 20：按每 5 分钟跑一轮算，20 封/轮 ≈ 240 封/小时，够用；单轮 HTTP 请求
+# 最多 20×收件人数，不容易撞配额。
+DEFAULT_MAX_PER_RUN = 20
 # WeLink content 是单条文本，实测过长会被截断或拒收。超长时截断并在日志里说明。
 MAX_CONTENT_CHARS = 4000
 
@@ -160,6 +187,16 @@ def load_config():
     if config['search_days'] <= 0:
         raise SystemExit('XLBN_SEARCH_DAYS 必须为正数（当前 %r）；'
                          '它同时是首次运行的爆炸半径控制' % config['search_days'])
+    raw_max = _setting('XLBN_MAX_PER_RUN', 'max_per_run')
+    try:
+        config['max_per_run'] = int(raw_max) if raw_max else DEFAULT_MAX_PER_RUN
+    except ValueError:
+        raise SystemExit('XLBN_MAX_PER_RUN 必须是个数（每次运行最多尝试发几封）：%r' % raw_max)
+    if config['max_per_run'] <= 0:
+        raise SystemExit('XLBN_MAX_PER_RUN 必须为正数（当前 %r）。'
+                         '想不限量就填个很大的数（比如 100000），别填 0 —— '
+                         '填 0 会被当成「一封都不发」还是「不限量」全靠猜，'
+                         '这种含糊比多写一位数字危险' % config['max_per_run'])
     config['dry_run'] = _setting('XLBN_DRY_RUN', 'dry_run').lower() in ('1', 'true', 'yes', 'on')
     missing = [name for name, key in REQUIRED_ENV if not config[key]]
     return config, missing
@@ -180,6 +217,7 @@ IMAP_USER = CONFIG['imap_user']
 IMAP_PASSWORD = CONFIG['imap_password']
 IMAP_FOLDER = CONFIG['imap_folder']
 SEARCH_DAYS = CONFIG['search_days']
+MAX_PER_RUN = CONFIG['max_per_run']
 
 # 首次联调时不必改代码（改代码就有顺手 commit 的风险）
 DRY_RUN = CONFIG['dry_run']
@@ -251,29 +289,95 @@ def welink_post_all(content, receivers):
 
 # ========== 去重快照 ==========
 def load_snapshot():
+    """读快照。文件缺失/损坏时返回空表，并把坏文件改名留证。
+
+    为什么要「改名留证」而不是就地忽略：快照是唯一的去重依据，读不出来就等于
+    「一封都没发过」—— 下一轮会把整批重新发一遍。这个放大效应很危险，所以坏文件
+    必须留下痕迹好查因（原地覆盖就把它抹掉了），改名后下一轮不再反复报同一个错。
+    """
     if not os.path.exists(SNAPSHOT_FILE):
         return []
     try:
         with open(SNAPSHOT_FILE, 'r', encoding='utf-8') as f:
             data = json.load(f)
         if not isinstance(data, list):
-            return []
-        cutoff = (datetime.now() - timedelta(days=SNAPSHOT_TTL_DAYS)).isoformat()
-        return [e for e in data if isinstance(e, dict) and e.get('sent_at', '') > cutoff]
+            raise ValueError('快照顶层不是数组，实际是 %s' % type(data).__name__)
     except Exception as e:
-        log.error('load snapshot failed: %s', e)
+        quarantine = '%s.corrupt-%s' % (SNAPSHOT_FILE, datetime.now().strftime('%Y%m%d%H%M%S'))
+        try:
+            os.replace(SNAPSHOT_FILE, quarantine)
+            note = '，已改名为 %s' % os.path.basename(quarantine)
+        except OSError as move_error:
+            note = '，且改名也失败（%s）' % move_error
+        # 用 error 级别：这是「本轮会把整批重发一遍」的直接原因，必须显眼
+        log.error('load snapshot failed: %s%s —— 本轮的去重依据为空，会按快照为空重发', e, note)
         return []
+
+    cutoff = (datetime.now() - timedelta(days=SNAPSHOT_TTL_DAYS)).isoformat()
+    kept = [e for e in data if isinstance(e, dict) and e.get('sent_at', '') > cutoff]
+    if len(kept) != len(data):
+        log.info('snapshot: %d 条中 %d 条已过 %d 天 TTL，丢弃',
+                 len(data), len(data) - len(kept), SNAPSHOT_TTL_DAYS)
+    return kept
 
 
 def save_snapshot(entries):
+    """写快照。返回是否成功 —— 调用方必须看这个返回值。
+
+    先写临时文件再 `os.replace` 换名（同目录内换名是原子的）。原来直接 'w' 打开
+    目标文件写，进程一被中途杀掉（Windows 上的计划任务是每 5 分钟拉一个新进程）
+    就留下一个截断的 JSON；下一轮读它失败 → 去重依据归零 → 整批重发。
+    写入失败**必须**让调用方知道：它想表达的是「这些信已经发过了」，没写进去就等于
+    下一轮全部重发，这是本轮「每次都全量重发」的直接机制之一，不能只落一行日志。
+    """
+    tmp = SNAPSHOT_FILE + '.tmp'
     try:
-        with open(SNAPSHOT_FILE, 'w', encoding='utf-8') as f:
+        with open(tmp, 'w', encoding='utf-8') as f:
             json.dump(entries, f, ensure_ascii=False)
+        os.replace(tmp, SNAPSHOT_FILE)
+        return True
     except Exception as e:
-        log.error('save snapshot failed: %s', e)
+        log.error('save snapshot failed: %s: %s', type(e).__name__, e)
+        try:
+            if os.path.exists(tmp):
+                os.remove(tmp)
+        except OSError:
+            pass
+        return False
 
 
 # ========== 邮件解析 ==========
+def _tidy_lines(text, strip_leading=True, max_blank=0):
+    """压掉「空行严重」。
+
+    通知类邮件的 HTML 大量用 `<td>&nbsp;</td>` 做占位/留白行，加上层层嵌套的
+    </td></tr></div>，转成文本后留下**成片的、只含一个空格的空行**。原来那句
+    `\\n[ \\t]*\\n+ -> \\n` 压不掉它们：空格在换行**之前**，而模式得先看到换行才匹配，
+    于是 "\\n \\n" 最后剩下 " \\n" —— 一行纯空白。实测一封普通通知邮件 29 行里有 22 行
+    是这种，到 WeLink 就是大片空行。
+
+    这里改成按行处理：每行去首尾空白，连续空行最多保留 max_blank 行（默认 0，即全去掉），
+    再去掉首尾空行。
+
+    为什么 HTML 侧 max_blank=0 而不是留一行当段落分隔：留一行会把表格的标签与值拆开 ——
+    `<th>集群</th><td>ascend-x</td>` 中间本来就有两个换行，留一行就变成「集群 / 空行 /
+    ascend-x」，一屏通知里几十处，又回到「空行严重」。HTML 的结构靠标签表达，多余的
+    空行纯粹是噪声。**纯文本侧才用 max_blank=1**：那里空行是唯一的分段手段，全去掉
+    会糊成一坨。strip_leading=False 也是给纯文本用的，行首空格可能是有意的对齐。
+    """
+    kept = []
+    for raw_line in text.splitlines():
+        line = raw_line.strip() if strip_leading else raw_line.rstrip()
+        if not line:
+            if max_blank and kept and kept[-1] != '':
+                kept.append('')
+            continue
+        kept.append(re.sub(r'[ \t]+', ' ', line) if strip_leading else line)
+    while kept and kept[-1] == '':
+        kept.pop()
+    return '\n'.join(kept)
+
+
 def _html_to_text(raw):
     if not raw:
         return ''
@@ -289,12 +393,13 @@ def _html_to_text(raw):
     s = re.sub(r'<br\s*/?>', '\n', s, flags=re.I)
     s = re.sub(r'</?p\s*>', '\n', s, flags=re.I)
     s = re.sub(r'</?div\s*>', '\n', s, flags=re.I)
+    # HTML 注释要先去掉再走通用标签剥离：`<[^>]+>` 碰到 `<!-- … -->` 只吃到第一个 `>`，
+    # 注释里剩下的文字会整段漏进正文
+    s = re.sub(r'<!--.*?-->', ' ', s, flags=re.S)
     s = re.sub(r'<[^>]+>', ' ', s)
     s = s.replace('&nbsp;', ' ').replace('&amp;', '&')
     s = s.replace('&lt;', '<').replace('&gt;', '>')
-    s = re.sub(r'[ \t]+', ' ', s)
-    s = re.sub(r'\n[ \t]*\n+', '\n', s)
-    return s.strip()
+    return _tidy_lines(s, strip_leading=True, max_blank=0)
 
 
 def _decode_part(part):
@@ -309,18 +414,26 @@ def _decode_part(part):
 
 
 def get_email_body(msg):
-    """取正文纯文本。优先 text/plain；只有 HTML 时才转成文本。"""
+    """取正文纯文本。优先 text/plain；只有 HTML 时才转成文本。
+
+    两条路径都要过 `_tidy_lines` —— 空行成片是通知类邮件的通病，纯文本侧的
+    multipart/alternative（HTML 旁边那截）同样一堆空行。纯文本用
+    strip_leading=False 且 max_blank=1：行首空格可能是监控系统打的表格对齐，
+    空行则是它唯一的分段手段，两个都不能像 HTML 那样压平。
+    """
     if not msg.is_multipart():
         ctype = msg.get_content_type()
         text = _decode_part(msg)
-        return _html_to_text(text) if ctype == 'text/html' else text
+        if ctype == 'text/html':
+            return _html_to_text(text)
+        return _tidy_lines(text, strip_leading=False, max_blank=1)
 
     plain, html = '', ''
     for part in msg.walk():
         ctype = part.get_content_type()
         if ctype == 'text/plain' and not plain:
             try:
-                plain = _decode_part(part)
+                plain = _tidy_lines(_decode_part(part), strip_leading=False, max_blank=1)
             except Exception:
                 pass
         elif ctype == 'text/html' and not html:
@@ -400,8 +513,8 @@ def imap_connect():
 def process():
     log.info('=' * 60)
     # 把 imap_server / imap_user 一并打出来：排查时的第一个问题是「我到底在读哪个邮箱」。
-    log.info('start; imap=%s user=%s folder=%s days=%d receivers=%s dry_run=%s log=%s',
-             IMAP_SERVER, IMAP_USER, IMAP_FOLDER, SEARCH_DAYS,
+    log.info('start; imap=%s user=%s folder=%s days=%d max_per_run=%d receivers=%s dry_run=%s log=%s',
+             IMAP_SERVER, IMAP_USER, IMAP_FOLDER, SEARCH_DAYS, MAX_PER_RUN,
              DEFAULT_RECEIVERS, DRY_RUN, LOG_FILE)
     mail = None
     try:
@@ -415,8 +528,13 @@ def process():
 
     snapshot = load_snapshot()
     sent_ids = {e['id'] for e in snapshot}
-    snapshot_add = []
-    counters = {'new': 0, 'dup': 0, 'parse_fail': 0, 'send_fail': 0}
+    # 达到 MAX_PER_RUN 就提前收工。**判据是「尝试了几封」，不是「成了几封」**：
+    # 撞频率限制要限的正是尝试次数，只数成功的话失败会被当成「没占额度」，那这条上限
+    # 就管不住请求量了。失败的信不记快照，于是下一轮它还在未发集合里、而且排在前面
+    # （已发的都判重跳过了），下轮优先重投 —— 这样尾部那批才排得出去。
+    attempts = 0
+    budget_exhausted = False
+    counters = {'new': 0, 'dup': 0, 'parse_fail': 0, 'send_fail': 0, 'save_fail': 0}
 
     for mid in ids:
         try:
@@ -440,6 +558,7 @@ def process():
             subject = decode_subject(msg)
             content = compose_content(subject, get_email_body(msg))
 
+            attempts += 1
             all_ok = welink_post_all(content, DEFAULT_RECEIVERS)
             if all_ok:
                 counters['new'] += 1
@@ -447,33 +566,49 @@ def process():
                 # 否则「没发」被记成「已发」，联调完接着跑真的那轮会全部判重、一封都不发，
                 # 而日志只显示 dup=N。这正是此前 fix/xlb-notify-dryrun-snapshot 修过的坑。
                 if not DRY_RUN:
-                    snapshot_add.append(message_id)
+                    # 每封发成功就立刻落盘，不攒到最后一起写。攒着写的代价是：进程在中途
+                    # 被杀（Windows 计划任务每 5 分钟一个进程，长跑容易被下一轮叠上来）
+                    # 这一轮的全部成绩就丢了，下一轮从头重发。
+                    snapshot.append({'id': message_id, 'sent_at': datetime.now().isoformat()})
+                    if not save_snapshot(snapshot):
+                        counters['save_fail'] += 1
             else:
                 counters['send_fail'] += 1
                 log.warning('send failed to some receivers, will retry next round: %s (msgid=%s)',
                             subject, message_id)
+
+            if attempts >= MAX_PER_RUN:
+                budget_exhausted = True
+                break
         except Exception as e:
             log.error('process mail %s failed: %s: %s', mid.decode(), type(e).__name__, e)
             counters['parse_fail'] += 1
 
-    if snapshot_add:
-        now = datetime.now().isoformat()
-        # 快照只记 id + 发送时间。早先还捎带了主题，但没有任何代码读它 ——
-        # 本文件夹收的是所有外部来信，主题里可能带内部信息，少落一份是一份。
-        for sent_id in snapshot_add:
-            snapshot.append({'id': sent_id, 'sent_at': now})
-        save_snapshot(snapshot)
+    if budget_exhausted:
+        # 必须显式说出来。不说的话，后面看日志的人只会看到「这次只发了 20 封」，
+        # 会以为剩下的被丢了 —— 上一轮「为什么有的邮件没转出来」就是这么被误判的。
+        log.info('已达本次上限 %d 封（已发的都记进快照了），剩余下次运行继续排空',
+                 MAX_PER_RUN)
 
     # DRY_RUN 下把 new 标成 would_send：否则这行会让人以为真发出去了 N 封
-    log.info('done: fetched=%d %s=%d dup=%d parse_fail=%d send_fail=%d snapshot=%d',
+    log.info('done: fetched=%d %s=%d dup=%d parse_fail=%d send_fail=%d save_fail=%d '
+             'attempts=%d snapshot=%d%s',
              len(ids), 'would_send' if DRY_RUN else 'new', counters['new'],
-             counters['dup'], counters['parse_fail'], counters['send_fail'], len(snapshot))
+             counters['dup'], counters['parse_fail'], counters['send_fail'],
+             counters['save_fail'], attempts, len(snapshot),
+             ' 早停（达上限）' if budget_exhausted else '')
 
-    if counters['parse_fail'] > 0 or counters['send_fail'] > 0:
-        welink_post_all(
-            f'告警脚本异常: 解析失败 {counters["parse_fail"]} 封, 发送失败 {counters["send_fail"]} 次',
-            DEFAULT_RECEIVERS,
-        )
+    # save_fail 也进告警：快照写不进去 = 下一轮把这一批**重新发一遍**，
+    # 是「每次都全量重发」的直接机制，不能只躺在日志里等人翻。
+    problems = []
+    if counters['parse_fail']:
+        problems.append('解析失败 %d 封' % counters['parse_fail'])
+    if counters['send_fail']:
+        problems.append('发送失败 %d 次' % counters['send_fail'])
+    if counters['save_fail']:
+        problems.append('快照写入失败 %d 次（下一轮会重发这一批）' % counters['save_fail'])
+    if problems:
+        welink_post_all('告警脚本异常: ' + ', '.join(problems), DEFAULT_RECEIVERS)
 
     if mail:
         try:
