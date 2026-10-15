@@ -1,9 +1,62 @@
+#!/usr/bin/env python3
+"""把中间邮箱某个文件夹里的邮件，原样转发到 WeLink。
+
+链路（三段两跳）：
+
+    本脚本 ──smtp.qq.com:587──> 中间邮箱 ──IMAP──> xlb_notify.py(内网Windows) ──> 小鲁班 WeLink
+
+本文件是**第二跳**：内网 Windows 机上跑，读中间邮箱、转发到小鲁班。
+
+## 现在的口径：全量转发，不做内容判断
+
+早先这脚本是个「告警转发器」——靠发件人白名单 + 主题必须含 FIRING/CRITICAL/…
+把告警从一堆信里挑出来，再用 parse_alert 解析成结构化字段、按告警名路由到收件人。
+**那套逻辑已经整体移除。** 现在只做一件事：文件夹里的每封信，取「主题 + 正文纯文本」
+发给 DEFAULT_RECEIVER 里列出的每个收件人，内容不做任何改写、判断或路由。
+
+为什么移除：那套解析对邮件格式是**硬契约**（主题必须双方括号、标签值不能含 http、
+标签与值必须分行），契约另一端在另一台机器上的另一个脚本里。任何一端改格式，
+这一端就静默丢字段 —— 这个耦合不值得为「挑告警」付。要挑，该在发信那一端挑。
+
+## 收件人
+
+全部发给 `DEFAULT_RECEIVER`（多个用逗号/分号分隔，逐个发）。不再有地址映射，
+也不再按告警名路由。
+
+## 两个安全阀，都是为了让「首次运行」不至于闯祸
+
+1. **时间窗**：只搜最近 `XLBN_SEARCH_DAYS` 天（默认 3）。**不设这条，首次运行会把
+   整个文件夹的历史邮件一次性群发出去。** 要真的全量就把天数调大。
+2. **去重快照**：按 Message-ID 记已发过的，7 天 TTL。发送失败的**不记**，下轮重试。
+   少数发件人不带 Message-ID，那种信按正文 sha256 做 key（不能用 IMAP 序号 ——
+   序号每轮重新编号，会漏判重也会误判重，见 process() 里的注释）。
+
+⚠️ 即便如此，首次运行仍可能一次发出大量邮件 —— 这个文件夹收的是**所有外部来信**，
+没有内容过滤。上线前先 `dry_run` 跑一轮看数量（[DRY-RUN] 日志会逐条打出收件人与正文摘要）。
+
+## 凭据
+
+一律从环境变量或同目录 xlb_notify.config.json 读，代码里一个默认值都不留：
+`TangJia025/general` 是 **PUBLIC** 仓，本文件此前把 WELINK_AUTH 与邮箱密码硬编码在
+第 30/36 行，两个凭据已明文推到公开远端（commit 098d6e5），必须按「已泄露」处理。
+缺凭据时**硬失败**而不是降级 —— 静默降级会把「没读到凭据」表现成「发送失败」，
+排查方向直接跑偏；而告警脚本静默失效等于监控静默停摆。
+
+    XLBN_WELINK_AUTH       必填  小鲁班发送凭据
+    XLBN_IMAP_USER         必填  中间邮箱账号
+    XLBN_IMAP_PASSWORD     必填  该邮箱密码/授权码
+    XLBN_DEFAULT_RECEIVER  必填  收件人，多个用逗号分隔
+    XLBN_WELINK_URL / XLBN_IMAP_SERVER / XLBN_IMAP_FOLDER / XLBN_SEARCH_DAYS  选填
+    XLBN_DRY_RUN           选填  设 1/true 则只打日志不发 WeLink（首次联调用）
+"""
+
 import os
 import re
 import sys
 import json
-import imaplib
 import email
+import hashlib
+import imaplib
 import logging
 import requests
 from logging.handlers import RotatingFileHandler
@@ -27,8 +80,11 @@ LOG_FILE = os.path.join(BASE_DIR, 'alert.log')
 CONFIG_FILE = os.path.join(BASE_DIR, 'xlb_notify.config.json')
 
 SNAPSHOT_TTL_DAYS = 7
-IMAP_SEARCH_DAYS = 3
-# DRY_RUN / SINGLE_RECEIVER_TEST 不在这里定值 —— 见下面 CONFIG 加载后那两行
+# 只搜最近 N 天。这是**安全阀**：去掉它，首次运行会把整个文件夹的历史邮件全部群发。
+# 要真全量就把 XLBN_SEARCH_DAYS 调大（或设成 3650）。
+DEFAULT_SEARCH_DAYS = 3
+# WeLink content 是单条文本，实测过长会被截断或拒收。超长时截断并在日志里说明。
+MAX_CONTENT_CHARS = 4000
 
 # ========== 凭据与收件人（环境变量优先，其次 xlb_notify.config.json）=========
 # 为什么一个默认值都不留：`TangJia025/general` 是 **PUBLIC** 仓。本文件此前把 WELINK_AUTH
@@ -40,26 +96,10 @@ IMAP_SEARCH_DAYS = 3
 #
 # 两个来源，按序取值（环境变量 → 配置文件 → 内置默认值）。**值只填在环境变量或
 # xlb_notify.config.json 里，代码里永远不填** —— 见上面那段泄露历史。
-# Windows 上配持久环境变量要开「系统属性 → 高级 → 环境变量」或敲 setx，改 JSON 更省事；
-# Linux/systemd 上反过来，EnvironmentFile 更顺手。两边都支持，不用二选一。
-#
-#   XLBN_WELINK_AUTH       必填  小鲁班发送凭据
-#   XLBN_IMAP_USER         必填  告警邮箱账号
-#   XLBN_IMAP_PASSWORD     必填  告警邮箱密码
-#   XLBN_ALERT_SENDER      必填  告警邮件来源地址（IMAP 只在 FROM 里搜它）。
-#                                多个用逗号分隔 —— 当前有两条链路：backlog 的
-#                                workflow-analysis 与昇腾失败分析，各自用不同的 QQ 账号发信。
-#   XLBN_DEFAULT_RECEIVER  必填  兜底收件人
-#   XLBN_ALERT_ROUTES      选填  JSON：[[["Runner"], ["z123", "l456"]], ...]，顺序即优先级
-#                                （关键词也可写成裸字符串：["Runner", [...]]）
-#   XLBN_WELINK_URL / XLBN_IMAP_SERVER / XLBN_IMAP_FOLDER  选填（服务端点，用默认值）
-#   XLBN_DRY_RUN           选填  设 1/true 则只打日志不发 WeLink（首次联调用）
-
 REQUIRED_ENV = (
     ('XLBN_WELINK_AUTH', 'welink_auth'),
     ('XLBN_IMAP_USER', 'imap_user'),
     ('XLBN_IMAP_PASSWORD', 'imap_password'),
-    ('XLBN_ALERT_SENDER', 'alert_sender'),
     ('XLBN_DEFAULT_RECEIVER', 'default_receiver'),
 )
 
@@ -95,41 +135,6 @@ def _setting(name, key, default=''):
     return value or default
 
 
-def _parse_routes(raw):
-    """路由表从环境变量或配置文件读 —— 表里全是同事工号，而本仓是公开的，故不入代码。
-
-    **返回顺序即优先级**（`get_receivers` 首个命中即返回），所以 JSON 里的顺序必须与原来
-    一致。注意原来那条 `([''], [...])` 是靠「空串是任何字符串的子串」充当兜底的，已不再
-    需要：`get_receivers` 末尾的 `return list(DEFAULT_RECEIVERS)` 就是兜底，且挪不错位置。
-
-    raw 既可以是 JSON 字符串（环境变量），也可以是已解析好的列表（配置文件）——
-    在 JSON 文件里把路由表再写成一层转义字符串实在太难写对了。
-    """
-    if not raw:
-        return []
-    if isinstance(raw, str):
-        try:
-            parsed = json.loads(raw)
-        except ValueError as exc:
-            raise SystemExit('XLBN_ALERT_ROUTES 不是合法 JSON：%s' % exc)
-    else:
-        parsed = raw
-    if not isinstance(parsed, list):
-        raise SystemExit('XLBN_ALERT_ROUTES 必须是列表：[[关键词...], [收件人...]]')
-    routes = []
-    for entry in parsed:
-        if not isinstance(entry, list) or len(entry) != 2:
-            raise SystemExit('XLBN_ALERT_ROUTES 每项必须是 [关键词, 收件人列表]：%r' % (entry,))
-        keywords, receivers = entry[0], entry[1]
-        # 单个关键词允许写成裸字符串，省得为双层方括号（关键词也要包一层 list）踩坑
-        if isinstance(keywords, str):
-            keywords = [keywords]
-        if not isinstance(keywords, list) or not isinstance(receivers, list):
-            raise SystemExit('XLBN_ALERT_ROUTES 每项必须是 [关键词列表, 收件人列表]：%r' % (entry,))
-        routes.append((list(keywords), list(receivers)))
-    return routes
-
-
 def load_config():
     """读凭据、账号与收件人。返回 (config, 缺失的必填变量名列表)。"""
     config = {
@@ -147,12 +152,15 @@ def load_config():
             'XLBN_IMAP_FOLDER 含非 ASCII 字符：%r\n'
             'IMAP 文件夹名必须写**修改版 UTF-7**，例如「外部邮件」写 INBOX/&WRaQ6JCuTvY-。'
             % config['imap_folder'])
-    # 路由表：环境变量是 JSON 字符串，配置文件里是已解析的列表，两者都交给 _parse_routes
-    routes_raw = os.environ.get('XLBN_ALERT_ROUTES', '').strip() or FILE_CONFIG.get('alert_routes') or ''
-    config['alert_routes'] = _parse_routes(routes_raw)
+    raw_days = _setting('XLBN_SEARCH_DAYS', 'search_days')
+    try:
+        config['search_days'] = int(raw_days) if raw_days else DEFAULT_SEARCH_DAYS
+    except ValueError:
+        raise SystemExit('XLBN_SEARCH_DAYS 必须是整数天数：%r' % raw_days)
+    if config['search_days'] <= 0:
+        raise SystemExit('XLBN_SEARCH_DAYS 必须为正数（当前 %r）；'
+                         '它同时是首次运行的爆炸半径控制' % config['search_days'])
     config['dry_run'] = _setting('XLBN_DRY_RUN', 'dry_run').lower() in ('1', 'true', 'yes', 'on')
-    config['single_receiver_test'] = str(
-        FILE_CONFIG.get('single_receiver_test', '') or '').strip().lower() in ('1', 'true', 'yes', 'on')
     missing = [name for name, key in REQUIRED_ENV if not config[key]]
     return config, missing
 
@@ -162,32 +170,19 @@ CONFIG, MISSING_CONFIG = load_config()
 WELINK_URL = CONFIG['welink_url']
 WELINK_AUTH = CONFIG['welink_auth']
 DEFAULT_RECEIVER = CONFIG['default_receiver']
-# 兜底收件人也要按逗号/分号切开，跟下面的 ALERT_SENDER 一样处理。
-# 为什么必须切：`welink_post` 每次只发一个 receiver，`process()` 靠遍历列表逐个发。
-# 不切的话整个字符串会被当成**一个**收件人 ID 发出去 —— 小鲁班拿到
-# "个人id,群id" 这种畸形串，会投给个人、丢掉群，而且返回 200 不报错，
+# 收件人按逗号/分号切开。为什么必须切：`welink_post` 每次只发一个 receiver，
+# `process()` 靠遍历列表逐个发。不切的话整个字符串会被当成**一个**收件人 ID 发出去 ——
+# 小鲁班拿到 "个人id,群id" 这种畸形串，会投给个人、丢掉群，而且返回 200 不报错，
 # 日志里只留一行 `send ok to 个人id,群id`，看起来像发成功了。
-# 配置文件模板里早已写明「多个用逗号分隔」，缺的是这里这行切分。
 DEFAULT_RECEIVERS = [s.strip() for s in re.split(r'[,;]', DEFAULT_RECEIVER) if s.strip()]
-ALERT_SENDER = CONFIG['alert_sender']
-# 发件人白名单。逗号/分号分隔多个 —— 两条链路各自用不同 QQ 账号发信时，
-# 只填一个会让另一条的邮件被 IMAP 搜不到：`FROM <string>` 按 RFC 3501 是**子串**匹配，
-# 而 `1079854335@qq.com` 与 `574451426@qq.com` 互不为子串，所以只写前者搜不到后者。
-# 单个值的行为与加这层之前逐字节一致（已实测）。
-ALERT_SENDERS = [s.strip() for s in re.split(r'[,;]', ALERT_SENDER) if s.strip()]
 IMAP_SERVER = CONFIG['imap_server']
 IMAP_USER = CONFIG['imap_user']
 IMAP_PASSWORD = CONFIG['imap_password']
 IMAP_FOLDER = CONFIG['imap_folder']
-ALERT_ROUTES = CONFIG['alert_routes']
+SEARCH_DAYS = CONFIG['search_days']
 
-# 两个开关也支持从配置文件/环境变量读 —— 首次联调时不必改代码（改代码就有顺手 commit 的风险）
+# 首次联调时不必改代码（改代码就有顺手 commit 的风险）
 DRY_RUN = CONFIG['dry_run']
-SINGLE_RECEIVER_TEST = CONFIG['single_receiver_test']
-
-SKIP_ALERTS = ('Watchdog', 'CloudAccount', 'CloudAccountUnreachable')
-SKIP_DESCRIPTION_KEYWORDS = ('BSS 账号', '云账号', 'AK/SK')
-ALERT_SUBJECT_KEYWORDS = ('FIRING', 'RESOLVED', 'CRITICAL', 'WARNING', 'INFO', 'RECOVERED')
 
 
 # ========== 日志配置 ==========
@@ -219,15 +214,7 @@ setup_logging()
 log = logging.getLogger('alert')
 
 
-def get_receivers(alertname):
-    if SINGLE_RECEIVER_TEST:
-        return list(DEFAULT_RECEIVERS)
-    for keywords, receivers in ALERT_ROUTES:
-        if any(kw in alertname for kw in keywords):
-            return receivers
-    return list(DEFAULT_RECEIVERS)
-
-
+# ========== 发送 ==========
 def welink_post(content, receiver, auth=WELINK_AUTH):
     if DRY_RUN:
         log.info('[DRY-RUN] skip send to %s: %s', receiver, content[:60])
@@ -262,6 +249,7 @@ def welink_post_all(content, receivers):
     return all_ok
 
 
+# ========== 去重快照 ==========
 def load_snapshot():
     if not os.path.exists(SNAPSHOT_FILE):
         return []
@@ -285,79 +273,16 @@ def save_snapshot(entries):
         log.error('save snapshot failed: %s', e)
 
 
-def parse_alert(subject, body):
-    info = {'alertname': 'Unknown', 'cluster': 'unknown', 'severity': 'info',
-            'status': 'firing', 'description': '', 'action': '', 'runbook': ''}
-
-    m = re.match(r'\[(\w+)\]\s*\[([^\]]+)\]\s*(.+)', subject)
-    if m:
-        info['severity'] = m.group(1).lower()
-        info['cluster'] = m.group(2).strip()
-        info['alertname'] = m.group(3).strip()
-        if 'resolved' in subject.lower() or 'recovered' in subject.lower():
-            info['status'] = 'resolved'
-
-    lines = [l.strip() for l in body.split('\n') if l.strip()]
-    label_map = {'集群': 'cluster', '告警': 'alias', '状态': 'status',
-                 '描述': 'description', '修复建议': 'action'}
-    section_titles = {'告警详情', '修复建议', '恢复详情'}
-    i = 0
-    while i < len(lines):
-        line = lines[i]
-        if line == '描述' and i + 1 < len(lines):
-            desc_parts = []
-            j = i + 1
-            while j < len(lines) and lines[j] not in label_map and lines[j] not in section_titles:
-                v = lines[j].strip().strip('|').strip()
-                if v and 'http' not in v and len(v) > 5:
-                    desc_parts.append(v)
-                j += 1
-            if desc_parts:
-                d = ' | '.join(desc_parts)
-                info['description'] = d if not info['description'] else info['description'] + ' | ' + d
-            i = j
-            continue
-        if line in label_map and i + 1 < len(lines):
-            nxt = lines[i + 1].strip().strip('|').strip()
-            if nxt and nxt not in label_map and nxt not in section_titles \
-                    and 'http' not in nxt and len(nxt) > 1:
-                key = label_map[line]
-                if key == 'alias':
-                    info['alertname'] = nxt
-                elif key == 'cluster':
-                    info['cluster'] = nxt
-                else:
-                    info[key] = nxt
-            i += 2
-        else:
-            i += 1
-
-    mm = re.search(r'https?://[^\s)]+', body)
-    if mm:
-        info['runbook'] = mm.group(0).rstrip('.,)>').rstrip('"')
-
-    return info
-
-
-def format_message(info):
-    if info['status'] == 'resolved':
-        return f"【RESOLVED】{info['alertname']}\n集群: {info['cluster']}\n告警已恢复"
-    msg = f"【{info['severity'].upper()}】{info['alertname']}\n集群: {info['cluster']}"
-    if info['description']:
-        msg += f"\n{info['description']}"
-    if info['action']:
-        msg += f"\n建议: {info['action']}"
-    if info['runbook']:
-        msg += f"\nRunbook: {info['runbook']}"
-    return msg
-
-
+# ========== 邮件解析 ==========
 def _html_to_text(raw):
     if not raw:
         return ''
     s = re.sub(r'<style[^>]*>.*?</style>', '', raw, flags=re.I | re.S)
     s = re.sub(r'<script[^>]*>.*?</script>', '', s, flags=re.I | re.S)
-    s = re.sub(r'<a[^>]+href="([^"]+)"[^>]*>([^<]*)</a>', r' \2 (\1) ', s, flags=re.I)
+    # href 的引号两种都要认。原来的正则只认双引号，单引号写法（合法 HTML，不少
+    # 邮件模板就是这么生成）会**整条 URL 丢掉**、只留下一段锚文本，且不报错 ——
+    # 实测确认过。在这个「原样转发」的口径下，丢链接比丢格式严重。
+    s = re.sub(r'<a[^>]+href=(["\'])(.*?)\1[^>]*>([^<]*)</a>', r' \3 (\2) ', s, flags=re.I)
     s = re.sub(r'</?th\s*>', '\n', s, flags=re.I)
     s = re.sub(r'</?td\s*>', '\n', s, flags=re.I)
     s = re.sub(r'</?tr\s*>', '\n', s, flags=re.I)
@@ -384,6 +309,7 @@ def _decode_part(part):
 
 
 def get_email_body(msg):
+    """取正文纯文本。优先 text/plain；只有 HTML 时才转成文本。"""
     if not msg.is_multipart():
         ctype = msg.get_content_type()
         text = _decode_part(msg)
@@ -405,37 +331,40 @@ def get_email_body(msg):
     return plain or html
 
 
-def should_skip(info):
-    if any(s in info['alertname'] for s in SKIP_ALERTS):
-        return True
-    if any(k in info.get('description', '') for k in SKIP_DESCRIPTION_KEYWORDS):
-        return True
-    return False
+def decode_subject(msg):
+    """解出主题。编码坏掉时保留原文而不是丢掉整封信 —— 主题读不出来不该拦住转发。"""
+    raw_subject = msg.get('Subject', '')
+    if not raw_subject:
+        return '(无主题)'
+    try:
+        return ''.join(
+            part.decode(charset or 'utf-8', errors='replace') if isinstance(part, bytes) else part
+            for part, charset in decode_header(raw_subject)
+        )
+    except Exception:
+        return str(raw_subject)
 
 
-def is_alert_subject(subject):
-    return any(k in subject for k in ALERT_SUBJECT_KEYWORDS)
+def compose_content(subject, body):
+    """主题 + 正文纯文本。不做改写、不解析字段。"""
+    subject = re.sub(r'\s+', ' ', subject or '').strip() or '(无主题)'
+    body = (body or '').strip()
+    content = '%s\n\n%s' % (subject, body) if body else subject
+    if len(content) > MAX_CONTENT_CHARS:
+        log.warning('content truncated: %d -> %d chars', len(content), MAX_CONTENT_CHARS)
+        content = content[:MAX_CONTENT_CHARS] + '\n…（正文过长已截断）'
+    return content
 
 
-def _sender_search(senders):
-    """把多个发件人拼成 IMAP 的 OR 表达式。
+# ========== IMAP ==========
+def fetch_all_emails(mail):
+    """搜文件夹里最近 SEARCH_DAYS 天的**全部**邮件。
 
-    OR 只接受两个操作数，所以 N 个发件人要靠右嵌套：
-        OR FROM "a" OR FROM "b" FROM "c"
-    最外层 OR 吃 `FROM "a"` 和「剩下的整个 OR」，最后一个发件人是内层第二操作数。
-    实测这串里的分隔符不能少：`OR`、关键字、字面量之间必须有空格。
+    只按时间收窄 —— 不再有发件人白名单、不再有主题闸。时间窗是安全阀，
+    见模块 docstring：没有它，首次运行会把整个文件夹的历史邮件群发出去。
     """
-    expression = 'FROM "%s"' % senders[-1]
-    for sender in reversed(senders[:-1]):
-        expression = 'OR FROM "%s" %s' % (sender, expression)
-    return expression
-
-
-def fetch_alert_emails(mail):
-    since = (datetime.now() - timedelta(days=IMAP_SEARCH_DAYS)).strftime('%d-%b-%Y')
-    # SENTSINCE 与前面那串 OR 之间是隐式 AND（IMAP 里并列的搜索键就是 AND），
-    # 这样能写成单层括号，不必给 OR 再套一层。
-    criteria = '(%s SENTSINCE "%s")' % (_sender_search(ALERT_SENDERS), since)
+    since = (datetime.now() - timedelta(days=SEARCH_DAYS)).strftime('%d-%b-%Y')
+    criteria = '(SENTSINCE "%s")' % since
     status, data = mail.search(None, criteria)
     if status != 'OK' or not data or not data[0]:
         return []
@@ -444,29 +373,41 @@ def fetch_alert_emails(mail):
 
 def fetch_email_bytes(mail, mid):
     status, data = mail.fetch(mid, '(RFC822)')
-    if status != 'OK' or not data or not data[0]:
+    if status != 'OK' or not data:
         return None
-    return data[0][1] if len(data[0]) > 1 else None
+    first = data[0]
+    # 正常是 (头部, 正文) 的元组。个别服务器会回一个裸字节串，那时 first[1] 是个整数，
+    # 交给 message_from_bytes 会抛 TypeError —— 得在这里就判掉，别让主循环走到那一步。
+    if not isinstance(first, tuple) or len(first) < 2:
+        return None
+    return first[1]
 
 
 def imap_connect():
     mail = imaplib.IMAP4_SSL(IMAP_SERVER, timeout=15)
     mail.login(IMAP_USER, IMAP_PASSWORD)
-    mail.select(IMAP_FOLDER)
+    status = mail.select(IMAP_FOLDER)[0]
+    # select 失败是**返回 NO 而不是抛异常**，不显式判掉就会一路走到 search，
+    # 那边同样只返回 NO，于是最终表现成「fetched 0 emails」—— 脚本天天报平安，
+    # 实际一封没读。这类静默停摆是这套链路最怕的失效模式，所以这里要主动抛。
+    if status != 'OK':
+        raise RuntimeError('select %r 失败（%s）：文件夹名不对，或账号无权限' %
+                           (IMAP_FOLDER, status))
     return mail
 
 
+# ========== 主流程 ==========
 def process():
     log.info('=' * 60)
-    # 把 imap_server / imap_user 一并打出来：「扫不到告警」的第一个诊断问题就是
-    # 「我到底在读哪个邮箱」，而这两个值此前只在配置里、日志里看不见。
-    log.info('start; imap=%s user=%s senders=%s folder=%s dry_run=%s log=%s',
-             IMAP_SERVER, IMAP_USER, ALERT_SENDERS, IMAP_FOLDER, DRY_RUN, LOG_FILE)
+    # 把 imap_server / imap_user 一并打出来：排查时的第一个问题是「我到底在读哪个邮箱」。
+    log.info('start; imap=%s user=%s folder=%s days=%d receivers=%s dry_run=%s log=%s',
+             IMAP_SERVER, IMAP_USER, IMAP_FOLDER, SEARCH_DAYS,
+             DEFAULT_RECEIVERS, DRY_RUN, LOG_FILE)
     mail = None
     try:
         mail = imap_connect()
-        ids = fetch_alert_emails(mail)
-        log.info('fetched %d emails in last %d days', len(ids), IMAP_SEARCH_DAYS)
+        ids = fetch_all_emails(mail)
+        log.info('fetched %d emails in last %d days', len(ids), SEARCH_DAYS)
     except Exception as e:
         log.error('imap connect/search failed: %s: %s', type(e).__name__, e)
         welink_post_all(f'告警脚本连接失败: {type(e).__name__}: {e}', DEFAULT_RECEIVERS)
@@ -475,7 +416,7 @@ def process():
     snapshot = load_snapshot()
     sent_ids = {e['id'] for e in snapshot}
     snapshot_add = []
-    counters = {'new': 0, 'skip': 0, 'dup': 0, 'parse_fail': 0, 'send_fail': 0, 'non_alert': 0}
+    counters = {'new': 0, 'dup': 0, 'parse_fail': 0, 'send_fail': 0}
 
     for mid in ids:
         try:
@@ -485,60 +426,48 @@ def process():
                 continue
 
             msg = email.message_from_bytes(raw)
-            message_id = msg.get('Message-ID') or mid.decode()
+            message_id = msg.get('Message-ID')
+            if not message_id:
+                # 有的发件人不带 Message-ID。兜底**不能**用 IMAP 序号（mid）：
+                # 序号是每次会话重新编号的 —— 同一封信在不同轮次编号可能不同（漏判重、
+                # 反复重发），而不同的信在 7 天窗口里可能顶到同一个编号（误判重、静默漏发）。
+                # 用正文摘要代替，跨轮稳定且每封不同。
+                message_id = 'sha256:' + hashlib.sha256(raw).hexdigest()
             if message_id in sent_ids:
                 counters['dup'] += 1
                 continue
 
-            subject = ''
-            raw_subject = msg.get('Subject', '')
-            if raw_subject:
-                try:
-                    subject = ''.join(
-                        p.decode(c or 'utf-8', errors='replace') if isinstance(p, bytes) else p
-                        for p, c in decode_header(raw_subject)
-                    )
-                except Exception:
-                    pass
+            subject = decode_subject(msg)
+            content = compose_content(subject, get_email_body(msg))
 
-            if not is_alert_subject(subject):
-                counters['non_alert'] += 1
-                continue
-
-            info = parse_alert(subject, get_email_body(msg))
-
-            if should_skip(info):
-                log.info('skip: %s', info['alertname'])
-                counters['skip'] += 1
-                snapshot_add.append((message_id, info['alertname']))
-                continue
-
-            receivers = get_receivers(info['alertname'])
-            log.info('alert=%s severity=%s receivers=%s',
-                     info['alertname'], info['severity'], receivers)
-            all_ok = welink_post_all(format_message(info), receivers)
-
+            all_ok = welink_post_all(content, DEFAULT_RECEIVERS)
             if all_ok:
                 counters['new'] += 1
-                snapshot_add.append((message_id, info['alertname']))
+                # DRY_RUN 下 welink_post 直接返回 True，**不能**顺手记进快照 ——
+                # 否则「没发」被记成「已发」，联调完接着跑真的那轮会全部判重、一封都不发，
+                # 而日志只显示 dup=N。这正是此前 fix/xlb-notify-dryrun-snapshot 修过的坑。
+                if not DRY_RUN:
+                    snapshot_add.append(message_id)
             else:
                 counters['send_fail'] += 1
                 log.warning('send failed to some receivers, will retry next round: %s (msgid=%s)',
-                            info['alertname'], message_id)
+                            subject, message_id)
         except Exception as e:
             log.error('process mail %s failed: %s: %s', mid.decode(), type(e).__name__, e)
             counters['parse_fail'] += 1
 
     if snapshot_add:
         now = datetime.now().isoformat()
-        for mid, _name in snapshot_add:
-            snapshot.append({'id': mid, 'sent_at': now})
+        # 快照只记 id + 发送时间。早先还捎带了主题，但没有任何代码读它 ——
+        # 本文件夹收的是所有外部来信，主题里可能带内部信息，少落一份是一份。
+        for sent_id in snapshot_add:
+            snapshot.append({'id': sent_id, 'sent_at': now})
         save_snapshot(snapshot)
 
-    log.info('done: fetched=%d new=%d skip=%d dup=%d non_alert=%d parse_fail=%d send_fail=%d snapshot=%d',
-             len(ids), counters['new'], counters['skip'], counters['dup'],
-             counters['non_alert'], counters['parse_fail'], counters['send_fail'],
-             len(snapshot))
+    # DRY_RUN 下把 new 标成 would_send：否则这行会让人以为真发出去了 N 封
+    log.info('done: fetched=%d %s=%d dup=%d parse_fail=%d send_fail=%d snapshot=%d',
+             len(ids), 'would_send' if DRY_RUN else 'new', counters['new'],
+             counters['dup'], counters['parse_fail'], counters['send_fail'], len(snapshot))
 
     if counters['parse_fail'] > 0 or counters['send_fail'] > 0:
         welink_post_all(

@@ -1,0 +1,520 @@
+#!/usr/bin/env python3
+"""xlb_notify.py 的离线自测：不连 IMAP、不发 WeLink。
+
+为什么值得写：这个脚本**在另一台机器上无人值守地跑**（内网 Windows，跑在中间邮箱上），
+出问题时没人盯着。它的失效模式几乎都是「看起来一切正常」：
+  * 收件人没切开 → 群消息静默丢掉，日志还写 send ok；
+  * 去重快照把 DRY_RUN 的「没发」记成「已发」→ 联调完真跑那轮全判重、一封不发；
+  * select 失败只返回 NO 不抛异常 → 一路走到「fetched 0 emails」，天天报平安；
+  * 文件夹名写错编码 → 报 UnicodeEncodeError，看不出是文件夹名的问题。
+这几条都在下面正面断言了。
+
+为什么用**子进程**跑每个用例，而不是直接 import：本模块的配置是在 import 时读的
+（CONFIG / MISSING_CONFIG / DEFAULT_RECEIVERS 全是模块级常量），import 一次就定了。
+子进程是唯一能干净地换一套环境变量的办法，顺带保证跑测试不会在仓库里留下 alert.log
+或快照文件 —— 每个用例都在自己的临时目录里跑一份脚本副本。
+
+运行：python3 -B tests/test_xlb_notify.py      （无需 pytest，也兼容 pytest）
+"""
+import json
+import os
+import pathlib
+import re
+import shutil
+import subprocess
+import sys
+import tempfile
+
+TEST_DIR = pathlib.Path(__file__).resolve().parent
+BASE_DIR = TEST_DIR.parent
+SCRIPT_SOURCE = BASE_DIR / "xlb_notify.py"
+
+# 每个用例共用的基础环境：凭据全是假的，但必须齐 —— 缺了会被入口拦下
+BASE_ENV = {
+    "PATH": os.environ.get("PATH", ""),
+    "HOME": os.environ.get("HOME", ""),
+    "XLBN_WELINK_AUTH": "fake-token",
+    "XLBN_IMAP_USER": "fake@example.com",
+    "XLBN_IMAP_PASSWORD": "fake-pass",
+    "XLBN_DEFAULT_RECEIVER": "w0012345, w0067890;w0099999",
+}
+
+
+def _workdir():
+    """造一个只放着脚本副本的临时目录 —— 配置与运行态都落在那里，仓库保持干净。"""
+    directory = tempfile.mkdtemp(prefix="xlb-notify-test-")
+    shutil.copy(str(SCRIPT_SOURCE), os.path.join(directory, "xlb_notify.py"))
+    return directory
+
+
+WORK = _workdir()
+CONFIG = os.path.join(WORK, "xlb_notify.config.json")
+SNAPSHOT = os.path.join(WORK, "email_alert_snapshot.json")
+
+
+def _run(code_or_none, env_extra=None, as_file=False):
+    """cwd 落在 WORK，所以 import xlb_notify 命中的是那份副本。"""
+    env = dict(BASE_ENV)
+    env.update(env_extra or {})
+    if as_file:
+        # 真·入口：像内网机上那样把脚本当文件跑（这样 __file__ 才存在）
+        command = [sys.executable, "-B", "xlb_notify.py"]
+    else:
+        command = [sys.executable, "-B", "-c", code_or_none]
+    return subprocess.run(command, env=env, cwd=WORK,
+                          capture_output=True, text=True, timeout=120)
+
+
+def _check(label, proc, expect_rc=None, must_contain=(), must_not_contain=()):
+    """断言一次子进程运行的结果。失败信息里带上完整输出，省得为了看现场再跑一遍。"""
+    blob = (proc.stdout or "") + (proc.stderr or "")
+    problems = []
+    if expect_rc is not None and proc.returncode != expect_rc:
+        problems.append("退出码 %d，期望 %d" % (proc.returncode, expect_rc))
+    for needle in must_contain:
+        if needle not in blob:
+            problems.append("输出里找不到 %r" % needle)
+    for needle in must_not_contain:
+        if needle in blob:
+            problems.append("输出里不该出现 %r" % needle)
+    assert not problems, "%s —— %s\n----- 实际输出 -----\n%s" % (
+        label, "；".join(problems), blob.strip()[:1200] or "(空)")
+
+
+def _write_config(data):
+    with open(CONFIG, "w", encoding="utf-8") as handle:
+        json.dump(data, handle, ensure_ascii=False)
+
+
+def _drop(path):
+    if os.path.exists(path):
+        os.remove(path)
+
+
+# ---------------------------------------------------------------- 收件人切分
+
+
+def test_receivers_split_on_comma_and_semicolon():
+    """合并的收件人串必须切开。小鲁班的 receiver 只收单个 ID，拼成一个串会被当成
+    一个畸形 ID —— 实测只投给第一个，其余静默丢掉，接口照样返回 200。"""
+    _drop(CONFIG)
+    _check("收件人切分",
+           _run("import xlb_notify as m; print(m.DEFAULT_RECEIVERS)"),
+           must_contain=("['w0012345', 'w0067890', 'w0099999']",))
+
+
+# ---------------------------------------------------------------- 缺凭据硬失败
+
+
+def test_missing_credentials_reported_by_name():
+    """缺哪个就报哪个 —— 只报一句「配置不对」会让人去翻环境变量，而真因可能在配置文件。"""
+    _drop(CONFIG)
+    _check("缺凭据逐项报出",
+           _run("import xlb_notify as m; print('缺=', m.MISSING_CONFIG)",
+                {"XLBN_WELINK_AUTH": "", "XLBN_IMAP_USER": ""}),
+           must_contain=("缺= ['XLBN_WELINK_AUTH', 'XLBN_IMAP_USER']",))
+
+
+def test_entry_point_refuses_to_run_without_credentials():
+    """入口缺凭据就退出且退出码非 0：静默降级会把「没读到凭据」表现成「发送失败」。"""
+    _drop(CONFIG)
+    _check("入口缺凭据不跑",
+           _run(None, {"XLBN_WELINK_AUTH": ""}, as_file=True),
+           expect_rc=1,
+           must_contain=("XLBN_WELINK_AUTH", "xlb_notify.config.json"))
+
+
+# ---------------------------------------------------------------- 配置文件
+
+
+def test_config_file_backs_up_env_and_ignores_note_keys():
+    """配置文件能兜住缺的环境变量；_xxx_note 这类说明键必须被容忍（模板里全是）。"""
+    _write_config({"welink_auth": "from-file-token", "default_receiver": "g0000001",
+                   "search_days": 10, "imap_folder": "INBOX/Test",
+                   "_note": "带下划线的说明键"})
+    _check("配置文件兜底",
+           _run("import xlb_notify as m; print('auth=', m.WELINK_AUTH, '| recv=', "
+                "m.DEFAULT_RECEIVERS, '| days=', m.SEARCH_DAYS, '| folder=', m.IMAP_FOLDER)",
+                {"XLBN_WELINK_AUTH": "", "XLBN_DEFAULT_RECEIVER": ""}),
+           must_contain=("auth= from-file-token", "recv= ['g0000001']", "days= 10",
+                         "folder= INBOX/Test"))
+    _check("环境变量优先",
+           _run("import xlb_notify as m; print('recv=', m.DEFAULT_RECEIVERS)",
+                {"XLBN_DEFAULT_RECEIVER": "env0001"}),
+           must_contain=("recv= ['env0001']",))
+    _drop(CONFIG)
+
+
+def test_broken_config_file_names_itself():
+    """坏 JSON 必须报文件名。否则表现成「凭据全都读不到 → 缺少环境变量」，
+    人会去查环境变量，而真因是配置文件存成了 ANSI 或写成了 JSONC。"""
+    with open(CONFIG, "w", encoding="utf-8") as handle:
+        handle.write("{ 这 不是 json }")
+    _check("坏 JSON 报文件名",
+           _run("import xlb_notify"),
+           expect_rc=1,
+           must_contain=("不是合法 JSON", "xlb_notify.config.json"),
+           must_not_contain=("缺少必需的配置",))
+    _drop(CONFIG)
+
+
+# ---------------------------------------------------------------- 启动闸门
+
+
+def test_non_ascii_folder_is_rejected_with_the_fix_spelled_out():
+    """文件夹名含非 ASCII 必须当场拦下。imaplib 在 _command 里按 ascii 编码参数，
+    明文中文抛的是 UnicodeEncodeError —— 不拦的话报错长这样「'ascii' codec can't
+    encode characters…」，看不出问题在文件夹名上。"""
+    _drop(CONFIG)
+    _check("非 ASCII 文件夹",
+           _run("import xlb_notify", {"XLBN_IMAP_FOLDER": "INBOX/外部邮件"}),
+           expect_rc=1, must_contain=("非 ASCII", "&WRaQ6JCuTvY-"))
+
+
+def test_search_days_must_be_a_positive_integer():
+    """时间窗是首次运行的爆炸半径控制，不能是 0/负数/非数字。"""
+    _drop(CONFIG)
+    for bad in ("0", "-1", "abc"):
+        _check("search_days=%r 被拒" % bad,
+               _run("import xlb_notify", {"XLBN_SEARCH_DAYS": bad}),
+               expect_rc=1, must_contain=("XLBN_SEARCH_DAYS",))
+
+
+# ---------------------------------------------------------------- 内容渲染
+
+
+def test_compose_content_joins_subject_and_body():
+    """纯文本 = 主题 + 空行 + 正文；主题压平内部空白；无正文只发主题；超长截断。"""
+    _drop(CONFIG)
+    _check("compose_content",
+           _run(r"""
+import xlb_notify as m
+print(repr(m.compose_content('  主题  带  空格 ', 'body  text')))
+print(repr(m.compose_content('', '')))
+print(repr(m.compose_content('主题', '   \n  ')))
+long = m.compose_content('t', 'x' * 5000)
+print('len=', len(long), '有截断提示=', '正文过长已截断' in long)
+"""),
+           must_contain=("'主题 带 空格\\n\\nbody  text'", "'(无主题)'", "'主题'",
+                         "len= 4011 有截断提示= True"))
+
+
+def test_decode_subject_never_loses_the_whole_mail():
+    """编码主题要能解；没主题给占位；字符集名字坏掉时保留原文 —— 主题读不出来
+    不该拦住转发，正文才是内容。"""
+    _drop(CONFIG)
+    _check("decode_subject",
+           _run(r"""
+import email, xlb_notify as m
+print(repr(m.decode_subject(email.message_from_string(
+    "Subject: =?utf-8?B?5Lit5paH5Li76aKY?=\r\nFrom: a@b\r\n\r\nx"))))
+print(repr(m.decode_subject(email.message_from_string("From: a@b\r\n\r\nx"))))
+print(repr(m.decode_subject(email.message_from_string(
+    "Subject: =?nosuchcharset?B?5Lit?=\r\nFrom: a@b\r\n\r\nx"))))
+"""),
+           must_contain=("'中文主题'", "'(无主题)'"))
+
+
+def test_html_body_conversion_keeps_links_and_decodes_gbk():
+    """HTML 转纯文本：表格行要分行、链接不能丢（双引号与单引号两种写法都要认）、
+    GBK 正文要能解。注意必须走 message_from_bytes —— 生产就是按字节解析的；
+    message_from_string 建出来的 Message，get_payload(decode=True) 会把中文
+    变成 \\uXXXX 字面量（email.message._decode_8bit 的行为），那是测试自身的坑。"""
+    _drop(CONFIG)
+    _check("HTML/GBK 正文",
+           _run(r"""
+import email, xlb_notify as m
+def body(header, text_bytes):
+    return m.get_email_body(email.message_from_bytes(header.encode('utf-8') + text_bytes))
+HTML = 'Content-Type: text/html; charset=utf-8\n\n'
+print('双引号 ->', body(HTML, '<p>见 <a href="http://a/b">链接</a></p>'.encode('utf-8')))
+print('单引号 ->', body(HTML, "<p>见 <a href='http://c/d'>链接</a></p>".encode('utf-8')))
+print('表格   ->', body(HTML, '<table><tr><th>集群</th><td>ascend-x</td></tr></table>'.encode('utf-8')))
+print('纯文本 ->', body('Content-Type: text/plain; charset=utf-8\n\n', '纯粹的正文'.encode('utf-8')))
+print('GBK    ->', body('Content-Type: text/plain; charset=gbk\n\n', '中文正文'.encode('gbk')))
+""", {"PYTHONIOENCODING": "utf-8"}),
+           must_contain=("http://a/b", "http://c/d", "ascend-x", "纯粹的正文", "中文正文"))
+
+
+# ---------------------------------------------------------------- 快照与 DRY_RUN
+
+# process() 的替身环境：假 IMAP（一封固定邮件）+ 假 requests（记下每次发送）。
+# 用例脚本拼在这个前缀后面，最后自己调 m.process()。共用一份是为了让三个用例
+# 的替身行为完全一致 —— 否则「真跑」与「失败重投」两个用例的差异会被替身差异盖住。
+_PROCESS_HARNESS = r"""
+import json, os, xlb_notify as m
+
+MAILS = [
+    ('Message-ID: <m1@x>\r\n'
+     'Subject: =?utf-8?B?5Lit5paH5Li76aKY?=\r\n'
+     'Content-Type: text/plain; charset=utf-8\r\n\r\n正文内容').encode('utf-8'),
+]
+
+posted = []
+def ok_post(url, json=None, timeout=None):
+    posted.append(json)
+    class R: ok = True; status_code = 200; text = ''
+    return R()
+m.requests.post = ok_post
+
+class FakeImap:
+    def login(self, *a): return ('OK', [b''])
+    def select(self, folder): return ('OK', [b'1'])
+    def search(self, charset, criteria):
+        return ('OK', [b' '.join(str(i + 1).encode() for i in range(len(MAILS)))])
+    def fetch(self, mid, spec):
+        return ('OK', [(b'head', MAILS[int(mid) - 1])])
+    def logout(self): return ('BYE', [b''])
+m.imaplib.IMAP4_SSL = lambda *a, **k: FakeImap()
+
+def snapshot_ids():
+    if not os.path.exists(m.SNAPSHOT_FILE):
+        return []
+    return [e['id'] for e in json.load(open(m.SNAPSHOT_FILE, encoding='utf-8'))]
+"""
+
+
+def test_dry_run_skips_send_and_does_not_touch_snapshot():
+    """DRY_RUN 下 welink_post 直接返回 True。若顺手记进快照，「没发」就被记成「已发」，
+    联调完接着跑真那轮会全部判重、一封都不发，而日志只显示 dup=N。
+
+    注意这里必须在**同一个进程里连跑两轮 process()** 才验得出来：只查「发没发」
+    是查不出这个坑的，坑在第二轮 —— 所以断言的是第二轮真的发出去了。
+    """
+    _drop(CONFIG)
+    _drop(SNAPSHOT)
+    _check("DRY_RUN 跑完整流程后不污染快照",
+           _run(_PROCESS_HARNESS + r"""
+m.process()
+print('第一轮 DRY_RUN 实际发出:', len(posted))
+print('第一轮后快照存在:', os.path.exists(m.SNAPSHOT_FILE))
+""", {"XLBN_DRY_RUN": "1"}),
+           must_contain=("第一轮 DRY_RUN 实际发出: 0", "第一轮后快照存在: False"))
+    _drop(SNAPSHOT)
+
+
+def test_real_run_sends_to_every_receiver_then_dedupes():
+    """非 DRY_RUN：一封邮件要发给每个收件人各一条（不是拼成一个串发一条），
+    第二轮同样的 Message-ID 必须判重不再发。"""
+    _drop(CONFIG)
+    _drop(SNAPSHOT)
+    _check("真跑：逐个收件人 + 按 Message-ID 判重",
+           _run(_PROCESS_HARNESS + r"""
+m.process()
+print('第一轮发出:', len(posted), '收件人:', [p['receiver'] for p in posted])
+print('内容首行:', posted[0]['content'].splitlines()[0])
+print('快照:', json.load(open(m.SNAPSHOT_FILE))[0]['id'])
+m.process()
+print('第二轮发出（累计）:', len(posted))
+"""),
+           must_contain=("第一轮发出: 3 收件人: ['w0012345', 'w0067890', 'w0099999']",
+                         "内容首行: 中文主题",
+                         "快照: <m1@x>",
+                         "第二轮发出（累计）: 3"))
+    _drop(SNAPSHOT)
+
+
+def test_mails_without_message_id_get_distinct_stable_keys():
+    """没有 Message-ID 的信（有的发件人不带）去重 key 必须**跨轮稳定且每封不同**。
+
+    兜底不能用 IMAP 序号：序号每轮重新编号，同一封可能换号（漏判重、反复重发），
+    而不同的信在 TTL 窗口内可能顶到同一个号（误判重、静默漏发）。这条用例断言
+    两封无 ID 的信都发得出去、且快照里各占一条 —— 共用一个 key 的实现会在这里挂。
+    """
+    _drop(CONFIG)
+    _drop(SNAPSHOT)
+    _check("无 Message-ID 不能共用一个 key",
+           _run(_PROCESS_HARNESS + r"""
+MAILS.append(b'Subject: no message id\r\n'
+             b'Content-Type: text/plain; charset=utf-8\r\n\r\n\xe7\xac\xac\xe4\xba\x8c\xe5\xb0\x81')
+m.process()
+print('发出总数:', len(posted))
+print('快照条数:', len(snapshot_ids()))
+print('两个 key 不同:', len(set(snapshot_ids())) == 2)
+print('key 前缀:', sorted(snapshot_ids())[-1][:7])
+"""),
+           must_contain=("发出总数: 6", "快照条数: 2", "两个 key 不同: True",
+                         "key 前缀: sha256:"))
+    _drop(SNAPSHOT)
+
+
+def test_send_failure_is_not_recorded_so_it_retries():
+    """发送失败绝不能记进快照 —— 记了就等于这封信永久丢掉，且日志只有一行 warning。"""
+    _drop(CONFIG)
+    _drop(SNAPSHOT)
+    _check("失败不记快照，下轮重投",
+           _run(_PROCESS_HARNESS + r"""
+def failing_post(url, json=None, timeout=None):
+    posted.append(json)
+    class R: ok = False; status_code = 500; text = 'boom'
+    return R()
+m.requests.post = failing_post
+m.process()
+print('快照存在:', os.path.exists(m.SNAPSHOT_FILE))
+print('有上报异常:', any('告警脚本异常' in p['content'] for p in posted))
+"""),
+           must_contain=("快照存在: False", "有上报异常: True"))
+    _drop(SNAPSHOT)
+
+
+def test_snapshot_survives_garbage_and_drops_expired_entries():
+    """快照是本机运行态，可能被手改坏。坏文件/非数组要当成空表，超 TTL 的要丢掉。"""
+    _drop(CONFIG)
+    _check("快照健壮性",
+           _run(r"""
+import json, xlb_notify as m
+open(m.SNAPSHOT_FILE, 'w').write('{ 坏 json')
+print('坏文件 ->', m.load_snapshot())
+open(m.SNAPSHOT_FILE, 'w').write('{"a": 1}')
+print('非数组 ->', m.load_snapshot())
+json.dump([{'id': '旧', 'sent_at': '2000-01-01T00:00:00'},
+           {'id': '新', 'sent_at': m.datetime.now().isoformat()}],
+          open(m.SNAPSHOT_FILE, 'w', encoding='utf-8'), ensure_ascii=False)
+print('过滤后 ->', [e['id'] for e in m.load_snapshot()])
+m.save_snapshot([{'id': 'x', 'sent_at': m.datetime.now().isoformat()}])
+print('回读 ->', [e['id'] for e in m.load_snapshot()])
+"""),
+           must_contain=("坏文件 -> []", "非数组 -> []", "过滤后 -> ['新']", "回读 -> ['x']"))
+    _drop(SNAPSHOT)
+
+
+# ---------------------------------------------------------------- 旧逻辑确已移除
+
+
+def test_alert_parsing_whitelist_and_routing_are_gone():
+    """整体替换过，旧的名字不该以死代码的形式留下 —— 留着就会被误以为还在生效。"""
+    _drop(CONFIG)
+    dropped = ("parse_alert", "format_message", "should_skip", "is_alert_subject",
+               "get_receivers", "_parse_routes", "ALERT_ROUTES", "ALERT_SENDER",
+               "ALERT_SENDERS", "SKIP_ALERTS", "ALERT_SUBJECT_KEYWORDS",
+               "single_receiver_test", "SINGLE_RECEIVER_TEST", "_sender_search")
+    _check("旧逻辑已移除",
+           _run("import xlb_notify as m; print('残留=', [n for n in %r if hasattr(m, n)])"
+                % (dropped,)),
+           must_contain=("残留= []",))
+
+
+def test_fetch_all_emails_has_no_sender_filter():
+    """搜邮件只按时间窗。留了 FROM 过滤就等于把「所有邮件」偷偷缩回白名单。"""
+    _drop(CONFIG)
+    _check("无 FROM 过滤",
+           _run(r"""
+import inspect, xlb_notify as m
+src = inspect.getsource(m.fetch_all_emails)
+print('有 SENTSINCE:', 'SENTSINCE' in src)
+print('有 FROM     :', 'FROM' in src)
+"""),
+           must_contain=("有 SENTSINCE: True", "有 FROM     : False"))
+
+
+# ---------------------------------------------------------------- IMAP 层静默停摆
+
+
+def test_imap_select_failure_raises_instead_of_looking_healthy():
+    """select 失败只返回 NO、不抛异常。不显式判掉，后面 search 也返回 NO，
+    最终表现成「fetched 0 emails」—— 脚本天天报平安，实际一封没读。"""
+    _drop(CONFIG)
+    _check("select 失败要抛",
+           _run(r"""
+import xlb_notify as m
+class Fake:
+    def login(self, *a): return ('OK', [b''])
+    def select(self, folder): return ('NO', [b'no such mailbox'])
+m.imaplib.IMAP4_SSL = lambda *a, **k: Fake()
+try:
+    m.imap_connect()
+    print('结果: 没抛异常（静默停摆）')
+except RuntimeError as e:
+    print('结果: 已抛 ->', e)
+"""),
+           must_contain=("结果: 已抛", "select", "失败"))
+    _check("select 正常时照常返回",
+           _run(r"""
+import xlb_notify as m
+class Fake:
+    def login(self, *a): return ('OK', [b''])
+    def select(self, folder): return ('OK', [b'3'])
+m.imaplib.IMAP4_SSL = lambda *a, **k: Fake()
+print('结果:', type(m.imap_connect()).__name__)
+"""),
+           must_contain=("结果: Fake",))
+
+
+def test_fetch_email_bytes_rejects_everything_but_a_proper_tuple():
+    """个别服务器回裸字节串，那时 first[1] 是个整数（取到字节里的第 2 个数字），
+    流到 message_from_bytes 才炸。这里就把形状判掉。"""
+    _drop(CONFIG)
+    _check("fetch 形状判定",
+           _run(r"""
+import xlb_notify as m
+class Fake:
+    def __init__(self, data, status='OK'): self.data, self.status = data, status
+    def fetch(self, mid, spec): return (self.status, self.data)
+print('正常元组 ->', repr(m.fetch_email_bytes(Fake([(b'head', b'BODY')]), b'1')))
+print('裸字节串 ->', repr(m.fetch_email_bytes(Fake([b'raw']), b'1')))
+print('空列表   ->', repr(m.fetch_email_bytes(Fake([]), b'1')))
+print('状态 NO  ->', repr(m.fetch_email_bytes(Fake([(b'h', b'B')], 'NO'), b'1')))
+print('单元素   ->', repr(m.fetch_email_bytes(Fake([(b'head',)]), b'1')))
+"""),
+           must_contain=("正常元组 -> b'BODY'", "裸字节串 -> None", "空列表   -> None",
+                         "状态 NO  -> None", "单元素   -> None"))
+    _check("search 只用时间窗、无结果返回空表",
+           _run(r"""
+import xlb_notify as m
+seen = {}
+class Fake:
+    def search(self, charset, criteria):
+        seen['criteria'] = criteria
+        return ('OK', [b''])
+print('结果:', m.fetch_all_emails(Fake()))
+print('条件:', seen['criteria'])
+"""),
+           must_contain=("结果: []", "SENTSINCE"))
+
+
+# ---------------------------------------------------------------- 凭据不入库
+
+
+def test_no_plaintext_credentials_in_the_script():
+    """本仓是 PUBLIC。此前 WELINK_AUTH 与邮箱密码就硬编码在这个文件里，已明文推到
+    公开远端（commit 098d6e5）。这条断言防止重演：字面量不许赋给名字像凭据的变量。"""
+    source = SCRIPT_SOURCE.read_text(encoding="utf-8")
+    credential_name = re.compile(r"(?:auth|passw|passwd|password|secret|token|credential)",
+                                 re.IGNORECASE)
+    assignment = re.compile(r"""^\s*([A-Za-z_]\w*)\s*=\s*(['"])(.+?)\2""")
+    hits = []
+    for number, line in enumerate(source.splitlines(), 1):
+        match = assignment.match(line)
+        if match and credential_name.search(match.group(1)):
+            hits.append("%d: %s" % (number, line.strip()))
+    assert not hits, "把字面量赋给了名字像凭据的变量：\n  " + "\n  ".join(hits)
+
+    # 反向保险：确认凭据确实有入口，而不是「干脆没有凭据这回事」
+    for name in ("XLBN_WELINK_AUTH", "XLBN_IMAP_PASSWORD"):
+        assert name in source, "源码里找不到凭据入口 %s" % name
+
+
+def main():
+    tests = [value for name, value in sorted(globals().items())
+             if name.startswith("test_") and callable(value)]
+    failed = 0
+    try:
+        for test in tests:
+            try:
+                test()
+            except AssertionError as exc:
+                failed += 1
+                print("FAIL  %s\n      %s" % (test.__name__, exc))
+            else:
+                print("PASS  %s" % test.__name__)
+        print("\n%d/%d 通过" % (len(tests) - failed, len(tests)))
+        if failed:
+            print("（临时目录保留在 %s，便于翻现场）" % WORK)
+    finally:
+        if not failed:
+            shutil.rmtree(WORK, ignore_errors=True)
+    return 1 if failed else 0
+
+
+if __name__ == "__main__":
+    sys.exit(main())

@@ -4,26 +4,27 @@
     "xlb_notify.config.json 已在 .gitignore 里 —— 填完别 force add，本仓是 PUBLIC。",
     "取值优先级：环境变量 > 本文件 > 脚本内置默认值。两个来源可以混用，",
     "比如端点用本文件、凭据走系统环境变量。",
-    "本文件（.example）入库，值必须全是占位符。"
+    "本文件（.example）入库，值必须全是占位符。",
+    "注意：这是 JSON，不能写注释 —— 所有说明都塞在 _xxx_note 这类键里。"
   ],
 
   "welink_url": "http://xiaoluban.rnd.huawei.com:80/",
   "welink_auth": "<填小鲁班发送凭据>",
 
   "imap_server": "imailcn56.email.huawei.com",
-  "_imap_user_note": "必须是「中间邮箱」那个账号 —— 也就是告警邮件实际落地的邮箱。填错的表现是「邮箱里明明有信、脚本却说没有告警」，且不报错。登录名可能是工号也可能是别名，以实际能登进去的为准；启动日志会打印 imap=<server> user=<账号>，跑起来先核对这两项。",
+  "_imap_user_note": "必须是「中间邮箱」那个账号 —— 也就是上游邮件实际落地的邮箱。填错的表现是「邮箱里明明有信、脚本却说没有」，且不报错。登录名可能是工号也可能是别名，以实际能登进去的为准；启动日志会打印 imap=<server> user=<账号>，跑起来先核对这两项。",
   "imap_user": "<填中间邮箱的登录账号>",
   "imap_password": "<填该邮箱的密码/授权码>",
 
   "_imap_folder_note": "文件夹名必须写 IMAP 的修改版 UTF-7，不能写明文中文 —— imaplib 在 _command 里按 ascii 编码，写中文会直接 UnicodeEncodeError（实测）。INBOX/&WRaQ6JCuTvY- 就是 INBOX/外部邮件。要换别的文件夹得自己转码，别凭感觉改。",
   "imap_folder": "INBOX/&WRaQ6JCuTvY-",
 
-  "_alert_sender_note": "IMAP 的 FROM 搜索是子串匹配（RFC 3501 §6.4.4），地址不同就互不命中。两条链路（backlog 的 workflow-analysis、昇腾失败分析）各用不同 QQ 账号发信时，两个都要填、逗号分隔 —— 只填一个，另一条链路的邮件会被静默漏掉。",
-  "alert_sender": "<填中间邮箱的发件地址，多个用逗号分隔>",
-  "default_receiver": "<填收件人工号，多个用逗号分隔，如 w0012345,w0067890>",
+  "_default_receiver_note": "收件人工号/群 id。脚本只读这一个键，不再有地址映射表、也不再按告警名路由 —— 文件夹里每封信都发给这里列出的所有人。多个用逗号或分号分隔，脚本会逐个发（小鲁班的 receiver 只收单个 ID，拼成一个串会静默只投给第一个）。",
+  "default_receiver": "<填收件人工号或群 id，多个用逗号分隔，如 w0012345,w0067890>",
 
-  "alert_routes": [],
+  "_search_days_note": "只转发最近 N 天的邮件，默认 3。这是安全阀：这个文件夹收的是**所有外部来信**，没有内容过滤，去掉时间窗就等于把整个文件夹的历史邮件一次性群发出去。要真全量就调大（比如 3650）；必须为正整数，填 0 或负数脚本会拒绝开跑。",
+  "search_days": 3,
 
-  "dry_run": false,
-  "single_receiver_test": false
+  "_dry_run_note": "true = 只打日志不发 WeLink、也不写去重快照。首次上线务必先这么跑一轮，看 [DRY-RUN] 日志里「会发给谁、多少封」，确认爆炸半径可接受再改回 false。",
+  "dry_run": false
 }
