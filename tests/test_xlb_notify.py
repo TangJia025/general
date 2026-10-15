@@ -215,6 +215,68 @@ print(repr(m.decode_subject(email.message_from_string(
            must_contain=("'中文主题'", "'(无主题)'"))
 
 
+def test_html_body_has_no_blank_line_swamp():
+    """通知类邮件转出来必须没有成片的空行。
+
+    实测一封普通通知邮件（嵌套 table + `&nbsp;` 占位行 + 缩进空白）原来出来 29 行、
+    其中 22 行是纯空白。根因是原来那句 `\\n[ \\t]*\\n+ -> \\n` 压不掉**只含一个空格的行**
+    —— 空格在换行之前，模式得先看到换行才匹配。这条用例就是钉这个：
+    空白行必须为 0，且表格的标签与值必须相邻（留空行会把它们拆开）。
+    """
+    _drop(CONFIG)
+    _check("HTML 无空行泛滥",
+           _run(r"""
+import email, xlb_notify as m
+HTML = '''<html><head><style>td{font-size:12px}</style></head>
+<body>
+<!--[if gte mso 9]><xml><o:OfficeDocumentSettings><o:AllowPNG/></o:OfficeDocumentSettings></xml><![endif]-->
+<table width="600" border="0">
+  <tr><td>&nbsp;</td></tr>
+  <tr><td><div><div><p>告警通知</p></div></div></td></tr>
+  <tr><td>&nbsp;</td></tr>
+  <tr><td><table>
+        <tr><th>集群</th><td>ascend-x</td></tr>
+        <tr><th>级别</th><td>CRITICAL</td></tr>
+  </table></td></tr>
+  <tr><td>&nbsp;</td></tr><tr><td>&nbsp;</td></tr><tr><td>&nbsp;</td></tr>
+  <tr><td>见 <a href="http://a/b">链接</a></td></tr>
+  <tr><td>&nbsp;</td></tr>
+</table>
+<!-- 内部备注：集群 A -> 集群 B 的通路，别发出去 -->
+</body></html>'''
+body = m.get_email_body(email.message_from_bytes(
+    'Content-Type: text/html; charset=utf-8\n\n'.encode('utf-8') + HTML.encode('utf-8')))
+lines = body.splitlines()
+print('行数:', len(lines))
+print('空白行数:', sum(1 for line in lines if not line.strip()))
+print('标签值相邻:', '集群\nascend-x' in body and '级别\nCRITICAL' in body)
+# 注释必须整段消失，而不是「吃到第一个 `>` 为止」——后者的漏法是：注释正文里
+# 一旦出现 `>`（这条模拟的是 `集群 A -> 集群 B` 这种内部备注，也等价于 Outlook 的
+# mso 条件注释），`<[^>]+>` 只吃到那个 `>`，**后面的注释正文就当成正文留下了**。
+print('注释没漏出:', '内部备注' not in body and '集群 B' not in body)
+print('没有残留标签:', '<' not in body and '>' not in body)
+print('样式没漏出:', 'font-size' not in body)
+"""),
+           must_contain=("行数: 6", "空白行数: 0", "标签值相邻: True",
+                         "注释没漏出: True", "没有残留标签: True",
+                         "样式没漏出: True"))
+
+
+def test_plain_text_body_keeps_alignment_but_collapses_blank_runs():
+    """纯文本侧不能像 HTML 那样压平：行首空格可能是监控系统打的表格对齐，
+    空行又是它唯一的分段手段。所以只把连续空行压到一个、去掉行尾空白。"""
+    _drop(CONFIG)
+    _check("纯文本保留对齐",
+           _run(r"""
+import email, xlb_notify as m
+PLAIN = '告警\n\n\n\n集群    ascend-x\n\n\n级别    CRITICAL\n\n\n\n'
+body = m.get_email_body(email.message_from_bytes(
+    'Content-Type: text/plain; charset=utf-8\n\n'.encode('utf-8') + PLAIN.encode('utf-8')))
+print('结果:', repr(body))
+""", {"PYTHONIOENCODING": "utf-8"}),
+           must_contain=("'告警\\n\\n集群    ascend-x\\n\\n级别    CRITICAL'",))
+
+
 def test_html_body_conversion_keeps_links_and_decodes_gbk():
     """HTML 转纯文本：表格行要分行、链接不能丢（双引号与单引号两种写法都要认）、
     GBK 正文要能解。注意必须走 message_from_bytes —— 生产就是按字节解析的；
@@ -242,13 +304,20 @@ print('GBK    ->', body('Content-Type: text/plain; charset=gbk\n\n', '中文正�
 # 用例脚本拼在这个前缀后面，最后自己调 m.process()。共用一份是为了让三个用例
 # 的替身行为完全一致 —— 否则「真跑」与「失败重投」两个用例的差异会被替身差异盖住。
 _PROCESS_HARNESS = r"""
-import json, os, xlb_notify as m
+import json, os, logging, xlb_notify as m
 
 MAILS = [
     ('Message-ID: <m1@x>\r\n'
      'Subject: =?utf-8?B?5Lit5paH5Li76aKY?=\r\n'
      'Content-Type: text/plain; charset=utf-8\r\n\r\n正文内容').encode('utf-8'),
 ]
+
+# 抓住日志正文，用来断言「日志里确实说了」而不只是「代码本意想说」
+log_messages = []
+class _Capture(logging.Handler):
+    def emit(self, record):
+        log_messages.append(record.getMessage())
+m.log.addHandler(_Capture())
 
 posted = []
 def ok_post(url, json=None, timeout=None):
@@ -338,6 +407,80 @@ print('key 前缀:', sorted(snapshot_ids())[-1][:7])
     _drop(SNAPSHOT)
 
 
+def test_batch_cap_bounds_a_single_run():
+    """单轮最多尝试 MAX_PER_RUN 封：撞频率限制就是从某一封开始尾部全失败，得把一次打爆
+    换成多轮排空。25 封 + 上限 20 → 只尝试 20 封，剩下的绝不碰。"""
+    _drop(CONFIG)
+    _drop(SNAPSHOT)
+    _check("上限生效",
+           _run(_PROCESS_HARNESS + r"""
+MAILS.clear()
+for i in range(25):
+    MAILS.append(('Message-ID: <m%d@x>\r\nSubject: s%d\r\n'
+                  'Content-Type: text/plain; charset=utf-8\r\n\r\nbody%d'
+                  % (i, i, i)).encode('utf-8'))
+m.process()
+print('尝试发送（3 收件人 x 封数）:', len(posted))
+print('快照条数:', len(snapshot_ids()))
+""", {"XLBN_MAX_PER_RUN": "20"}),
+           must_contain=("尝试发送（3 收件人 x 封数）: 60", "快照条数: 20"))
+    _drop(SNAPSHOT)
+
+
+def test_batch_cap_says_so_in_the_log_and_the_run_drains_across_runs():
+    """两件事一起验：
+    1. 早停必须在日志里说出来 —— 不说的话，看日志的人只会看到「这次只发了 20 封」，
+       会以为剩下的被丢了（上一轮「为什么有的邮件没转出来」就是这么被误判的）。
+    2. 下一轮真的接着排空，而且**不重发**上一轮已发的那些。"""
+    _drop(CONFIG)
+    _drop(SNAPSHOT)
+    _check("多轮排空 + 早停有说明",
+           _run(_PROCESS_HARNESS + r"""
+MAILS.clear()
+for i in range(25):
+    MAILS.append(('Message-ID: <m%d@x>\r\nSubject: s%d\r\n'
+                  'Content-Type: text/plain; charset=utf-8\r\n\r\nbody%d'
+                  % (i, i, i)).encode('utf-8'))
+m.process()
+first = len(posted)
+print('第一轮:', first, '快照:', len(snapshot_ids()))
+print('日志有早停说明:', any('已达本次上限 20 封' in x and '剩余下次运行继续排空' in x
+                             for x in log_messages))
+print('done 行标了早停:', any('早停（达上限）' in x for x in log_messages))
+m.process()
+print('第二轮新增:', len(posted) - first)
+print('第二轮后快照:', len(snapshot_ids()))
+""", {"XLBN_MAX_PER_RUN": "20"}),
+           must_contain=("第一轮: 60 快照: 20", "日志有早停说明: True",
+                         "done 行标了早停: True", "第二轮新增: 15", "第二轮后快照: 25"))
+    _drop(SNAPSHOT)
+
+
+def test_batch_cap_does_not_waste_budget_on_already_sent_ids():
+    """上限管的是**尝试数**，判重跳过的不占额度 —— 否则一个积压很久的文件夹
+    每轮都会被一堆已发的信把额度吃光，新的信永远排不到。"""
+    _drop(CONFIG)
+    _drop(SNAPSHOT)
+    _check("判重不占额度",
+           _run(_PROCESS_HARNESS + r"""
+import json, datetime
+MAILS.clear()
+for i in range(25):
+    MAILS.append(('Message-ID: <m%d@x>\r\nSubject: s%d\r\n'
+                  'Content-Type: text/plain; charset=utf-8\r\n\r\nbody%d'
+                  % (i, i, i)).encode('utf-8'))
+# 前 23 封假装早就发过了
+now = datetime.datetime.now().isoformat()
+json.dump([{'id': '<m%d@x>' % i, 'sent_at': now} for i in range(23)],
+          open(m.SNAPSHOT_FILE, 'w', encoding='utf-8'))
+m.process()
+print('尝试发送:', len(posted))
+print('快照条数:', len(snapshot_ids()))
+""", {"XLBN_MAX_PER_RUN": "20"}),
+           must_contain=("尝试发送: 6", "快照条数: 25"))
+    _drop(SNAPSHOT)
+
+
 def test_send_failure_is_not_recorded_so_it_retries():
     """发送失败绝不能记进快照 —— 记了就等于这封信永久丢掉，且日志只有一行 warning。"""
     _drop(CONFIG)
@@ -355,6 +498,65 @@ print('有上报异常:', any('告警脚本异常' in p['content'] for p in post
 """),
            must_contain=("快照存在: False", "有上报异常: True"))
     _drop(SNAPSHOT)
+
+
+def test_failed_snapshot_write_is_surfaced_not_swallowed():
+    """快照写不进去 = 下一轮把这一批**重新发一遍**，是「每轮全量重发」的直接机制。
+    不能只落一行日志：必须计入 save_fail、写进 done 行、并且发一条 WeLink 告警。"""
+    _drop(CONFIG)
+    _drop(SNAPSHOT)
+    _check("快照写失败要上报",
+           _run(_PROCESS_HARNESS + r"""
+# 把快照指到一个不存在的目录 → 写入必然失败
+m.SNAPSHOT_FILE = os.path.join(os.path.dirname(m.SNAPSHOT_FILE), 'no-such-dir', 'x.json')
+m.process()
+print('新增发送:', len(posted))
+print('done 行提到 save_fail:', any('save_fail=1' in x for x in log_messages))
+print('发了告警:', any('快照写入失败' in p['content'] for p in posted))
+"""),
+           must_contain=("新增发送: 6", "done 行提到 save_fail: True", "发了告警: True"))
+
+
+def test_corrupt_snapshot_is_quarantined_so_it_stops_repeating():
+    """坏快照会被改名留证：留着好查因（原地覆盖就抹掉了），改名后下一轮不再反复报同一个错。"""
+    _drop(CONFIG)
+    _drop(SNAPSHOT)
+    _check("坏快照改名留证",
+           _run(r"""
+import glob, os, xlb_notify as m
+open(m.SNAPSHOT_FILE, 'w').write('{ 坏 json')
+print('读到:', m.load_snapshot())
+quarantined = glob.glob(m.SNAPSHOT_FILE + '.corrupt-*')
+print('留下坏文件:', len(quarantined) == 1)
+print('原文件已移走:', not os.path.exists(m.SNAPSHOT_FILE))
+print('再读一次不再报错:', m.load_snapshot() == [])
+"""),
+           must_contain=("读到: []", "留下坏文件: True", "原文件已移走: True",
+                         "再读一次不再报错: True"))
+
+
+def test_snapshot_write_is_atomic_and_leaves_no_temp_file():
+    """原子换名写：进程被中途杀掉不会留下截断的 JSON（那会让下一轮判重依据归零、
+    整批重发）。顺带断言不留 .tmp 残骸。"""
+    _drop(CONFIG)
+    _drop(SNAPSHOT)
+    _check("快照原子写",
+           _run(r"""
+import glob, json, os, xlb_notify as m
+print('保存成功:', m.save_snapshot([{'id': 'a', 'sent_at': m.datetime.now().isoformat()}]))
+print('内容:', [e['id'] for e in json.load(open(m.SNAPSHOT_FILE, encoding='utf-8'))])
+print('残留 .tmp:', glob.glob(m.SNAPSHOT_FILE + '.tmp'))
+"""),
+           must_contain=("保存成功: True", "内容: ['a']", "残留 .tmp: []"))
+    _drop(SNAPSHOT)
+
+
+def test_max_per_run_must_be_a_positive_integer():
+    _drop(CONFIG)
+    for bad in ("0", "-1", "abc"):
+        _check("max_per_run=%r 被拒" % bad,
+               _run("import xlb_notify", {"XLBN_MAX_PER_RUN": bad}),
+               expect_rc=1, must_contain=("XLBN_MAX_PER_RUN",))
 
 
 def test_snapshot_survives_garbage_and_drops_expired_entries():
